@@ -1,34 +1,34 @@
+. ./daintmc.sh
+
 # set up path
 base=`pwd`
 install_path="$base"/install
 mkdir nest
 cd nest
 
-# set up environment
-module swap PrgEnv-cray PrgEnv-gnu
-module swap gcc/7.2.0
-module load daint-mc
-module load cray-python/2.7.13.1
-module load PyExtensions/2.7.13.1-CrayGNU-17.08 # for cython
+msg "building NEST to install at $install_path"
 
-export CC=`which cc`; export CXX=`which CC`
-export CRAYPE_LINK_TYPE=dynamic
+# set up environment
+load_modules
 
 # get the code
 # TODO: check out a tag/commit
+msg "clone code"
 git clone https://github.com/nest/nest-simulator.git --recursive
-mv nest-simulator nest
-cd nest
+cd nest-simulator
 
 # configure
 
-# TODO: python mpi
+# TODO: mpi
+msg "configure build"
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX:PATH=$install_path
 
 # make
+msg "build"
 make -j6
+msg "install"
 make install
 
 cd $base

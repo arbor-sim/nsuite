@@ -1,27 +1,26 @@
+. ./daintmc.sh
+
 # set up path
 base=`pwd`
 install_path="$base"/install
 mkdir neuron
 cd neuron
 
-# set up environment
-module swap PrgEnv-cray PrgEnv-gnu
-module swap gcc/7.2.0
-module load daint-mc
-module load cray-python/2.7.13.1
+msg "building NEURON to install at $install_path"
 
-export CC=`which cc`; export CXX=`which CC`
-export CRAYPE_LINK_TYPE=dynamic
+# set up environment
+load_modules
 
 # get the code
 # TODO: check out a tag/commit
+msg "clone code"
 git clone https://github.com/neuronsimulator/nrn
 cd nrn
 
 # TODO:
 #       mpi
 #       python
-mkdir build; cd build;
+msg "configure build"
 ./build.sh
 config_options=--prefix="$install_path"
 config_options="$config_options --without-iv"
@@ -30,7 +29,9 @@ config_options="$config_options --with-nrnpython"
 
 ./configure $config_options
 
+msg "build"
 make -j6
+msg "install"
 make install
 
 cd $base

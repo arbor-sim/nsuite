@@ -1,3 +1,7 @@
+# paths with builds of software packages
 build/install
 build/nest
 build/neuron
+
+# vim temporary files
+*.sw[ponq]
