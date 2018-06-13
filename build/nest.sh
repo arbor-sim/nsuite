@@ -1,5 +1,3 @@
-source ./linux.sh
-
 # set up path
 base=`pwd`
 install_path="$base"/install
@@ -16,7 +14,7 @@ cd nest-simulator
 
 # configure
 
-# TODO: python if not by default
+# TODO: mpi
 msg "configure build"
 mkdir build
 cd build

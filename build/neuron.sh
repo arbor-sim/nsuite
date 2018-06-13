@@ -1,5 +1,3 @@
-. ./daintmc.sh
-
 # set up path
 base=`pwd`
 install_path="$base"/install
@@ -7,9 +5,6 @@ mkdir neuron
 cd neuron
 
 msg "building NEURON to install at $install_path"
-
-# set up environment
-load_modules
 
 # get the code
 # TODO: check out a tag/commit
