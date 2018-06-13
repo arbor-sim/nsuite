@@ -1,7 +1,4 @@
-msg()
-{
-    echo ======= $1 =======
-}
+source ./util.sh
 
 load_modules()
 {
