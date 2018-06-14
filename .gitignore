@@ -1,7 +1,11 @@
 # paths with builds of software packages
-build/install
-build/nest
-build/neuron
+build
+config
+install
 
 # vim temporary files
 *.sw[ponq]
+
+# Neuron nmodl patches
+x86_64
+
