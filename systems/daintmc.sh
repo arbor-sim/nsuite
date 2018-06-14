@@ -1,6 +1,4 @@
-source ./util.sh
-
-msg "set up environment"
+# set up environment for building on the multicore part of daint
 
 if [ $PE_ENV = "CRAY" ]
 then
