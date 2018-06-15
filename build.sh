@@ -1,10 +1,12 @@
 # set up path
 base_path=`pwd`
 install_path="$base_path"/install
+build_path="$base_path"/build
 
 . $base_path/scripts/util.sh
 
-# This will set the system_name variable to the name of the target system
+# This will set the system_name variable to the name 
+# system on which we are running.
 detect_system;
 
 msg "target system: $system_name"
@@ -13,8 +15,10 @@ msg "target system: $system_name"
 
 msg "working path:  $base_path"
 msg "install path:  $install_path"
+msg "build path:    $build_path"
 
 mkdir -p $base_path/build
+. $base_path/scripts/build_arbor.sh
 . $base_path/scripts/build_nest.sh
 . $base_path/scripts/build_neuron.sh
 
