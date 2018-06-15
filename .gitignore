@@ -9,3 +9,4 @@ install
 # Neuron nmodl patches
 x86_64
 
+*.pyc
