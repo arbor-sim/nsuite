@@ -35,6 +35,7 @@ BREAKPOINT {
     /* number of nanoseconds to wait */
     /* factor of 1e6 converts ms to ns */
     long interval_ns__ = dt/rate*1e6;
+    printf("waiting %d ms\n", (int)interval_ns__/1000000);
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &e__);
     long elapsed_ns__ = (e__.tv_sec - s__.tv_sec) * 1000000000 + (e__.tv_nsec - s__.tv_nsec);
