@@ -1,0 +1,10 @@
+{
+    "name": "small test",
+    "num-cells": 1000,
+    "duration": 100,
+    "fan-in": 1000,
+    "min-delay": 10,
+    "spike-frequency": 20,
+    "realtime-ratio": 0.1
+}
+
