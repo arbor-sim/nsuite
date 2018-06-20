@@ -46,12 +46,13 @@ class Network:
 
         self.connections = []
         for i in range(self.num_cells):
-            src = i
+            tgt = i
 
+            random.seed(i)
             for j in range(0,self.fan_in):
-               tgt = random.randint(0,self.num_cells-2)
-               if tgt >= i:
-                   tgt = tgt+1
+               src = random.randint(0,self.num_cells-2)
+               if src >= i:
+                   src = src+1
 
                con = h.NetCon(self.cells[src].source, self.cells[tgt].source, 1, min_delay, 1)
                self.connections.append(con)
