@@ -34,7 +34,7 @@ export PATH="$bin_path:$PATH"
 
 mkdir -p config
 
-echo $python_path >> config/python_path
-echo $bin_path    >> config/bin_path
-echo $system_name >> config/target
+echo $python_path > config/python_path
+echo $bin_path    > config/bin_path
+echo $system_name > config/target
 

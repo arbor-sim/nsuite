@@ -17,6 +17,10 @@ What are we building?
 3 requires that the environment has been extended to include the
 PYTHONPATH, PATH etc to reflect the installed software.
 
+Have a build script that takes an argument describing the system that
+it is to build for. If no argument is passed it should attempt to automatically
+determine the system.
+
 ### Execute
 
 Load the modules used to build.
