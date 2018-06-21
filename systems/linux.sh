@@ -10,7 +10,7 @@ then
     then
         export with_mpi=true
         export CC=`which mpicc`
-        export CXX=`which mpi++`
+        export CXX=`which mpic++`
         msg "Compiling with MPI"
         msg "  MPI C  : $CC"
         msg "  MPI C++: $CXX"
