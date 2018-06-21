@@ -8,6 +8,8 @@ if [ ! -d "$arb_repo_path/.git" ]
 then
     msg "ARBOR: cloning"
     git clone https://github.com/eth-cscs/arbor.git $arb_repo_path --recursive
+else
+    msg "ARBOR: repository has already been checked out"
 fi
 
 # only configure build if not already configured
