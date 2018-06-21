@@ -19,10 +19,13 @@ then
     msg "NEURON: configure"
 
     ./build.sh > $build_path/neuron_configure_log
+
     config_options=--prefix="$install_path"
     config_options="$config_options --without-iv"
     config_options="$config_options --with-nrnpython"
-    # TODO: mpi... config_options="$config_options --with-mpi"
+    if [ "$with_mpi" = "true" ]; then
+        config_options="$config_options --with-mpi"
+    fi
 
     ./configure $config_options >> $build_path/neuron_configure_log
 fi
