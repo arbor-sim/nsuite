@@ -1,10 +1,10 @@
 {
     "name": "small test",
-    "num-cells": 100,
+    "num-cells": 500,
     "duration": 100,
-    "fan-in": 1000,
+    "fan-in": 10000,
     "min-delay": 10,
-    "spike-frequency": 20,
+    "spike-frequency": 50,
     "realtime-ratio": 0.1
 }
 
