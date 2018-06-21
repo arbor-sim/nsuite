@@ -1,6 +1,6 @@
 {
     "name": "small test",
-    "num-cells": 1000,
+    "num-cells": 100,
     "duration": 100,
     "fan-in": 1000,
     "min-delay": 10,

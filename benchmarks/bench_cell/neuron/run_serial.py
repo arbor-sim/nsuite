@@ -65,11 +65,7 @@ class Network:
 util.hoc_setup()
 
 params = util.Params('input.json')
-
-print()
-print(params)
-
-# TODO: load parameters from json file
+print(""""params)
 
 start_setup = timer()
 
