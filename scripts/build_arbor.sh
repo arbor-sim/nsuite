@@ -20,11 +20,14 @@ fi
 # only configure build if not already configured
 if [ ! -d "$arb_build_path" ]
 then
-    # TODO: mpi
-    msg "ARBOR: configure build"
     mkdir -p "$arb_build_path"
     cd "$arb_build_path"
-    cmake .. -DCMAKE_INSTALL_PREFIX:PATH="$install_path" &>> "$out"
+    cmake_args=-DCMAKE_INSTALL_PREFIX:PATH="$install_path"
+    if [ "$with_mpi" = "true" ]; then
+        cmake_args="$cmake_args -DARB_WITH_MPI=ON"
+    fi
+    msg "ARBOR: configure build with args: $cmake_args"
+    cmake .. $cmake_args &>> "$out"
     [ $? != 0 ] && err "see ${out}" && return 1
 fi
 
@@ -41,3 +44,4 @@ make install &>> "$out"
 msg "ARBOR: build completed"
 
 cd $base_path
+

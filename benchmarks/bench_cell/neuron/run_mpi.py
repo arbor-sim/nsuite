@@ -5,6 +5,7 @@ from timeit import default_timer as timer
 from mpi4py import MPI
 from neuron import h
 import util
+from parameters import Params
 
 class BenchCell:
     _ids = itertools.count(0)
@@ -89,12 +90,13 @@ comm = MPI.COMM_WORLD
 util.hoc_setup()
 
 pc = h.ParallelContext()
+pc.nthread(1)
 rankd = int(pc.id())
 sized = int(pc.nhost())
 is_root = rankd==0
 if is_root: print("=== Running benchmark with {} MPI ranks".format(sized))
 
-params = util.Params('input.json')
+params = Params('input.json')
 
 if is_root: print("\n{}".format(params))
 
@@ -111,15 +113,13 @@ h.steps_per_ms = 1/dt # or else NEURON might noisily fudge dt
 h.tstop = params.duration
 
 comm.Barrier() #####
-end_setup = timer()
 
 if is_root: print('initialize model...')
 
 comm.Barrier() #####
-start_init = timer()
 h.init()
 comm.Barrier() #####
-end_init = timer()
+end_setup = timer()
 if is_root: print('  model initialized\n')
 
 # run the simulation with a timer
@@ -133,17 +133,15 @@ if is_root: print('  model run\n')
 
 time_sim = end_sim - start_sim
 time_setup = end_setup - start_setup
-time_init = end_init - start_init
 
 expected_time = params.duration*params.realtime_ratio * 1e-3 * params.num_cells / sized
 overhead = abs(time_sim-expected_time)
 percent = overhead/expected_time*100
 
 s = "         == Timings ==\n\n" \
-    "  model-setup  : {0:12.4f} s\n" \
-    "  model-init   : {1:12.4f} s\n" \
-    "  model-run    : {2:12.4f} s\n" \
-    "  overheads    : {3:12.2f} %\n" \
-    .format(time_setup, time_init, time_sim, percent)
+    "  model-init   : {0:12.4f} s\n" \
+    "  model-run    : {1:12.4f} s\n" \
+    "  overheads    : {2:12.2f} %\n" \
+    .format(time_setup, time_sim, percent)
 if is_root: print(s)
 
