@@ -1,4 +1,5 @@
 NEURON {
+    THREADSAFE
     POINT_PROCESS bench
     RANGE first, frequency, rate
 }
