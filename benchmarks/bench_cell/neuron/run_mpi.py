@@ -6,7 +6,12 @@ from mpi4py import MPI
 from neuron import h
 import util
 from parameters import Params
+from meters import Meter
 
+#
+#   Simple benchmark cell.
+#   A single compartment with one bench point process attached.
+#
 class BenchCell:
     _ids = itertools.count(0)
 
@@ -27,6 +32,10 @@ class BenchCell:
         self.source.frequency = self.frequency
 
 
+#
+#   A network of benchmark cells.
+#   Random all to all network with no self-connections
+#
 class Network:
     def __init__(self, num_cells, min_delay, fan_in, realtime_ratio, frequency):
         self.pc = h.ParallelContext()
@@ -100,48 +109,27 @@ params = Params('input.json')
 
 if is_root: print("\n{}".format(params))
 
-comm.Barrier() #####
-start_setup = timer()
+meters = Meter()
+comm.Barrier(); meters.start()
 
 if is_root: print('building network...')
-network = Network(params.num_cells, params.min_delay, params.fan_in, params.realtime_ratio, params.spike_frequency)
-if is_root: print('  network built\n')
+network = Network(params.num_cells, params.min_delay, params.fan_in,
+                  params.realtime_ratio, params.spike_frequency)
 
+comm.Barrier(); meters.checkpoint('model-setup')
+
+if is_root: print('initialize model...')
 dt = params.min_delay/2; # 1 ms step time
 h.dt = dt
 h.steps_per_ms = 1/dt # or else NEURON might noisily fudge dt
 h.tstop = params.duration
-
-comm.Barrier() #####
-
-if is_root: print('initialize model...')
-
-comm.Barrier() #####
 h.init()
-comm.Barrier() #####
-end_setup = timer()
-if is_root: print('  model initialized\n')
+comm.Barrier(); meters.checkpoint('model-init')
 
-# run the simulation with a timer
+# run the simulation
 if is_root: print('running model...')
-start_sim = timer()
-comm.Barrier() #####
 h.run()
-comm.Barrier() #####
-end_sim = timer()
-if is_root: print('  model run\n')
+comm.Barrier(); meters.checkpoint('model-run')
 
-time_sim = end_sim - start_sim
-time_setup = end_setup - start_setup
-
-expected_time = params.duration*params.realtime_ratio * 1e-3 * params.num_cells / sized
-overhead = abs(time_sim-expected_time)
-percent = overhead/expected_time*100
-
-s = "         == Timings ==\n\n" \
-    "  model-init   : {0:12.4f} s\n" \
-    "  model-run    : {1:12.4f} s\n" \
-    "  overheads    : {2:12.2f} %\n" \
-    .format(time_setup, time_sim, percent)
-if is_root: print(s)
+if is_root: print(meters)
 

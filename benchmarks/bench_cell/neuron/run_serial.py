@@ -2,8 +2,14 @@ import itertools
 import random
 from timeit import default_timer as timer
 from neuron import h
+from parameters import Params
+from meters import Meter
 import util
 
+#
+#   Simple benchmark cell.
+#   A single compartment with one bench point process attached.
+#
 class BenchCell:
     _ids = itertools.count(0)
 
@@ -24,6 +30,10 @@ class BenchCell:
         self.source.frequency = self.frequency
 
 
+#
+#   A network of benchmark cells.
+#   Random all to all network with no self-connections
+#
 class Network:
     def __init__(self, num_cells, min_delay, fan_in, realtime_ratio, frequency):
         self.num_cells = num_cells
@@ -54,7 +64,8 @@ class Network:
                if src >= i:
                    src = src+1
 
-               con = h.NetCon(self.cells[src].source, self.cells[tgt].source, 1, min_delay, 1)
+               con = h.NetCon(self.cells[src].source, self.cells[tgt].source,
+                              1, min_delay, 1)
                self.connections.append(con)
 
 
@@ -64,48 +75,27 @@ class Network:
 
 util.hoc_setup()
 
-params = util.Params('input.json')
-print(""""params)
+params = Params('input.json')
+print(params)
 
-start_setup = timer()
+meters = Meter()
 
 print('building network...')
-network = Network(params.num_cells, params.min_delay, params.fan_in, params.realtime_ratio, params.spike_frequency)
-print('  network built\n')
+network = Network(params.num_cells, params.min_delay, params.fan_in,
+                  params.realtime_ratio, params.spike_frequency)
+meters.checkpoint('model-setup')
 
+print('initializing model...')
 dt = params.min_delay/2; # 1 ms step time
 h.dt = dt
 h.steps_per_ms = 1/dt # or else NEURON might noisily fudge dt
 h.tstop = params.duration
-
-end_setup = timer()
-
-print('initialize model...')
-start_init = timer()
 h.init()
-end_init = timer()
-print('  model initialized\n')
+meters.checkpoint('model-init')
 
 # run the simulation with a timer
 print('running model...')
-start_sim = timer()
 h.run()
-end_sim = timer()
-print('  model run\n')
+meters.checkpoint('model-run')
 
-time_sim = end_sim - start_sim
-time_setup = end_setup - start_setup
-time_init = end_init - start_init
-
-expected_time = params.duration*params.realtime_ratio * 1e-3 * params.num_cells
-overhead = abs(time_sim-expected_time)
-percent = overhead/expected_time*100
-
-s = "         == Timings ==\n\n" \
-    "  model-setup  : {0:12.4f} s\n" \
-    "  model-init   : {1:12.4f} s\n" \
-    "  model-run    : {2:12.4f} s\n" \
-    "  overheads    : {3:12.2f} %\n" \
-    .format(time_setup, time_init, time_sim, percent)
-print(s)
-
+print(meters)
