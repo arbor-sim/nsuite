@@ -8,6 +8,7 @@ def from_json(o, key):
 
 class Params:
     def __repr__(self):
+        expected_time = self.num_cells*self.realtime_ratio*self.duration*1e-3
         s = "parameters\n" \
             "  name         : {0:>10s}\n" \
             "  cells        : {1:10d}\n" \
@@ -16,8 +17,10 @@ class Params:
             "  min delay    : {4:10.0f} ms\n" \
             "  spike freq   : {5:13.2f} Hz\n" \
             "  integration  : {6:14.3f} times faster than realtime\n" \
+            "  wall time    : {7:14.3f} s\n" \
             .format(self.name, self.num_cells, self.duration, self.fan_in,\
-                    self.min_delay, self.spike_frequency, 1/self.realtime_ratio)
+                    self.min_delay, self.spike_frequency, \
+                    1/self.realtime_ratio, expected_time)
         return s
 
     def __init__(self, filename=None):
