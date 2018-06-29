@@ -26,7 +26,7 @@ then
     ./build.sh &>> ${out}
     [ $? != 0 ] && err "see ${out}" && return 1
 
-    config_options=--prefix="$install_path"
+    config_options="--prefix=${install_path} --exec-prefix=${install_path}"
     config_options="$config_options --without-iv"
     config_options="$config_options --with-nrnpython"
     if [ "$with_mpi" = "true" ]; then
