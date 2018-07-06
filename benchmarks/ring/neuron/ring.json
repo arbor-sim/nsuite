@@ -1,0 +1,10 @@
+{
+    "name": "test",
+    "num-cells": 100,
+    "min-delay": 10,
+    "duration": 100,
+    "depth": 8,
+    "branch-probs": [1, 0.5],
+    "compartments": [20, 1],
+    "lengths": [200, 10]
+}

@@ -12,3 +12,5 @@ x86_64
 *.pyc
 out
 
+# spike files
+*.gdf
