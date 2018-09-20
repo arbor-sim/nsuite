@@ -14,3 +14,5 @@ out
 
 # spike files
 *.gdf
+
+log_*

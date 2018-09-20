@@ -19,20 +19,20 @@ err() {
 # sets the variable system_name
 detect_system() {
     # default option
-    system_name=linux;
+    ns_system_name=linux;
 
     local name=`hostname`
 
     # by default target multicore on Piz Daint
     if [[ "$name" == 'daint'* ]]
     then
-        system_name=daintmc
+        ns_system_name=daintmc
     fi
 }
 
 find_paths() {
     local tmp=""
-    for path in `find $base_path/install -type d -name $2`
+    for path in `find $ns_base_path/install -type d -name $2`
     do
         tmp="$path:$tmp"
     done
