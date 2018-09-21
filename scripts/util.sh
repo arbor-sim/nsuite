@@ -16,6 +16,11 @@ err() {
     >&2 printf "${light_red}== ERROR${nc} ${white}$*${nc}\n"
 }
 
+exit_on_error() {
+    err "$*"
+    exit 1
+}
+
 # sets the variable system_name
 detect_system() {
     # default option

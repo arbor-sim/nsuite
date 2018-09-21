@@ -74,12 +74,24 @@ default_environment() {
     [ $? = 0 ] && ns_python=$(which python3)
 
     # Arbor specific
+
     ns_arb_repo=https://github.com/eth-cscs/arbor.git
     ns_arb_branch=master
 
     ns_arb_arch=native
     ns_arb_with_gpu=OFF
     ns_arb_vectorize=ON
+
+    # Neuron specific
+
+    # By default, the official source tar ball is downloaded for this version
+    # Neuron uses the same naming scheme for major X.Y versions, but an effectively arbitrary
+    # naming scheme for minor X.Y.Z versions. Supporting them would be a major pain.
+    ns_nrn_version=7.6
+    # set to a git repository url to source from a git repo instead of using official tar ball
+    ns_nrn_git_repo=
+    # set this variable if using git and want to use a branch other than master
+    ns_nrn_branch=master
 }
 
 # Set up default environment variables
@@ -142,6 +154,18 @@ msg "using mpi:     $ns_with_mpi"
 msg "C compiler:    $ns_cc"
 msg "C++ compiler:  $ns_cxx"
 msg "python:        $ns_python"
+echo
+msg "---- ARBOR ----"
+msg "repo:          $ns_arb_repo"
+msg "branch:        $ns_arb_branch"
+msg "arch:          $ns_arb_arch"
+msg "gpu:           $ns_arb_with_gpu"
+msg "vectorize:     $ns_arb_vectorize"
+echo
+msg "---- NEURON ----"
+msg "version:       $ns_nrn_version"
+msg "repo:          $ns_nrn_git_repo"
+msg "branch:        $ns_nrn_branch"
 echo
 
 mkdir -p "$ns_build_path"
