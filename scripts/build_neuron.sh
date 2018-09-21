@@ -64,7 +64,7 @@ then
 fi
 
 msg "NEURON: build"
-make -j6 &>> ${out}
+make -j $ns_makej &>> ${out}
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 msg "NEURON: install"

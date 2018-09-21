@@ -66,6 +66,9 @@ default_environment() {
         ns_cxx=$(which mpic++)
     fi
 
+    # set the number of parallel build tasks
+    ns_makej=6
+
     # detect python3
     ns_python=
     command -v python3 &> /dev/null
@@ -128,12 +131,13 @@ done
 # Run a user supplied configuration script if it was provided with the -e flag.
 # This will make changes to the configuration variables ns_* set in environment()
 if [ "$ns_environment" != "" ]; then
-    msg "using user-supplied configuration: $ns_environment"
+    msg "using additional configuration: $ns_environment"
     if [ ! -f "$ns_environment" ]; then
         err "file '$ns_environment' not found"
         exit 1
     fi
     source "$ns_environment"
+    echo
 fi
 
 msg "---- TARGETS ----"
