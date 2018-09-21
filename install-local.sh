@@ -1,5 +1,3 @@
-#!/usr/bin/bash
-
 usage() {
     echo
     echo "nsuite installer options:"
@@ -166,13 +164,15 @@ msg "---- NEURON ----"
 msg "version:       $ns_nrn_version"
 msg "repo:          $ns_nrn_git_repo"
 msg "branch:        $ns_nrn_branch"
-echo
 
 mkdir -p "$ns_build_path"
 
-[ "$ns_build_arbor"  = true ] && source "$ns_base_path/scripts/build_arbor.sh"
-[ "$ns_build_neuron" = true ] && source "$ns_base_path/scripts/build_neuron.sh"
-[ "$ns_build_nest"   = true ] && source "$ns_base_path/scripts/build_nest.sh"
+export CC="$ns_cc"
+export CXX="$ns_cxx"
+
+[ "$ns_build_arbor"  = true ] && echo && source "$ns_base_path/scripts/build_arbor.sh"
+[ "$ns_build_neuron" = true ] && echo && source "$ns_base_path/scripts/build_neuron.sh"
+[ "$ns_build_nest"   = true ] && echo && source "$ns_base_path/scripts/build_nest.sh"
 
 exit 0
 
