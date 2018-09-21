@@ -19,3 +19,5 @@ ns_with_mpi=ON
 ns_arb_arch=broadwell
 
 export CRAYPE_LINK_TYPE=dynamic
+
+ns_makej=20
