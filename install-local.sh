@@ -88,7 +88,9 @@ default_environment() {
     # By default, the official source tar ball is downloaded for this version
     # Neuron uses the same naming scheme for major X.Y versions, but an effectively arbitrary
     # naming scheme for minor X.Y.Z versions. Supporting them would be a major pain.
-    ns_nrn_version=7.6
+    # By default we choose version 7.6
+    ns_nrn_version_major=7
+    ns_nrn_version_minor=6
     # set to a git repository url to source from a git repo instead of using official tar ball
     ns_nrn_git_repo=
     # set this variable if using git and want to use a branch other than master
@@ -165,7 +167,7 @@ msg "gpu:           $ns_arb_with_gpu"
 msg "vectorize:     $ns_arb_vectorize"
 echo
 msg "---- NEURON ----"
-msg "version:       $ns_nrn_version"
+msg "version:       ${ns_nrn_version_major}.${ns_nrn_version_minor}"
 msg "repo:          $ns_nrn_git_repo"
 msg "branch:        $ns_nrn_branch"
 
