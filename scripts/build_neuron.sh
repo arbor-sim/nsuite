@@ -25,6 +25,7 @@ if [ ! -f "$nrn_checked_flag" ]; then
     # otherwise download an X.Y release tar ball
     else
         cd "$ns_build_path"
+        ns_nrn_version="${ns_nrn_version_major}.${ns_nrn_version_minor}"
         nrn_tar="nrn-${ns_nrn_version}"
         nrn_src="neuron.yale.edu/ftp/neuron/versions/v${ns_nrn_version}/${nrn_tar}.tar.gz"
 
@@ -32,11 +33,11 @@ if [ ! -f "$nrn_checked_flag" ]; then
         wget "$nrn_src" &>> ${out}
         [ $? != 0 ] && exit_on_error "see ${out}"
 
-        msg "NEURON: expanding tar ball"
+        msg "NEURON: untar ${nrn_tar}.tar.gz"
         tar -xzf "${nrn_tar}.tar.gz" &>> ${out}
         [ $? != 0 ] && exit_on_error "see ${out}"
-
-        mv "${nrn_tar}" "$nrn_repo_path"
+        mv "${nrn_tar}" "$nrn_repo_path"  &>> ${out}
+        [ $? != 0 ] && exit_on_error "see ${out}"
     fi
 
     touch "${nrn_checked_flag}"
