@@ -51,6 +51,14 @@ msg "ARBOR: install"
 make install &>> "$out"
 [ $? != 0 ] && exit_on_error "see ${out}"
 
+src_path="$arb_build_path/bin"
+dst_path="$ns_install_path/bin"
+msg "ARBOR: copy examples to '${dst_path}'"
+cp $src_path/ring $dst_path/arb_ring  &>> "$out"
+[ $? != 0 ] && exit_on_error "see ${out}"
+cp $src_path/bench $dst_path/arb_bench &>> "$out"
+[ $? != 0 ] && exit_on_error "see ${out}"
+
 msg "ARBOR: build completed"
 
 cd $ns_base_path

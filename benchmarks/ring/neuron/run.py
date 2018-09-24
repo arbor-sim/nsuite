@@ -2,7 +2,8 @@ from matplotlib import pyplot
 import random
 from mpi4py import MPI
 from neuron import h
-import util
+
+import hoc_tools
 from meters import Meter
 import cell
 import parameters
@@ -102,12 +103,12 @@ class ring_network:
             self.stim_connection.weight[0] = 0.01
 
 # hoc setup
-util.hoc_setup()
+hoc_tools.hoc_setup()
 
 # set up the MPI infrastructure
 comm = MPI.COMM_WORLD
 pc = h.ParallelContext()
-pc.nthread(4)
+pc.nthread(1)
 rankd = int(pc.id())
 sized = int(pc.nhost())
 is_root = rankd==0
