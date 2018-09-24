@@ -4,98 +4,24 @@ usage() {
     echo
     echo "   arbor  : build arbor"
     echo "   neuron : build neuron"
-    echo "   nest   : build nest"
-    echo "   all    : build all of nest, neuron and arbor"
+    echo "   all    : build arbor and neuron"
     echo "   -e filename: source filename before building"
     echo
     echo "examples:"
     echo
-    echo "install arbor and nest, but not neuron:"
-    echo "$ install arbor nest"
+    echo "install only arbor:"
+    echo "$ install arbor"
     echo
-    echo "install arbor, nest and neuron:"
+    echo "install arbor and neuron:"
     echo "$ install all"
     echo
-    echo "install arbor using environment configured in config.sh:"
-    echo "$ install arbor -e config.sh"
+    echo "install neuron using environment configured in config.sh:"
+    echo "$ install neuron -e config.sh"
     echo
 }
 
 # Load some utility functions.
 source ./scripts/util.sh
-
-# Sets up the default enviroment.
-# Variables defined here use the prefix ns_
-default_environment() {
-    # By default do not build any of the packages.
-    ns_build_arbor=false
-    ns_build_nest=false
-    ns_build_neuron=false
-
-    # No additional environment script to run.
-    ns_environment=
-
-    # Where software packages will be built then installed.
-    ns_base_path=$(pwd)
-    ns_install_path="$ns_base_path/install"
-    ns_build_path="$ns_base_path/build"
-
-    # Detect OS
-    case "$OSTYPE" in
-      linux*)   ns_system=linux ;;
-      darwin*)  ns_system=apple ;;
-      *)        err "unsuported OS: $OSTYPE"; exit 1 ;;
-    esac
-
-    # Choose compiler based on OS
-    if [ "$ns_system" = "linux" ]; then
-        ns_cc=$(which gcc)
-        ns_cxx=$(which g++)
-    elif [ "$ns_system" = "apple" ]; then
-        ns_cc=$(which clang)
-        ns_cxx=$(which clang++)
-    fi
-
-    # use MPI if we can find it
-    ns_with_mpi=OFF
-    command -v mpicc &> /dev/null
-    [ $? = 0 ] && command -v mpic++ &> /dev/null
-    if [ $? = 0 ]; then
-        ns_with_mpi=ON
-        ns_cc=$(which mpicc)
-        ns_cxx=$(which mpic++)
-    fi
-
-    # set the number of parallel build tasks
-    ns_makej=6
-
-    # detect python3
-    ns_python=
-    command -v python3 &> /dev/null
-    [ $? = 0 ] && ns_python=$(which python3)
-
-    # Arbor specific
-
-    ns_arb_repo=https://github.com/eth-cscs/arbor.git
-    ns_arb_branch=master
-
-    ns_arb_arch=native
-    ns_arb_with_gpu=OFF
-    ns_arb_vectorize=ON
-
-    # Neuron specific
-
-    # By default, the official source tar ball is downloaded for this version
-    # Neuron uses the same naming scheme for major X.Y versions, but an effectively arbitrary
-    # naming scheme for minor X.Y.Z versions. Supporting them would be a major pain.
-    # By default we choose version 7.6
-    ns_nrn_version_major=7
-    ns_nrn_version_minor=6
-    # set to a git repository url to source from a git repo instead of using official tar ball
-    ns_nrn_git_repo=
-    # set this variable if using git and want to use a branch other than master
-    ns_nrn_branch=master
-}
 
 # Set up default environment variables
 default_environment
@@ -107,15 +33,11 @@ do
         arbor )
             ns_build_arbor=true
             ;;
-        nest )
-            ns_build_nest=true
-            ;;
         neuron )
             ns_build_neuron=true
             ;;
         all )
             ns_build_arbor=true
-            ns_build_nest=true
             ns_build_neuron=true
             ;;
         -e )
@@ -144,7 +66,6 @@ fi
 
 msg "---- TARGETS ----"
 msg "build arbor:   $ns_build_arbor"
-msg "build nest:    $ns_build_nest"
 msg "build neuron:  $ns_build_neuron"
 echo
 msg "---- PATHS ----"
@@ -178,9 +99,10 @@ export CXX="$ns_cxx"
 
 [ "$ns_build_arbor"  = true ] && echo && source "$ns_base_path/scripts/build_arbor.sh"
 [ "$ns_build_neuron" = true ] && echo && source "$ns_base_path/scripts/build_neuron.sh"
-[ "$ns_build_nest"   = true ] && echo && source "$ns_base_path/scripts/build_nest.sh"
 
-exit 0
+echo
+msg "Installation finished"
+echo
 
 # find and record the python and binary paths
 find_paths python_path site-packages
