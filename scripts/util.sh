@@ -118,6 +118,8 @@ default_environment() {
 }
 
 # Attempts to detect harware resouces available on node
+# These default values are probably acceptable for laptop and desktop systems.
+# For detailed benchmarking, these defaults can be overridden.
 default_hardware() {
     ns_threads_per_core=1
     ns_cores_per_socket=1
