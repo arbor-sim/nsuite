@@ -2,7 +2,7 @@
     "name": "test",
     "num-cells": 5,
     "min-delay": 10,
-    "duration": 100,
+    "duration": 1000,
     "depth": 5,
     "branch-probs": [1, 0.5],
     "compartments": [20, 1],

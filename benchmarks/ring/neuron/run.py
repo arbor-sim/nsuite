@@ -1,52 +1,22 @@
+import config
+env = config.load_env()
+
+print(env)
+
 from matplotlib import pyplot
-import random
-from mpi4py import MPI
 from neuron import h
 
-import hoc_tools
-from meters import Meter
+import metering
 import cell
 import parameters
-
-# Helper that records and outputs spikes from a simulation
-class spike_record:
-    def __init__(self):
-        self.times = h.Vector()
-        self.ids = h.Vector()
-        self.pc = h.ParallelContext()
-        self.pc.spike_record(-1, self.times, self.ids)
-
-    def size(self):
-        return len(self.times)
-
-    def print(self, fname):
-        rank = int(self.pc.id())
-        nhost = int(self.pc.nhost())
-
-        self.pc.barrier()
-
-        if rank == 0:
-            f = open(fname, 'w')
-            f.close()
-
-        num_spikes = int(self.pc.allreduce(self.size(), 1))
-        if rank==0:
-            print('There were % spikes.'%num_spikes)
-
-        for r in range(nhost):
-            if r == rank:
-                f = open(fname, 'a')
-                for i in range(self.size()):
-                    f.write('%d %f\n' % (self.ids[i], self.times[i]))
-                f.close()
-            pc.barrier()
+import neuron_tools as nrn
 
 # A Ring network
 class ring_network:
     def __init__(self, num_cells, min_delay, cell_params):
         self.pc = h.ParallelContext()
-        self.d_rank = int(pc.id())
-        self.d_size = int(pc.nhost())
+        self.d_rank = int(self.pc.id())
+        self.d_size = int(self.pc.nhost())
 
         self.num_cells = num_cells
         self.min_delay = min_delay
@@ -78,7 +48,7 @@ class ring_network:
             total_comp += c.ncomp
             total_seg += c.nseg
 
-        print('cell stats: {} cells; {} segments; {} compartments.'.format(num_cells, total_seg, total_comp))
+        #print('cell stats: {} cells; {} segments; {} compartments.'.format(num_cells, total_seg, total_comp))
 
         # Generate the connections.
         # For each local gid, make an incoming connection with source at gid-1.
@@ -103,63 +73,51 @@ class ring_network:
             self.stim_connection.weight[0] = 0.01
 
 # hoc setup
-hoc_tools.hoc_setup()
+nrn.hoc_setup()
 
-# set up the MPI infrastructure
-comm = MPI.COMM_WORLD
-pc = h.ParallelContext()
-pc.nthread(1)
-rankd = int(pc.id())
-sized = int(pc.nhost())
-is_root = rankd==0
-if is_root: print("=== Running benchmark with {} MPI ranks".format(sized))
+# create environment
+ctx = nrn.neuron_context(env)
 
-#
-# set up model parameters
-#
+meter = metering.meter(env.mpi)
+meter.start()
 
-do_plot = False
-
+# build the model #####
 params = parameters.model_parameters('ring.json')
-print(params)
-
-# start meters
-meters = Meter()
-comm.Barrier(); meters.start()
-
-# build the model
 model = ring_network(params.num_cells, params.min_delay, params.cell)
+#####
 
-# it is a mystery to me what this actually does, but it has gotta get done.
-local_minimum_delay = pc.set_maxstep(params.min_delay)
-
-if do_plot and is_root:
-    soma_voltage, dend_voltage, time_points = model.cells[0].set_recorder()
-
-####################################################################
-# initialize the model
-####################################################################
+ctx.init(params.min_delay, env.dt)
 
 # set up spike output
-spikes = spike_record()
+spikes = nrn.spike_record()
 
-h.stdinit()
-
-comm.Barrier(); meters.checkpoint('model-init')
+meter.checkpoint('model-init')
 
 # run the simulation
-if is_root: print('running model...')
-h.dt = 0.025
-pc.psolve(params.duration)
-comm.Barrier(); meters.checkpoint('model-run')
+ctx.run(env.duration)
 
-if is_root: print(meters)
+meter.checkpoint('model-run')
+
+meter.print()
+
+report = metering.report_from_meter(meter)
+report.to_file('meters.json')
 
 spikes.print('spikes.gdf')
 
-if do_plot and is_root:
-    soma_plot = pyplot.plot(time_points, soma_voltage, color='black')
-    dend_plot = pyplot.plot(time_points, dend_voltage, color='red')
-    pyplot.legend(soma_plot + dend_plot, ['soma', 'dend(0.5)'])
-    pyplot.xlabel('time (ms)')
-    pyplot.show()
+#data=open('/home/bcumming/software/github/arbor/build/bin/meters.json').read()
+#orep = metering.report_from_json(data)
+#print(orep.to_json())
+
+
+## BEFORE h.stdinit
+#if do_plot and ctx.is_root:
+#    soma_voltage, dend_voltage, time_points = model.cells[0].set_recorder()
+
+## After simulation
+#if do_plot and ctx.is_root:
+#    soma_plot = pyplot.plot(time_points, soma_voltage, color='black')
+#    dend_plot = pyplot.plot(time_points, dend_voltage, color='red')
+#    pyplot.legend(soma_plot + dend_plot, ['soma', 'dend(0.5)'])
+#    pyplot.xlabel('time (ms)')
+#    pyplot.show()
