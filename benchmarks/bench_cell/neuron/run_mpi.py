@@ -99,7 +99,7 @@ comm = MPI.COMM_WORLD
 util.hoc_setup()
 
 pc = h.ParallelContext()
-pc.nthread(1)
+pc.nthread(4)
 rankd = int(pc.id())
 sized = int(pc.nhost())
 is_root = rankd==0

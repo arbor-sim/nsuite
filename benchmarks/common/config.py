@@ -8,11 +8,13 @@ class environment:
             "{2:20s}{3:>20s}\n" \
             "{4:20s}{5:>20d}\n" \
             "{6:20s}{7:>20.4f}\n" \
+            "{8:20s}{9:>20s}\n" \
             "----------------------------------------------\n"\
             .format("threads", self.nthreads,
                     "mpi", 'yes' if self.mpi else 'no',
                     'duration (ms)', int(self.duration),
-                    'dt (ms)', self.dt)
+                    'dt (ms)', self.dt,
+                    'parameter file', self.parameter_file if self.parameter_file else 'none')
 
         return s
 
@@ -21,6 +23,7 @@ class environment:
         self.mpi = False
         self.dt = 0.025
         self.duration = 100
+        self.parameter_file = None
 
 def parse_clargs():
     P = argparse.ArgumentParser(description='Neuron Benchmark.')
@@ -47,7 +50,7 @@ def load_env():
     args = parse_clargs()
 
     env.mpi = args.mpi
-    env.param_file = args.param
+    env.parameter_file = args.param
     env.dt = args.dt
     env.duration = args.duration
 

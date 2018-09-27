@@ -12,7 +12,13 @@ x86_64
 *.pyc
 out
 
+#
+# simulation outputs
+#
+
 # spike files
 *.gdf
+# meters
+meter*.json
 
 log_*
