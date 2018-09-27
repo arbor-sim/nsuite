@@ -98,7 +98,9 @@ export CC="$ns_cc"
 export CXX="$ns_cxx"
 
 [ "$ns_build_arbor"  = true ] && echo && source "$ns_base_path/scripts/build_arbor.sh"
+cd "$ns_base_path"
 [ "$ns_build_neuron" = true ] && echo && source "$ns_base_path/scripts/build_neuron.sh"
+cd "$ns_base_path"
 
 echo
 msg "Installation finished"
@@ -114,9 +116,10 @@ msg "bin paths:    $bin_path"
 export PYTHONPATH="$python_path:$PYTHONPATH"
 export PATH="$bin_path:$PATH"
 
-mkdir -p config
+ns_config_path="${ns_base_path}/config"
+mkdir -p "$ns_config_path"
 
-echo $python_path > config/python_path
-echo $bin_path    > config/bin_path
-echo $system_name > config/target
+echo $python_path > "$ns_config_path/python_path"
+echo $bin_path    > "$ns_config_path/bin_path"
+echo $system_name > "$ns_config_path/target"
 

@@ -64,7 +64,7 @@ then
     [ $? != 0 ] && exit_on_error "see ${out}"
 fi
 
-msg "NEURON: build"
+msg "NEURON: make"
 make -j $ns_makej &>> ${out}
 [ $? != 0 ] && exit_on_error "see ${out}"
 

@@ -1,9 +1,13 @@
 import config
 env = config.load_env()
 
-print(env)
+if env.mpi:
+    from mpi4py import MPI
+    if MPI.COMM_WORLD.rank==0:
+        print(env)
+else:
+    print(env)
 
-from matplotlib import pyplot
 from neuron import h
 
 import metering
@@ -82,7 +86,7 @@ meter = metering.meter(env.mpi)
 meter.start()
 
 # build the model #####
-params = parameters.model_parameters('ring.json')
+params = parameters.model_parameters(env.parameter_file)
 model = ring_network(params.num_cells, params.min_delay, params.cell)
 #####
 

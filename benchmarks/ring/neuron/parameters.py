@@ -54,7 +54,7 @@ class model_parameters:
 
         else:
             self.name      = 'default'
-            self.num_cells = 10
+            self.num_cells = 20
             self.duration  = 100
             self.min_delay = 10
             self.cell = cell_parameters()

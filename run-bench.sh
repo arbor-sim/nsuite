@@ -51,6 +51,10 @@ cpath="${ns_base_path}/config"
 [ -f "${cpath}/bin_path" ]    && export PATH="$(cat ${cpath}/bin_path):${PATH}"
 [ -f "${cpath}/python_path" ] && export PYTHONPATH="$(cat ${cpath}/python_path):${PYTHONPATH}"
 
+echo cpath:      $cpath
+echo PTYHONPATH: $PYTHONPATH
+cat ${cpath}/python_path
+
 # try to auto-detect the number of cores/sockets
 default_hardware
 
@@ -79,5 +83,6 @@ msg "mpi:               $ns_with_mpi"
 #[ "$ns_bench_neuron" = true ] && echo && source "$ns_base_path/benchmarks/neuron.sh"
 
 cd $ns_base_path/benchmarks/ring/neuron
-python run.py --mpi --dt 0.025 --duration 200
 
+tps=$ns_threads_per_socket
+ARB_NUM_THREADS=$tps mpirun -n 1 --map-by socket:PE=$tps $ns_python run.py --mpi --dt 0.025 --duration 200

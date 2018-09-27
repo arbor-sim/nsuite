@@ -134,4 +134,6 @@ default_hardware() {
         nlog=`sysctl hw.logicalcpu | awk '{print $2}'`
         ns_threads_per_core=`echo "$nlog / $ns_cores_per_socket" | bc`
     fi
+
+    ns_threads_per_socket=$[ $ns_threads_per_core * $ns_cores_per_socket ]
 }
