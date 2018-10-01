@@ -17,14 +17,14 @@ import neuron_tools as nrn
 
 # A Ring network
 class ring_network:
-    def __init__(self, num_cells, min_delay, cell_params):
+    def __init__(self, params):
         self.pc = h.ParallelContext()
         self.d_rank = int(self.pc.id())
         self.d_size = int(self.pc.nhost())
 
-        self.num_cells = num_cells
-        self.min_delay = min_delay
-        self.cell_params = cell_params
+        self.num_cells = params.num_cells
+        self.min_delay = params.min_delay
+        self.cell_params = params.cell
         self.cells = []
 
         # distribute gid in round robin
@@ -52,7 +52,7 @@ class ring_network:
             total_comp += c.ncomp
             total_seg += c.nseg
 
-        #print('cell stats: {} cells; {} segments; {} compartments.'.format(num_cells, total_seg, total_comp))
+        print('cell stats: {} cells; {} segments; {} compartments.'.format(self.num_cells, total_seg, total_comp))
 
         # Generate the connections.
         # For each local gid, make an incoming connection with source at gid-1.
@@ -87,7 +87,7 @@ meter.start()
 
 # build the model #####
 params = parameters.model_parameters(env.parameter_file)
-model = ring_network(params.num_cells, params.min_delay, params.cell)
+model = ring_network(params)
 #####
 
 ctx.init(params.min_delay, env.dt)
@@ -104,10 +104,12 @@ meter.checkpoint('model-run')
 
 meter.print()
 
-report = metering.report_from_meter(meter)
-report.to_file('meters.json')
+prefix = env.opath+'/nrn_'+params.name+'_';
 
-spikes.print('spikes.gdf')
+report = metering.report_from_meter(meter)
+report.to_file(prefix+'meters.json')
+
+spikes.print(prefix+'spikes.gdf')
 
 #data=open('/home/bcumming/software/github/arbor/build/bin/meters.json').read()
 #orep = metering.report_from_json(data)
