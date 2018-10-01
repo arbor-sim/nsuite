@@ -9,11 +9,13 @@ class environment:
             "{4:20s}{5:>20d}\n" \
             "{6:20s}{7:>20.4f}\n" \
             "{8:20s}{9:>20s}\n" \
+            "{10:20s}{11:>20s}\n" \
             "----------------------------------------------\n"\
             .format("threads", self.nthreads,
                     "mpi", 'yes' if self.mpi else 'no',
                     'duration (ms)', int(self.duration),
                     'dt (ms)', self.dt,
+                    'output path', self.opath,
                     'parameter file', self.parameter_file if self.parameter_file else 'none')
 
         return s
@@ -33,6 +35,8 @@ def parse_clargs():
                    help='file with parameters for the model')
     P.add_argument('--dt', type=float, default=0.025,
                    help='time step size')
+    P.add_argument('--opath', type=str, default='.',
+                   help='path for output files')
     P.add_argument('--duration', type=float, default=100,
                    help='time step size')
 
@@ -52,6 +56,7 @@ def load_env():
     env.mpi = args.mpi
     env.parameter_file = args.param
     env.dt = args.dt
+    env.opath = args.opath
     env.duration = args.duration
 
     return env

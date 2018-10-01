@@ -81,6 +81,12 @@ class branchy_cell:
                         for seg in dend:
                             seg.pas.g = 0.001  # Passive conductance in S/cm2
                             seg.pas.e = -65    # Leak reversal potential mV
+                        #for seg in dend:
+                        #    seg.hh.gnabar = 0.12  # Sodium conductance in S/cm2
+                        #    seg.hh.gkbar = 0.036  # Potassium conductance in S/cm2
+                        #    seg.hh.gl = 0.0003    # Leak conductance in S/cm2
+                        #    seg.hh.el = -54.3     # Reversal potential in mV
+
                         dend.connect(sec(1))
                         level_secs.append(dend)
                         count += 1

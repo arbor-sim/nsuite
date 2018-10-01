@@ -20,5 +20,12 @@ out
 *.gdf
 # meters
 meter*.json
+voltage*.json
+
+benchmarks/ring/input
+benchmarks/ring/output
 
 log_*
+
+# generated simulation run scripts
+run_*.sh

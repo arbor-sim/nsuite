@@ -82,7 +82,23 @@ msg "mpi:               $ns_with_mpi"
 #[ "$ns_bench_arbor"  = true ] && echo && source "$ns_base_path/benchmarks/arbor.sh"
 #[ "$ns_bench_neuron" = true ] && echo && source "$ns_base_path/benchmarks/neuron.sh"
 
-cd $ns_base_path/benchmarks/ring/neuron
+ns_ring_path="$ns_base_path/benchmarks/ring"
+ns_ring_in="$ns_ring_path/input"
+ns_ring_out="$ns_ring_path/output"
+mkdir -p "$ns_ring_in"
+mkdir -p "$ns_ring_out"
+rm -f "$ns_ring_in/*"
+rm -f "$ns_ring_out/*"
+cd "$ns_ring_path"
 
-tps=$ns_threads_per_socket
-ARB_NUM_THREADS=$tps mpirun -n 1 --map-by socket:PE=$tps $ns_python run.py --mpi --dt 0.025 --duration 200
+# generate the inputs
+$ns_python generate_inputs.py -c 8 -n ring -s $ns_sockets
+
+msg NEURON ring benchmark
+
+# run the neuron simulation
+source run_nrn.sh
+
+msg ARBOR ring benchmark
+source run_arb.sh
+
