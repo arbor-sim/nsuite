@@ -52,7 +52,13 @@ class ring_network:
             total_comp += c.ncomp
             total_seg += c.nseg
 
-        print('cell stats: {} cells; {} segments; {} compartments.'.format(self.num_cells, total_seg, total_comp))
+        if self.d_size>1:
+            from mpi4py import MPI
+            total_comp = MPI.COMM_WORLD.reduce(total_comp, op=MPI.SUM, root=0)
+            total_seg = MPI.COMM_WORLD.reduce(total_seg, op=MPI.SUM, root=0)
+
+        if self.d_rank==0:
+            print('cell stats: {} cells; {} segments; {} compartments; {} comp/cell.'.format(self.num_cells, total_seg, total_comp, total_comp/self.num_cells))
 
         # Generate the connections.
         # For each local gid, make an incoming connection with source at gid-1.

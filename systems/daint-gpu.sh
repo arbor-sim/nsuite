@@ -1,3 +1,5 @@
+### environment ###
+
 # set up environment for building on the multicore part of daint
 
 [ "$PE_ENV" = "CRAY" ] && module swap PrgEnv-cray PrgEnv-gnu
@@ -14,6 +16,8 @@ ns_python=$(which python3)
 # load after python tools because easybuild...
 module swap gcc/6.2.0
 
+### compilation options ###
+
 ns_cc=$(which cc)
 ns_cxx=$(which CC)
 ns_with_mpi=ON
@@ -24,3 +28,15 @@ ns_arb_arch=haswell
 export CRAYPE_LINK_TYPE=dynamic
 
 ns_makej=20
+
+### benchmark execution options ###
+
+ns_threads_per_core=2
+ns_cores_per_socket=12
+ns_sockets=1
+ns_threads_per_socket=24
+
+run_with_mpi() {
+    echo ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -N $ns_sockets -c $ns_threads_per_socket $*
+    ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -N $ns_sockets -c $ns_threads_per_socket $*
+}

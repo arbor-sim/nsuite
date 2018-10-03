@@ -137,3 +137,9 @@ default_hardware() {
 
     ns_threads_per_socket=$[ $ns_threads_per_core * $ns_cores_per_socket ]
 }
+
+run_with_mpi() {
+    echo ARB_NUM_THREADS=$ns_threads_per_socket mpirun -n $ns_sockets --map-by socket:PE=$ns_threads_per_socket $*
+    ARB_NUM_THREADS=$ns_threads_per_socket mpirun -n $ns_sockets --map-by socket:PE=$ns_threads_per_socket $*
+}
+
