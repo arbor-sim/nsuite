@@ -29,6 +29,7 @@ for depth in depth_range:
         d = {
             'name': run_name,
             'num-cells': ncells*ns,
+            'synapses': 1000,
             'min-delay': 10,
             'duration': 100,
             'depth': depth,
@@ -44,7 +45,7 @@ for depth in depth_range:
 
         nrn_run_fid.write('nrn_ofile=$ns_ring_out/nrn_'+run_name+'.out\n')
         nrn_run_fid.write('run_with_mpi $ns_python neuron/run.py --mpi --param %s --opath $ns_ring_out > $nrn_ofile\n'%(fname))
-        nrn_run_fid.write('./table_line.sh $nrn_ofile')
+        nrn_run_fid.write('./table_line.sh $nrn_ofile\n')
 
         arb_run_fid.write('arb_ofile=$ns_ring_out/arb_'+run_name+'.out\n')
         arb_run_fid.write('run_with_mpi arb_ring %s > $arb_ofile\n'%(fname))
