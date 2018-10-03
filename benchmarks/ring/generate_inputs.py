@@ -18,11 +18,13 @@ name = args.name
 ns = args.sockets
 nc = args.cells
 
+depth_range=[2, 4, 6]
+cell_range=[pow(2,x) for x in range(4,nc)]
+
 arb_run_fid = open('run_arb.sh', 'w')
 nrn_run_fid = open('run_nrn.sh', 'w')
-#for depth in [2, 4, 6]:
-for depth in [2, 4, 6]:
-    for ncells in [pow(2,x) for x in range(4,nc)]:
+for depth in depth_range:
+    for ncells in cell_range:
         run_name = '%s_%d_%d_%d'%(name, ns, ncells, depth)
         d = {
             'name': run_name,
@@ -40,12 +42,14 @@ for depth in [2, 4, 6]:
         pfid.write(json.dumps(d))
         pfid.close()
 
-        ### one rank per socket with threads_per_socket threads
-        nrn_run_fid.write('ofile=$ns_ring_out/nrn_'+run_name+'.out\n')
-        nrn_run_fid.write('ARB_NUM_THREADS=$ns_threads_per_socket mpirun -n $ns_sockets --map-by socket:PE=$ns_threads_per_socket $ns_python neuron/run.py --mpi --param %s --opath $ns_ring_out > $ofile\n'%(fname))
-        nrn_run_fid.write('grep -e ^cell -e ^model-run $ofile\n')
+        nrn_run_fid.write('nrn_ofile=$ns_ring_out/nrn_'+run_name+'.out\n')
+        nrn_run_fid.write('run_with_mpi $ns_python neuron/run.py --mpi --param %s --opath $ns_ring_out > $nrn_ofile\n'%(fname))
+        nrn_run_fid.write('./table_line.sh $nrn_ofile')
 
-        arb_run_fid.write('ARB_NUM_THREADS=$ns_threads_per_socket mpirun -n $ns_sockets --map-by socket:PE=$ns_threads_per_socket arb_ring %s | grep ^model-run\n'%(fname))
+        arb_run_fid.write('arb_ofile=$ns_ring_out/arb_'+run_name+'.out\n')
+        arb_run_fid.write('run_with_mpi arb_ring %s > $arb_ofile\n'%(fname))
+        nrn_run_fid.write('./table_line.sh $arb_ofile')
+
     nrn_run_fid.write('echo\n')
     arb_run_fid.write('echo\n')
 
