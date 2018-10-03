@@ -6,11 +6,12 @@ class cell_parameters:
         return 'branchy cell parameters: depth {}; branch_probs {}; compartments {}; lengths {}'\
                 .format(self.max_depth, self.branch_probs, self.compartments, self.lengths)
 
-    def __init__(self, max_depth, branch_prob, compartment, length):
+    def __init__(self, max_depth, branch_prob, compartment, length, synapses):
         self.max_depth = max_depth          # maximum number of levels
         self.branch_probs = branch_prob      # range of branching probabilities at each level
         self.compartments = compartment      # range of compartment counts at each level
         self.lengths = length                # range of lengths of sections at each level
+        self.synapses = synapses             # the nyumber of synapses per cell
 
 def interp(r, i, n):
     p = i * 1.0/(n-1)
@@ -106,6 +107,11 @@ class branchy_cell:
         # stick a synapse on one of the dendrites attached to the soma
         self.synapse = h.ExpSyn(self.dend(0.5))
         self.synapse.tau = 2
+
+        # add additional synapses that will not be connected in the network
+        self.synapses = []
+        for i in range(1, params.synapses):
+            self.synapses.append(h.ExpSyn(self.dend(0.5)))
 
 
     def set_recorder(self):

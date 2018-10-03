@@ -25,11 +25,13 @@ class cell_parameters:
             self.branch_probs = from_json(data, 'branch-probs')
             self.compartments = from_json(data, 'compartments')
             self.lengths      = from_json(data, 'lengths')
+            self.synapses     = from_json(data, 'synapses')
         else:
             self.max_depth    = 5
             self.branch_probs = [1.0, 0.5]
             self.compartments = [20, 2]
             self.lengths      = [200, 20]
+            self.synapses     = 1
 
 class model_parameters:
     def __repr__(self):
