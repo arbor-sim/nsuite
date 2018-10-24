@@ -7,8 +7,8 @@ module load daint-mc
 module load CMake
 
 # PyExtensions is needed for cython, mpi4py and others.
-# It loads cray-python/3.6.1.1 which points python at version 3.6.1.1
-module load PyExtensions/3.6.1.1-CrayGNU-17.08
+# It loads cray-python/3.6.5.1
+module load PyExtensions/3.6.5.1-CrayGNU-18.08
 ns_python=$(which python3)
 
 # load after python tools because easybuild...
