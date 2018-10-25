@@ -19,7 +19,7 @@ if [ ! -f "$arb_checked_flag" ]; then
     if [ "$ns_arb_branch" != "master" ]; then
         msg "ARBOR: check out branch $ns_arb_branch"
         cd "$arb_repo_path"
-        git checkout "mc_arb_branch" &>> "$out"
+        git checkout "$ns_arb_branch" &>> "$out"
         [ $? != 0 ] && exit_on_error "see ${out}"
     fi
     touch "${arb_checked_flag}"
