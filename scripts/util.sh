@@ -97,7 +97,7 @@ default_environment() {
     # Arbor specific
 
     ns_arb_repo=https://github.com/eth-cscs/arbor.git
-    ns_arb_branch=master
+    ns_arb_branch=v0.1
 
     ns_arb_arch=native
     ns_arb_with_gpu=OFF
