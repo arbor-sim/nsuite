@@ -44,7 +44,7 @@ cmake .. $cmake_args &>> "$out"
 cd "$arb_build_path"
 
 msg "ARBOR: build"
-make -j $ns_makej &>> "$out"
+make -j $ns_makej examples &>> "$out"
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 msg "ARBOR: install"
