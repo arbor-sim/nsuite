@@ -22,7 +22,11 @@ if [ ! -f "$nrn_checked_flag" ]; then
             git checkout "$ns_nrn_branch" &>> "$out"
             [ $? != 0 ] && exit_on_error "see ${out}"
         fi
-    # otherwise download an X.Y release tar ball
+    # Otherwise download an X.Y release tar ball.
+    # This might be brittle, because the name format for the neuron tar ball changes
+    # from time to time. Furthermore patch updates are automatically rolled into
+    # the release tar ball, so you might not get reproducable runs: get the code
+    # from GitHub and check out a commit if reproducability must be guarenteed.
     else
         cd "$ns_build_path"
         ns_nrn_version="${ns_nrn_version_major}.${ns_nrn_version_minor}"
@@ -44,6 +48,9 @@ if [ ! -f "$nrn_checked_flag" ]; then
 fi
 
 cd $nrn_repo_path
+
+# fix neuron to use CoreNEURON-compatble output
+sed -i -e 's/GLOBAL minf/RANGE minf/g' -e 's/TABLE minf/:TABLE minf/g' src/nrnoc/hh.mod
 
 # only run configure steps if Makefile has not previously been generated.
 if [ ! -f "$nrn_repo_path/Makefile" ]
@@ -75,7 +82,7 @@ make install &>> ${out}
 # install python stuff
 msg "NEURON: python setup and install"
 cd "$nrn_repo_path/src/nrnpython"
-python setup.py install --prefix=$ns_install_path &>> ${out}
+"$ns_python" setup.py install --prefix=$ns_install_path &>> ${out}
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 cd $base_path

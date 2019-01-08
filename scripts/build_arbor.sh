@@ -38,7 +38,7 @@ cmake_args="$cmake_args -DARB_WITH_GPU=$ns_arb_with_gpu"
 cmake_args="$cmake_args -DARB_ARCH=$ns_arb_arch"
 cmake_args="$cmake_args -DARB_VECTORIZE=$ns_arb_vectorize"
 msg "ARBOR: cmake $cmake_args"
-cmake .. $cmake_args &>> "$out"
+cmake "$arb_repo_path" $cmake_args &>> "$out"
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 cd "$arb_build_path"

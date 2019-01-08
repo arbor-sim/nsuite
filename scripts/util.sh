@@ -16,6 +16,14 @@ err() {
     >&2 printf "${light_red}== ERROR${nc} ${white}$*${nc}\n"
 }
 
+dbg() {
+    local white='\033[1;37m'
+    local green='\033[1;92m'
+    local nc='\033[0m'
+
+    >&2 printf "${green}==== ${nc} ${white}$*${nc}\n"
+}
+
 exit_on_error() {
     err "$*"
     exit 1
@@ -51,6 +59,7 @@ default_environment() {
     ns_build_arbor=false
     ns_build_nest=false
     ns_build_neuron=false
+    ns_build_coreneuron=false
 
     # No additional environment script to run.
     ns_environment=
@@ -112,9 +121,13 @@ default_environment() {
     ns_nrn_version_major=7
     ns_nrn_version_minor=6
     # set to a git repository url to source from a git repo instead of using official tar ball
-    ns_nrn_git_repo=
+    ns_nrn_git_repo=https://github.com/neuronsimulator/nrn.git
     # set this variable if using git and want to use a branch other than master
     ns_nrn_branch=master
+
+    # CoreNeuron specific
+    ns_cnrn_git_repo=https://github.com/BlueBrain/CoreNeuron.git
+    ns_cnrn_sha=
 }
 
 # Attempts to detect harware resouces available on node
