@@ -97,6 +97,10 @@ msg "---- NEURON ----"
 msg "version:       ${ns_nrn_version_major}.${ns_nrn_version_minor}"
 msg "repo:          $ns_nrn_git_repo"
 msg "branch:        $ns_nrn_branch"
+echo
+msg "---- CoreNEURON ----"
+msg "repo:          $ns_cnrn_git_repo"
+msg "sha:           $ns_cnrn_sha"
 
 mkdir -p "$ns_build_path"
 

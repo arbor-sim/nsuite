@@ -45,7 +45,7 @@ cmake "$cnrn_repo_path" $cmake_args &>> "$out"
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 msg "CoreNEURON: make"
-make -j $ns_makej &>> "$out"
+make -j $ns_makej VERBOSE=1 #&>> "$out"
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 msg "CoreNEURON: install"
