@@ -26,6 +26,7 @@ class environment:
         self.dt = 0.025
         self.duration = 100
         self.parameter_file = None
+        self.opath = 'output'
 
 def parse_clargs():
     P = argparse.ArgumentParser(description='Neuron Benchmark.')

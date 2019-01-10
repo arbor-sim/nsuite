@@ -3,9 +3,11 @@ env = config.load_env()
 
 if env.mpi:
     from mpi4py import MPI
+    print('started with MPI:', MPI.COMM_WORLD.rank,'/',MPI.COMM_WORLD.size)
     if MPI.COMM_WORLD.rank==0:
         print(env)
 else:
+    print('started without MPI!')
     print(env)
 
 from neuron import h
@@ -57,6 +59,8 @@ class ring_network:
             total_comp = MPI.COMM_WORLD.reduce(total_comp, op=MPI.SUM, root=0)
             total_seg = MPI.COMM_WORLD.reduce(total_seg, op=MPI.SUM, root=0)
 
+        print('rank', self.d_rank, 'of', self.d_size, 'generated model')
+
         if self.d_rank==0:
             print('cell stats: {} cells; {} segments; {} compartments; {} comp/cell.'.format(self.num_cells, total_seg, total_comp, total_comp/self.num_cells))
 
@@ -87,14 +91,14 @@ nrn.hoc_setup()
 
 # create environment
 ctx = nrn.neuron_context(env)
+print(ctx)
 
 meter = metering.meter(env.mpi)
 meter.start()
 
-# build the model #####
+# build the model
 params = parameters.model_parameters(env.parameter_file)
 model = ring_network(params)
-#####
 
 ctx.init(params.min_delay, env.dt)
 
@@ -102,6 +106,10 @@ ctx.init(params.min_delay, env.dt)
 spikes = nrn.spike_record()
 
 meter.checkpoint('model-init')
+
+if params.core_path:
+    ctx.write_core(params.core_path)
+    meter.checkpoint('model-output')
 
 # run the simulation
 ctx.run(env.duration)

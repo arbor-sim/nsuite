@@ -1,5 +1,7 @@
 import os
+import pathlib
 import sys
+
 import neuron
 
 # Without neuron.gui, need to explicit load 'standard' hoc routines like 'run',
@@ -23,8 +25,8 @@ class neuron_context:
     def __repr__(self):
         s = "-- neuron context ----------------------------\n" \
             "{0:20s}{1:>20d}\n" \
-            "{0:20s}{1:>20d}\n" \
-            "{0:20s}{1:>20d}\n" \
+            "{2:20s}{3:>20d}\n" \
+            "{4:20s}{5:>20d}\n" \
             "----------------------------------------------\n"\
             .format("threads", self.env.nthreads, "ranks", self.size, "rank", self.rank, "is_root", self.is_root)
 
@@ -37,10 +39,14 @@ class neuron_context:
         self.pc = neuron.h.ParallelContext()
         self.rank = self.pc.id()
         self.size = self.pc.nhost()
+        print('yarp: pc  size', self.size,' pc  rank', self.pc.id())
+        print('yarp: mpi size', MPI.COMM_WORLD.size,' mpi rank', MPI.COMM_WORLD.rank)
         self.pc.nthread(self.env.nthreads)
         self.is_root = self.rank==0
         self.comm = MPI.COMM_WORLD
         self.initialised = False
+        # must be set to output model for coreneuron.
+        neuron.h.cvode.cache_efficient(1)
 
     def init(self, min_delay, dt):
         # I don't know why this has to be done, but it does.
@@ -53,9 +59,30 @@ class neuron_context:
 
     def run(self, duration):
         if not self.initialised:
-            print('damn')
+            print('ERROR: The neuron context must be initialized before a model can be run.')
         else:
             self.pc.psolve(duration)
+
+    # dump model state for CoreNeuron here
+    def write_core(self, path):
+        if self.is_root:
+            print('writing coreneuron model state to ', path)
+
+            pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+            #for the_file in os.listdir(path):
+            #    file_path = os.path.join(path, the_file)
+            #    try:
+            #        if os.path.isfile(file_path):
+            #            os.unlink(file_path)
+            #        elif os.path.isdir(file_path):
+            #            shutil.rmtree(file_path)
+            #    except Exception as e:
+            #        print('  error: ', e)
+
+        # MPI ranks wait for root rank to create output path before writing
+        self.barrier()
+
+        self.pc.nrnbbcore_write(path)
 
     def barrier(self):
         self.comm.Barrier()

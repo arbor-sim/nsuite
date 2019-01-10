@@ -9,6 +9,8 @@ def parse_clargs():
                    help='the name of the set of benchmarks.')
     P.add_argument('-c', '--cells', type=int, default=15,
                    help='2^c cells will be in the largest model.')
+    P.add_argument('-d', '--depth', type=int, default=0,
+                   help='depth of generated cells.')
 
     return P.parse_args()
 
@@ -17,8 +19,13 @@ args = parse_clargs()
 name = args.name
 ns = args.sockets
 nc = args.cells
+dp = args.depth
 
-depth_range=[2, 4, 6]
+if dp==0:
+    depth_range=[2, 4, 6]
+else:
+    depth_range=[dp]
+
 cell_range=[pow(2,x) for x in range(4,nc)]
 
 arb_run_fid = open('run_arb.sh', 'w')
@@ -28,6 +35,7 @@ for depth in depth_range:
         run_name = '%s_%d_%d_%d'%(name, ns, ncells, depth)
         d = {
             'name': run_name,
+            'core-path': run_name+'_core',
             'num-cells': ncells*ns,
             'synapses': 1000,
             'min-delay': 10,
@@ -40,11 +48,13 @@ for depth in depth_range:
 
         fname = './input/'+run_name+'.json'
         pfid = open(fname, 'w')
-        pfid.write(json.dumps(d))
+        pfid.write(json.dumps(d, indent=4))
         pfid.close()
 
         nrn_run_fid.write('nrn_ofile=$ns_ring_out/nrn_'+run_name+'.out\n')
+        nrn_run_fid.write('echo post\n')
         nrn_run_fid.write('run_with_mpi $ns_python neuron/run.py --mpi --param %s --opath $ns_ring_out > $nrn_ofile\n'%(fname))
+        nrn_run_fid.write('echo pre\n')
         nrn_run_fid.write('./table_line.sh $nrn_ofile\n')
 
         arb_run_fid.write('arb_ofile=$ns_ring_out/arb_'+run_name+'.out\n')

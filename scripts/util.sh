@@ -105,7 +105,7 @@ default_environment() {
 
     # Arbor specific
 
-    ns_arb_repo=https://github.com/eth-cscs/arbor.git
+    ns_arb_repo=https://github.com/arbor-sim/arbor.git
     ns_arb_branch=v0.1
 
     ns_arb_arch=native
@@ -121,7 +121,8 @@ default_environment() {
     ns_nrn_version_major=7
     ns_nrn_version_minor=6
     # set to a git repository url to source from a git repo instead of using official tar ball
-    ns_nrn_git_repo=https://github.com/neuronsimulator/nrn.git
+    #ns_nrn_git_repo=https://github.com/neuronsimulator/nrn.git
+    ns_nrn_git_repo=
     # set this variable if using git and want to use a branch other than master
     ns_nrn_branch=master
 
