@@ -12,7 +12,7 @@ module load PyExtensions/3.6.5.1-CrayGNU-18.08
 ns_python=$(which python3)
 
 # load after python tools because easybuild...
-module swap gcc/7.2.0
+module swap gcc/7.3.0
 
 ### compilation options ###
 
