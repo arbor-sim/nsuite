@@ -94,7 +94,8 @@ msg "gpu:           $ns_arb_with_gpu"
 msg "vectorize:     $ns_arb_vectorize"
 echo
 msg "---- NEURON ----"
-msg "version:       ${ns_nrn_version_major}.${ns_nrn_version_minor}"
+msg "tarball:       $ns_nrn_tarball"
+msg "url:           $ns_nrn_url"
 msg "repo:          $ns_nrn_git_repo"
 msg "branch:        $ns_nrn_branch"
 echo

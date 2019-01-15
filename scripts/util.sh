@@ -114,13 +114,20 @@ default_environment() {
 
     # Neuron specific
 
-    # By default, the official source tar ball is downloaded for this version
-    # Neuron uses the same naming scheme for major X.Y versions, but an effectively arbitrary
-    # naming scheme for minor X.Y.Z versions. Supporting them would be a major pain.
-    # By default we choose version 7.6
-    ns_nrn_version_major=7
-    ns_nrn_version_minor=6
-    # set to a git repository url to source from a git repo instead of using official tar ball
+    # Neuron is inconsistent with the location and naming scheme of different
+    # versions, so just hard code URL and name of the tar ball.
+
+    # The path of the unpacked tar ball. It can't be determined from
+    # inspecting the name of the tar ball.
+    #ns_nrn_path=nrn-7.5
+    #ns_nrn_tarball=nrn-7.5.tar.gz
+    #ns_nrn_url=https://neuron.yale.edu/ftp/neuron/versions/v7.5/${ns_nrn_tarball}
+    ns_nrn_path=nrn-7.6
+    ns_nrn_tarball=nrn-7.6.5.tar.gz
+    ns_nrn_url=https://neuron.yale.edu/ftp/neuron/versions/v7.6/7.6.5/${ns_nrn_tarball}
+
+    # set to a git repository url to source from a git repo instead of using
+    # official tar ball
     #ns_nrn_git_repo=https://github.com/neuronsimulator/nrn.git
     ns_nrn_git_repo=
     # set this variable if using git and want to use a branch other than master

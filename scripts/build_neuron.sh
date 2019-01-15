@@ -9,7 +9,9 @@ rm -f $out
 if [ ! -f "$nrn_checked_flag" ]; then
     rm -rf "$nrn_repo_path"
 
-    # if a git repository is set, use that
+    # If a git repository is set, use it.
+    # Use git with a specific commit for reproducability, because the
+    # "versioned" tar balls on the Neuron web site are not actually versioned.
     if [ "${ns_nrn_git_repo}" != "" ]; then
         msg "NEURON: cloning from $ns_nrn_git_repo to $nrn_repo_path"
         git clone "$ns_nrn_git_repo" "$nrn_repo_path" &>> "${out}"
@@ -22,25 +24,23 @@ if [ ! -f "$nrn_checked_flag" ]; then
             git checkout "$ns_nrn_branch" &>> "$out"
             [ $? != 0 ] && exit_on_error "see ${out}"
         fi
-    # Otherwise download an X.Y release tar ball.
-    # This might be brittle, because the name format for the neuron tar ball changes
-    # from time to time. Furthermore patch updates are automatically rolled into
-    # the release tar ball, so you might not get reproducable runs: get the code
-    # from GitHub and check out a commit if reproducability must be guarenteed.
+    # Otherwise download a tar ball.
+    # This is brittle and ugly, because the name format for the neuron tar ball
+    # changes from time to time, making it impossible to parameterize this
+    # on the version number. Furthermore patch updates are automatically
+    # rolled into the release tar ball, so a url won't always point to the same
+    # code.
     else
         cd "$ns_build_path"
-        ns_nrn_version="${ns_nrn_version_major}.${ns_nrn_version_minor}"
-        nrn_tar="nrn-${ns_nrn_version}"
-        nrn_src="neuron.yale.edu/ftp/neuron/versions/v${ns_nrn_version}/${nrn_tar}.tar.gz"
 
-        msg "NEURON: download version ${ns_nrn_version} from ${nrn_src}"
-        wget "$nrn_src" &>> ${out}
+        msg "NEURON: download tarball ${ns_nrn_tarball} from ${ns_nrn_url}"
+        wget "$ns_nrn_url" &>> ${out}
         [ $? != 0 ] && exit_on_error "see ${out}"
 
-        msg "NEURON: untar ${nrn_tar}.tar.gz"
-        tar -xzf "${nrn_tar}.tar.gz" &>> ${out}
+        msg "NEURON: untar ${ns_nrn_tarball}"
+        tar -xzf "${ns_nrn_tarball}" &>> ${out}
         [ $? != 0 ] && exit_on_error "see ${out}"
-        mv "${nrn_tar}" "$nrn_repo_path"  &>> ${out}
+        mv "${ns_nrn_path}" "$nrn_repo_path"  &>> ${out}
         [ $? != 0 ] && exit_on_error "see ${out}"
     fi
 
@@ -82,7 +82,8 @@ make install &>> ${out}
 # install python stuff
 msg "NEURON: python setup and install"
 cd "$nrn_repo_path/src/nrnpython"
-"$ns_python" setup.py install --prefix=$ns_install_path &>> ${out}
+#"$ns_python" setup.py install --prefix=$ns_install_path &>> ${out}
+python setup.py install --prefix=$ns_install_path &>> ${out}
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 cd $base_path

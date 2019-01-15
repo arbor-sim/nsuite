@@ -29,3 +29,6 @@ log_*
 
 # generated simulation run scripts
 run_*.sh
+
+# CoreNEURON inputs generated from NEURON.
+*core
