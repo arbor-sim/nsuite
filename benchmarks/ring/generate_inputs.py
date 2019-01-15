@@ -31,6 +31,10 @@ cell_range=[pow(2,x) for x in range(4,nc)]
 arb_run_fid = open('run_arb.sh', 'w')
 nrn_run_fid = open('run_nrn.sh', 'w')
 for depth in depth_range:
+    nrn_run_fid.write('echo depth '+str(depth)+'\n')
+    nrn_run_fid.write('echo "  cells       comps        wall  throughput"\n')
+    arb_run_fid.write('echo depth '+str(depth)+'\n')
+    arb_run_fid.write('echo "  cells       comps        wall  throughput"\n')
     for ncells in cell_range:
         run_name = '%s_%d_%d_%d'%(name, ns, ncells, depth)
         d = {
@@ -52,9 +56,7 @@ for depth in depth_range:
         pfid.close()
 
         nrn_run_fid.write('nrn_ofile=$ns_ring_out/nrn_'+run_name+'.out\n')
-        nrn_run_fid.write('echo post\n')
         nrn_run_fid.write('run_with_mpi $ns_python neuron/run.py --mpi --param %s --opath $ns_ring_out > $nrn_ofile\n'%(fname))
-        nrn_run_fid.write('echo pre\n')
         nrn_run_fid.write('./table_line.sh $nrn_ofile\n')
 
         arb_run_fid.write('arb_ofile=$ns_ring_out/arb_'+run_name+'.out\n')
