@@ -17,6 +17,7 @@ default_environment
 
 ns_bench_arbor=false
 ns_bench_neuron=false
+ns_bench_coreneuron=false
 
 # parse arguments
 while [ "$1" != "" ]
@@ -28,9 +29,13 @@ do
         neuron )
             ns_bench_neuron=true
             ;;
+        coreneuron )
+            ns_bench_coreneuron=true
+            ;;
         all )
             ns_bench_arbor=true
             ns_bench_neuron=true
+            ns_bench_coreneuron=true
             ;;
         -e )
             shift
@@ -77,7 +82,8 @@ echo
 
 msg "---- Applications ----"
 msg "arbor:             $ns_bench_arbor"
-msg "neuron:            $ns_bench_neuron"
+msg "NEURON:            $ns_bench_neuron"
+msg "CoreNeuron:        $ns_bench_coreneuron"
 echo
 
 msg "---- Benchmarks ----"
@@ -93,8 +99,8 @@ rm -f "$ns_ring_out/*"
 cd "$ns_ring_path"
 
 # generate the inputs
-#$ns_python generate_inputs.py -c 12 -n ring -s $ns_sockets
-$ns_python generate_inputs.py -c 10 -d 4 -n ring -s $ns_sockets
+$ns_python generate_inputs.py -c 10 -d 2 -n ring -s $ns_sockets
+#$ns_python generate_inputs.py -c 12 -d 4 -n ring -s $ns_sockets
 
 if [ "$ns_bench_arbor" = "true" ]; then
     msg Arbor ring benchmark
@@ -102,7 +108,12 @@ if [ "$ns_bench_arbor" = "true" ]; then
 fi
 
 if [ "$ns_bench_neuron" = "true" ]; then
-    msg Neuron ring benchmark
+    msg NEURON ring benchmark
     source run_nrn.sh
+fi
+
+if [ "$ns_bench_coreneuron" = "true" ]; then
+    msg CoreNeuron ring benchmark
+    source run_corenrn.sh
 fi
 

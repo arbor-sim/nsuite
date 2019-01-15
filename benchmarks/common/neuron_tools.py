@@ -39,8 +39,6 @@ class neuron_context:
         self.pc = neuron.h.ParallelContext()
         self.rank = self.pc.id()
         self.size = self.pc.nhost()
-        print('yarp: pc  size', self.size,' pc  rank', self.pc.id())
-        print('yarp: mpi size', MPI.COMM_WORLD.size,' mpi rank', MPI.COMM_WORLD.rank)
         self.pc.nthread(self.env.nthreads)
         self.is_root = self.rank==0
         self.comm = MPI.COMM_WORLD

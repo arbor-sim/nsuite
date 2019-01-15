@@ -11,6 +11,8 @@ def parse_clargs():
                    help='2^c cells will be in the largest model.')
     P.add_argument('-d', '--depth', type=int, default=0,
                    help='depth of generated cells.')
+    P.add_argument('-g', '--gencorenrn', type=bool, default=False,
+                   help='generate coreneuron outputs.')
 
     return P.parse_args()
 
@@ -30,7 +32,10 @@ cell_range=[pow(2,x) for x in range(4,nc)]
 
 arb_run_fid = open('run_arb.sh', 'w')
 nrn_run_fid = open('run_nrn.sh', 'w')
+corenrn_run_fid = open('run_corenrn.sh', 'w')
 for depth in depth_range:
+    corenrn_run_fid.write('echo depth '+str(depth)+'\n')
+    corenrn_run_fid.write('echo "  cells compartments    wall(s)  throughput  mem-tot(MB) mem-percell(MB)"\n')
     nrn_run_fid.write('echo depth '+str(depth)+'\n')
     nrn_run_fid.write('echo "  cells       comps        wall  throughput"\n')
     arb_run_fid.write('echo depth '+str(depth)+'\n')
@@ -39,9 +44,8 @@ for depth in depth_range:
         run_name = '%s_%d_%d_%d'%(name, ns, ncells, depth)
         d = {
             'name': run_name,
-            'core-path': run_name+'_core',
             'num-cells': ncells*ns,
-            'synapses': 1000,
+            'synapses': 2000,
             'min-delay': 10,
             'duration': 100,
             'depth': depth,
@@ -56,14 +60,19 @@ for depth in depth_range:
         pfid.close()
 
         nrn_run_fid.write('nrn_ofile=$ns_ring_out/nrn_'+run_name+'.out\n')
-        nrn_run_fid.write('run_with_mpi $ns_python neuron/run.py --mpi --param %s --opath $ns_ring_out > $nrn_ofile\n'%(fname))
+        nrn_run_fid.write('run_with_mpi $ns_python neuron/run.py --mpi --param %s --opath $ns_ring_out --dump > $nrn_ofile\n'%(fname))
         nrn_run_fid.write('./table_line.sh $nrn_ofile\n')
+
+        corenrn_run_fid.write('corenrn_ofile=$ns_ring_out/corenrn_'+run_name+'.out\n')
+        corenrn_run_fid.write('run_with_mpi coreneuron_exec -mpi -e 100 -d '+run_name+'_core &> $corenrn_ofile\n')
+        corenrn_run_fid.write('./corenrn_table_line.sh $corenrn_ofile\n')
 
         arb_run_fid.write('arb_ofile=$ns_ring_out/arb_'+run_name+'.out\n')
         arb_run_fid.write('run_with_mpi arb_ring %s > $arb_ofile\n'%(fname))
         arb_run_fid.write('./table_line.sh $arb_ofile\n')
 
     nrn_run_fid.write('echo\n')
+    corenrn_run_fid.write('echo\n')
     arb_run_fid.write('echo\n')
 
 nrn_run_fid.close()

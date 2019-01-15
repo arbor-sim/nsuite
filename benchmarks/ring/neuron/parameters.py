@@ -40,14 +40,12 @@ class model_parameters:
             "  cells        : {1:10d}\n" \
             "  duration     : {2:10.0f} ms\n" \
             "  min delay    : {3:10.0f} ms\n" \
-            "  core output  : {4:s} ms\n" \
-            .format(self.name, self.num_cells, self.duration, self.min_delay, self.core_path)
+            .format(self.name, self.num_cells, self.duration, self.min_delay)
         s+= str(self.cell)
         return s
 
     def __init__(self, filename=None):
         self.name      = 'default'
-        self.core_path = ''
         self.num_cells = 20
         self.duration  = 100
         self.min_delay = 10
@@ -60,8 +58,5 @@ class model_parameters:
                 self.num_cells = from_json(data, 'num-cells')
                 self.duration  = from_json(data, 'duration')
                 self.min_delay = from_json(data, 'min-delay')
-                if 'core-path' in data:
-                    self.core_path = data['core-path']
-
                 self.cell      = cell_parameters(data)
 
