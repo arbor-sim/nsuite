@@ -36,16 +36,16 @@ corenrn_run_fid = open('run_corenrn.sh', 'w')
 for depth in depth_range:
     corenrn_run_fid.write('echo depth '+str(depth)+'\n')
     corenrn_run_fid.write('echo "  cells compartments    wall(s)  throughput  mem-tot(MB) mem-percell(MB)"\n')
-    nrn_run_fid.write('echo depth '+str(depth)+'\n')
-    nrn_run_fid.write('echo "  cells       comps        wall  throughput"\n')
-    arb_run_fid.write('echo depth '+str(depth)+'\n')
-    arb_run_fid.write('echo "  cells       comps        wall  throughput"\n')
+    nrn_run_fid.write(    'echo depth '+str(depth)+'\n')
+    nrn_run_fid.write(    'echo "  cells       comps     wall(s)  throughput  mem-tot(MB) mem-percell(MB)"\n')
+    arb_run_fid.write(    'echo depth '+str(depth)+'\n')
+    arb_run_fid.write(    'echo "  cells       comps     wall(s)  throughput  mem-tot(MB) mem-percell(MB)"\n')
     for ncells in cell_range:
         run_name = '%s_%d_%d_%d'%(name, ns, ncells, depth)
         d = {
             'name': run_name,
             'num-cells': ncells*ns,
-            'synapses': 2000,
+            'synapses': 10000,
             'min-delay': 10,
             'duration': 100,
             'depth': depth,
