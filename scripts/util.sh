@@ -16,6 +16,14 @@ err() {
     >&2 printf "${light_red}== ERROR${nc} ${white}$*${nc}\n"
 }
 
+dbg() {
+    local white='\033[1;37m'
+    local green='\033[1;92m'
+    local nc='\033[0m'
+
+    >&2 printf "${green}==== ${nc} ${white}$*${nc}\n"
+}
+
 exit_on_error() {
     err "$*"
     exit 1
@@ -51,6 +59,7 @@ default_environment() {
     ns_build_arbor=false
     ns_build_nest=false
     ns_build_neuron=false
+    ns_build_coreneuron=false
 
     # No additional environment script to run.
     ns_environment=
@@ -96,8 +105,10 @@ default_environment() {
 
     # Arbor specific
 
-    ns_arb_repo=https://github.com/eth-cscs/arbor.git
-    ns_arb_branch=v0.1
+    #ns_arb_repo=https://github.com/arbor-sim/arbor.git
+    #ns_arb_branch=v0.1
+    ns_arb_repo=https://github.com/bcumming/arbor.git
+    ns_arb_branch=meter-accumulate
 
     ns_arb_arch=native
     ns_arb_with_gpu=OFF
@@ -105,16 +116,28 @@ default_environment() {
 
     # Neuron specific
 
-    # By default, the official source tar ball is downloaded for this version
-    # Neuron uses the same naming scheme for major X.Y versions, but an effectively arbitrary
-    # naming scheme for minor X.Y.Z versions. Supporting them would be a major pain.
-    # By default we choose version 7.6
-    ns_nrn_version_major=7
-    ns_nrn_version_minor=6
-    # set to a git repository url to source from a git repo instead of using official tar ball
+    # Neuron is inconsistent with the location and naming scheme of different
+    # versions, so just hard code URL and name of the tar ball.
+
+    # The path of the unpacked tar ball. It can't be determined from
+    # inspecting the name of the tar ball.
+    #ns_nrn_path=nrn-7.5
+    #ns_nrn_tarball=nrn-7.5.tar.gz
+    #ns_nrn_url=https://neuron.yale.edu/ftp/neuron/versions/v7.5/${ns_nrn_tarball}
+    ns_nrn_path=nrn-7.6
+    ns_nrn_tarball=nrn-7.6.5.tar.gz
+    ns_nrn_url=https://neuron.yale.edu/ftp/neuron/versions/v7.6/7.6.5/${ns_nrn_tarball}
+
+    # set to a git repository url to source from a git repo instead of using
+    # official tar ball
+    #ns_nrn_git_repo=https://github.com/neuronsimulator/nrn.git
     ns_nrn_git_repo=
     # set this variable if using git and want to use a branch other than master
     ns_nrn_branch=master
+
+    # CoreNeuron specific
+    ns_cnrn_git_repo=https://github.com/BlueBrain/CoreNeuron.git
+    ns_cnrn_sha=
 }
 
 # Attempts to detect harware resouces available on node

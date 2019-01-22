@@ -10,13 +10,15 @@ class environment:
             "{6:20s}{7:>20.4f}\n" \
             "{8:20s}{9:>20s}\n" \
             "{10:20s}{11:>20s}\n" \
+            "{11:20s}{12:>20s}\n" \
             "----------------------------------------------\n"\
             .format("threads", self.nthreads,
                     "mpi", 'yes' if self.mpi else 'no',
                     'duration (ms)', int(self.duration),
                     'dt (ms)', self.dt,
                     'output path', self.opath,
-                    'parameter file', self.parameter_file if self.parameter_file else 'none')
+                    'parameter file', self.parameter_file if self.parameter_file else 'none',
+                    'dump coreneuron', 'yes' if self.dump_coreneuron else 'no')
 
         return s
 
@@ -26,11 +28,15 @@ class environment:
         self.dt = 0.025
         self.duration = 100
         self.parameter_file = None
+        self.opath = 'output'
+        self.dump_coreneuron = False
 
 def parse_clargs():
     P = argparse.ArgumentParser(description='Neuron Benchmark.')
     P.add_argument('--mpi', action='store_true',
                    help='run with mpi')
+    P.add_argument('--dump', action='store_true',
+                   help='dump neuron state as coreneuron input')
     P.add_argument('--param', metavar='FILE',
                    help='file with parameters for the model')
     P.add_argument('--dt', type=float, default=0.025,
@@ -58,6 +64,7 @@ def load_env():
     env.dt = args.dt
     env.opath = args.opath
     env.duration = args.duration
+    env.dump_coreneuron = args.dump
 
     return env
 
