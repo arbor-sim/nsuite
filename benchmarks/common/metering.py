@@ -7,7 +7,7 @@ class meter:
         s = "-- meters ------------------------------------\n" \
             "{0:20s}{1:>20s}\n" \
             "----------------------------------------------\n"\
-            .format("region", "time (s)")
+            .format("meter", "time(s)")
 
         for i in range(len(self.checkpoints)):
             s += "{0:20s}{1:20.5f}\n".format(self.checkpoints[i], self.times[i])

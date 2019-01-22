@@ -6,7 +6,7 @@ if env.mpi:
     if MPI.COMM_WORLD.rank==0:
         print(env)
 else:
-    print(env)
+        print(env)
 
 from neuron import h
 
@@ -87,14 +87,15 @@ nrn.hoc_setup()
 
 # create environment
 ctx = nrn.neuron_context(env)
+if ctx.rank==0:
+    print(ctx)
 
 meter = metering.meter(env.mpi)
 meter.start()
 
-# build the model #####
+# build the model
 params = parameters.model_parameters(env.parameter_file)
 model = ring_network(params)
-#####
 
 ctx.init(params.min_delay, env.dt)
 
@@ -102,6 +103,10 @@ ctx.init(params.min_delay, env.dt)
 spikes = nrn.spike_record()
 
 meter.checkpoint('model-init')
+
+if env.dump_coreneuron:
+    ctx.write_core(params.name+'_core')
+    meter.checkpoint('model-output')
 
 # run the simulation
 ctx.run(env.duration)

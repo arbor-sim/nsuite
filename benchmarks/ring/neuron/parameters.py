@@ -45,6 +45,12 @@ class model_parameters:
         return s
 
     def __init__(self, filename=None):
+        self.name      = 'default'
+        self.num_cells = 20
+        self.duration  = 100
+        self.min_delay = 10
+        self.cell = cell_parameters()
+
         if filename:
             with open(filename) as f:
                 data = json.load(f)
@@ -54,9 +60,3 @@ class model_parameters:
                 self.min_delay = from_json(data, 'min-delay')
                 self.cell      = cell_parameters(data)
 
-        else:
-            self.name      = 'default'
-            self.num_cells = 20
-            self.duration  = 100
-            self.min_delay = 10
-            self.cell = cell_parameters()

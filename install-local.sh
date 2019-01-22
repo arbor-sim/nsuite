@@ -2,20 +2,21 @@ usage() {
     echo
     echo "nsuite installer options:"
     echo
-    echo "   arbor  : build arbor"
-    echo "   neuron : build neuron"
-    echo "   all    : build arbor and neuron"
-    echo "   -e filename: source filename before building"
+    echo "   arbor       : build Arbor"
+    echo "   neuron      : build NEURON"
+    echo "   coreneuron  : build CoreNEURON"
+    echo "   all         : build all simulators"
+    echo "   -e filename : source filename before building"
     echo
     echo "examples:"
     echo
-    echo "install only arbor:"
+    echo "install only Arbor:"
     echo "$ install arbor"
     echo
-    echo "install arbor and neuron:"
+    echo "install Arbor, NEURON and CoreNEURON:"
     echo "$ install all"
     echo
-    echo "install neuron using environment configured in config.sh:"
+    echo "install NEURON using environment configured in config.sh:"
     echo "$ install neuron -e config.sh"
     echo
 }
@@ -36,9 +37,13 @@ do
         neuron )
             ns_build_neuron=true
             ;;
+        coreneuron )
+            ns_build_coreneuron=true
+            ;;
         all )
             ns_build_arbor=true
             ns_build_neuron=true
+            ns_build_coreneuron=true
             ;;
         -e )
             shift
@@ -65,8 +70,9 @@ if [ "$ns_environment" != "" ]; then
 fi
 
 msg "---- TARGETS ----"
-msg "build arbor:   $ns_build_arbor"
-msg "build neuron:  $ns_build_neuron"
+msg "build arbor:       $ns_build_arbor"
+msg "build neuron:      $ns_build_neuron"
+msg "build coreneuron:  $ns_build_coreneuron"
 echo
 msg "---- PATHS ----"
 msg "working path:  $ns_base_path"
@@ -88,9 +94,14 @@ msg "gpu:           $ns_arb_with_gpu"
 msg "vectorize:     $ns_arb_vectorize"
 echo
 msg "---- NEURON ----"
-msg "version:       ${ns_nrn_version_major}.${ns_nrn_version_minor}"
+msg "tarball:       $ns_nrn_tarball"
+msg "url:           $ns_nrn_url"
 msg "repo:          $ns_nrn_git_repo"
 msg "branch:        $ns_nrn_branch"
+echo
+msg "---- CoreNEURON ----"
+msg "repo:          $ns_cnrn_git_repo"
+msg "sha:           $ns_cnrn_sha"
 
 mkdir -p "$ns_build_path"
 
@@ -100,6 +111,8 @@ export CXX="$ns_cxx"
 [ "$ns_build_arbor"  = true ] && echo && source "$ns_base_path/scripts/build_arbor.sh"
 cd "$ns_base_path"
 [ "$ns_build_neuron" = true ] && echo && source "$ns_base_path/scripts/build_neuron.sh"
+cd "$ns_base_path"
+[ "$ns_build_coreneuron" = true ] && echo && source "$ns_base_path/scripts/build_coreneuron.sh"
 cd "$ns_base_path"
 
 echo
