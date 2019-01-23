@@ -51,15 +51,45 @@ msg "ARBOR: install"
 make install &>> "$out"
 [ $? != 0 ] && exit_on_error "see ${out}"
 
+# temporary fix: manually copy the Arbor sup library to the installation path.
+cp    "$arb_build_path/lib/libarborsup.a" "$ns_install_path/lib"
+cp -R "$arb_repo_path/sup/include/sup" "$ns_install_path/include"
+cp -R "$arb_repo_path/ext/json/single_include/nlohmann/" "$ns_install_path/include"
+
 src_path="$arb_build_path/bin"
 dst_path="$ns_install_path/bin"
-msg "ARBOR: copy examples to '${dst_path}'"
-cp $src_path/ring $dst_path/arb_ring  &>> "$out"
-[ $? != 0 ] && exit_on_error "see ${out}"
-cp $src_path/bench $dst_path/arb_bench &>> "$out"
-[ $? != 0 ] && exit_on_error "see ${out}"
 
-msg "ARBOR: build completed"
-
+msg "ARBOR: library build completed"
 cd $ns_base_path
 
+msg "ARBOR: building benchmark models"
+
+# Required for the CMake scripts that build the benchmarks to
+# find the Arbor library that was built and installed above.
+export CMAKE_PREFIX_PATH="$ns_install_path"
+
+benchmarks="ring"
+
+for bench in $benchmarks
+do
+    echo
+    msg "ARBOR: $bench benchmark"
+    source_path="${ns_base_path}/benchmarks/${bench}/arbor"
+    build_path="${ns_build_path}/${bench}_arbor"
+    mkdir -p "$build_path"
+    cd "$build_path"
+
+    msg "ARBOR: $bench benchmark cmake"
+    # Set install path to the source path.
+    # This will install the "run" executable in the source path.
+    cmake "$source_path" -DCMAKE_INSTALL_PREFIX:PATH="$source_path" &>> "$out"
+    [ $? != 0 ] && exit_on_error "see ${out}"
+
+    msg "ARBOR: $bench benchmark make"
+    make -j $ns_makej &>> "$out"
+    [ $? != 0 ] && exit_on_error "see ${out}"
+
+    msg "ARBOR: $bench benchmark install"
+    make install &>> "$out"
+    [ $? != 0 ] && exit_on_error "see ${out}"
+done
