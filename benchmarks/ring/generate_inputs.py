@@ -68,7 +68,7 @@ for depth in depth_range:
         corenrn_run_fid.write('./corenrn_table_line.sh $corenrn_ofile\n')
 
         arb_run_fid.write('arb_ofile=$ns_ring_out/arb_'+run_name+'.out\n')
-        arb_run_fid.write('run_with_mpi arb_ring %s > $arb_ofile\n'%(fname))
+        arb_run_fid.write('run_with_mpi ./arbor/run %s > $arb_ofile\n'%(fname))
         arb_run_fid.write('./table_line.sh $arb_ofile\n')
 
     nrn_run_fid.write('echo\n')
