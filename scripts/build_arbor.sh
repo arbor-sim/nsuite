@@ -79,17 +79,17 @@ do
     mkdir -p "$build_path"
     cd "$build_path"
 
-    msg "ARBOR: $bench benchmark cmake"
+    msg "ARBOR: cmake"
     # Set install path to the source path.
     # This will install the "run" executable in the source path.
     cmake "$source_path" -DCMAKE_INSTALL_PREFIX:PATH="$source_path" &>> "$out"
     [ $? != 0 ] && exit_on_error "see ${out}"
 
-    msg "ARBOR: $bench benchmark make"
+    msg "ARBOR: make"
     make -j $ns_makej &>> "$out"
     [ $? != 0 ] && exit_on_error "see ${out}"
 
-    msg "ARBOR: $bench benchmark install"
+    msg "ARBOR: install"
     make install &>> "$out"
     [ $? != 0 ] && exit_on_error "see ${out}"
 done
