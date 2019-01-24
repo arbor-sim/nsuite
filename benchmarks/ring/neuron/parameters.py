@@ -9,14 +9,16 @@ def from_json(o, key):
 class cell_parameters:
     def __repr__(self):
         s = "cell parameters\n" \
-            "  depth        : {0:10d}\n" \
-            "  branch prob  :     [{1:5.2f} : {2:5.2f}]\n" \
-            "  compartments :     [{3:5d} : {4:5d}]\n" \
-            "  lengths      :     [{5:5.1f} : {6:5.1f}]\n" \
+            "  depth        :  {0:10d}\n" \
+            "  branch prob  :  [{1:5.2f} : {2:5.2f}]\n" \
+            "  compartments :  [{3:5d} : {4:5d}]\n" \
+            "  lengths      :  [{5:5.1f} : {6:5.1f}]\n" \
+            "  connections  :  {7:5.1f}\n" \
             .format(self.max_depth,
                     self.branch_probs[0], self.branch_probs[1],
                     self.compartments[0], self.compartments[1],
-                    self.lengths[0], self.lengths[1])
+                    self.lengths[0], self.lengths[1],
+                    self.synapses)
         return s
 
     def __init__(self, data=None):
@@ -38,9 +40,11 @@ class model_parameters:
         s = "parameters\n" \
             "  name         : {0:>10s}\n" \
             "  cells        : {1:10d}\n" \
-            "  duration     : {2:10.0f} ms\n" \
-            "  min delay    : {3:10.0f} ms\n" \
-            .format(self.name, self.num_cells, self.duration, self.min_delay)
+            "  ring size    : {2:10d}\n" \
+            "  duration     : {3:10.0f} ms\n" \
+            "  min delay    : {4:10.0f} ms\n" \
+            "  dt           : {5:10.0f} ms\n" \
+            .format(self.name, self.num_cells, self.ring_size, self.duration, self.min_delay, self.dt)
         s+= str(self.cell)
         return s
 
@@ -48,7 +52,9 @@ class model_parameters:
         self.name      = 'default'
         self.num_cells = 20
         self.duration  = 100
+        self.dt        = 0.025
         self.min_delay = 10
+        self.ring_size = 10
         self.cell = cell_parameters()
 
         if filename:
@@ -56,7 +62,9 @@ class model_parameters:
                 data = json.load(f)
                 self.name      = from_json(data, 'name')
                 self.num_cells = from_json(data, 'num-cells')
+                self.ring_size = from_json(data, 'ring-size')
                 self.duration  = from_json(data, 'duration')
+                self.dt        = from_json(data, 'dt')
                 self.min_delay = from_json(data, 'min-delay')
                 self.cell      = cell_parameters(data)
 

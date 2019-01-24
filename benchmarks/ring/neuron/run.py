@@ -1,4 +1,5 @@
 import config
+import random
 env = config.load_env()
 
 if env.mpi:
@@ -6,7 +7,7 @@ if env.mpi:
     if MPI.COMM_WORLD.rank==0:
         print(env)
 else:
-        print(env)
+    print(env)
 
 from neuron import h
 
@@ -25,6 +26,8 @@ class ring_network:
         self.num_cells = params.num_cells
         self.min_delay = params.min_delay
         self.cell_params = params.cell
+        self.ring_size = params.ring_size
+        self.synapses_per_cell = params.cell.synapses
         self.cells = []
 
         # distribute gid in round robin
@@ -63,24 +66,45 @@ class ring_network:
         # Generate the connections.
         # For each local gid, make an incoming connection with source at gid-1.
         self.connections = []
-        for i in range(len(self.gids)):
+        num_local_cells = len(self.gids)
+        self.stims = []
+        self.stim_connections = []
+        for i in range(num_local_cells):
             gid = self.gids[i]
 
-            src = (gid-1) % self.num_cells
+            # attach ring connection to previous gid in local ring
+            s = self.ring_size
+            ring = int(gid/s)
+            ring_start = s*ring;
+            ring_end = min(ring_start+s, self.num_cells);
+            src = gid-1
+            if gid==ring_start:
+                src = ring_end-1
 
-            con = self.pc.gid_connect(src, self.cells[i].synapse)
+            con = self.pc.gid_connect(src, self.cells[i].synapses[0])
             con.delay = self.min_delay
             con.weight[0] = 0.01
             self.connections.append(con)
 
-        # attach a stimulus to gid 0
-        if self.gids[0]==0:
-            self.stim = h.NetStim()
-            self.stim.number = 1
-            self.stim.start = 0
-            self.stim_connection = h.NetCon(self.stim, self.cells[0].synapse)
-            self.stim_connection.delay = 1
-            self.stim_connection.weight[0] = 0.01
+            # Attach stimulus if cell is first in sub-ring
+            if gid==ring_start:
+                stim = h.NetStim()
+                stim.number = 1 # one spike
+                stim.start = 0  # at t=0
+                stim_connection = h.NetCon(stim, self.cells[i].synapses[0])
+                stim_connection.delay = 1
+                stim_connection.weight[0] = 0.01
+                self.stims.append(stim)
+                self.stim_connections.append(stim_connection)
+
+            # TODO: for loop that makes dummy connections
+            for i in range(1, self.synapses_per_cell):
+                src = random.randint(0, self.num_cells-2)
+                if src==gid:
+                    src=src+1
+                delay = params.min_delay + random.uniform(0, 2*params.min_delay)
+                con = self.pc.gid_connect(src, self.cells[gid].synapses[i])
+                self.connections.append(con)
 
 # hoc setup
 nrn.hoc_setup()
@@ -95,6 +119,8 @@ meter.start()
 
 # build the model
 params = parameters.model_parameters(env.parameter_file)
+if ctx.rank==0:
+    print(params)
 model = ring_network(params)
 
 ctx.init(params.min_delay, env.dt)

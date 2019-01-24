@@ -43,6 +43,8 @@ class meter:
         if self.with_mpi:
             if self.comm.rank==0:
                 print(self)
+        else:
+            print(self)
 
 class meter_report:
     def __init__(self, checkpoints, times, num_domains):

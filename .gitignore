@@ -19,8 +19,8 @@ out
 # spike files
 *.gdf
 # meters
-meter*.json
-voltage*.json
+*meter*.json
+*voltage*.json
 
 benchmarks/ring/input
 benchmarks/ring/output

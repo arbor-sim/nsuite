@@ -57,6 +57,7 @@ class branchy_cell:
         # build the dendritic tree
         nlev = params.max_depth
         random.seed(gid) # seed the random number generator on gid
+        flat_section_list = [soma]
         for i in range(params.max_depth):
             level_secs = []
             count = 0
@@ -90,6 +91,7 @@ class branchy_cell:
 
                         dend.connect(sec(1))
                         level_secs.append(dend)
+                        flat_section_list.append(dend)
                         count += 1
                         self.ncomp += nc
                 j += 1
@@ -101,17 +103,16 @@ class branchy_cell:
             self.sections.append(level_secs)
 
         self.soma = soma
-        # TODO: this may not have been generated
-        self.dend = self.sections[1][0]
 
-        # stick a synapse on one of the dendrites attached to the soma
-        self.synapse = h.ExpSyn(self.dend(0.5))
-        self.synapse.tau = 2
+        # stick a synapse on the soma
+        self.synapses = [h.ExpSyn(self.soma(0.5))]
+        self.synapses[0].tau = 2
 
-        # add additional synapses that will not be connected in the network
-        self.synapses = []
+        # add additional synapses that will be connected to the "ghost" network
         for i in range(1, params.synapses):
-            self.synapses.append(h.ExpSyn(self.dend(0.5)))
+            seg = random.randint(1, self.nseg-1)
+            pos = random.uniform(0, 1)
+            self.synapses.append(h.ExpSyn(flat_section_list[seg](pos)))
 
 
     def set_recorder(self):

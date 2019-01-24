@@ -1,10 +1,22 @@
 {
     "name": "test",
-    "num-cells": 5,
-    "min-delay": 10,
-    "duration": 1000,
-    "depth": 5,
-    "branch-probs": [1, 0.5],
-    "compartments": [20, 1],
-    "lengths": [200, 10]
+    "num-cells": 100,
+    "synapses": 100,
+    "ring-size": 10,
+    "min-delay": 5,
+    "dt": 0.025,
+    "duration": 100,
+    "depth": 4,
+    "branch-probs": [
+        1,
+        0.5
+    ],
+    "compartments": [
+        20,
+        2
+    ],
+    "lengths": [
+        200,
+        20
+    ]
 }
