@@ -383,7 +383,6 @@ arb::mc_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& params) 
     cell.add_synapse({0, 0.5}, "expsyn");
 
     // Add additional synapses to random locations on the cell.
-    // Standard mersenne_twister_engine seeded with gid.
     std::uniform_real_distribution<double> pos_dis(0, 1);
     std::uniform_int_distribution<cell_lid_type> seg_dis(1, nsec-1);
     for (unsigned i=1u; i<params.synapses; ++i) {
