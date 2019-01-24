@@ -104,6 +104,8 @@ class ring_network:
                     src=src+1
                 delay = params.min_delay + random.uniform(0, 2*params.min_delay)
                 con = self.pc.gid_connect(src, self.cells[gid].synapses[i])
+                con.weight[0] = 0
+                con.delay = delay
                 self.connections.append(con)
 
 # hoc setup
@@ -123,7 +125,7 @@ if ctx.rank==0:
     print(params)
 model = ring_network(params)
 
-ctx.init(params.min_delay, env.dt)
+ctx.init(params.min_delay, params.dt)
 
 # set up spike output
 spikes = nrn.spike_record()
@@ -135,7 +137,7 @@ if env.dump_coreneuron:
     meter.checkpoint('model-output')
 
 # run the simulation
-ctx.run(env.duration)
+ctx.run(params.duration)
 
 meter.checkpoint('model-run')
 
