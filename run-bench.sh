@@ -99,7 +99,7 @@ rm -f "$ns_ring_out/*"
 cd "$ns_ring_path"
 
 # generate the inputs
-$ns_python generate_inputs.py -c 10 -d 2 -n ring -s $ns_sockets
+$ns_python generate_inputs.py -c 8 -d 4 -n ring -s $ns_sockets
 
 if [ "$ns_bench_arbor" = "true" ]; then
     msg Arbor ring benchmark
