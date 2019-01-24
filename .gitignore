@@ -38,3 +38,5 @@ out.dat
 
 # executables for arbor benchmarks
 benchmarks/*/arbor/run
+
+__pychache__

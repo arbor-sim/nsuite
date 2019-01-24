@@ -1,8 +1,3 @@
-/*
- * A miniapp that demonstrates how to make a ring model
- *
- */
-
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -49,10 +44,10 @@ arb::mc_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& params);
 
 class ring_recipe: public arb::recipe {
 public:
-    ring_recipe(unsigned num_cells, cell_parameters params, unsigned min_delay):
-        num_cells_(num_cells),
-        cell_params_(params),
-        min_delay_(min_delay)
+    ring_recipe(ring_params params):
+        num_cells_(params.num_cells),
+        min_delay_(params.min_delay),
+        params_(params)
     {}
 
     cell_size_type num_cells() const override {
@@ -60,7 +55,7 @@ public:
     }
 
     arb::util::unique_any get_cell_description(cell_gid_type gid) const override {
-        return branch_cell(gid, cell_params_);
+        return branch_cell(gid, params_.cell);
     }
 
     cell_kind get_cell_kind(cell_gid_type gid) const override {
@@ -74,21 +69,51 @@ public:
 
     // The cell has one target synapse, which will be connected to cell gid-1.
     cell_size_type num_targets(cell_gid_type gid) const override {
-        return 1;
+        //return params_.cell.synapses;;
+        return 0;
     }
 
-    // Each cell has one incoming connection, from cell with gid-1.
+    // Each cell has one incoming connection, from cell with gid-1,
+    // and fan_in-1 random connections with very low weight.
     std::vector<arb::cell_connection> connections_on(cell_gid_type gid) const override {
-        cell_gid_type src = gid? gid-1: num_cells_-1;
-        return {arb::cell_connection({src, 0}, {gid, 0}, event_weight_, min_delay_)};
+        std::vector<arb::cell_connection> cons;
+        const auto ncons = params_.cell.synapses;
+        cons.reserve(ncons);
+
+        const auto s = params_.ring_size;
+        const auto group = gid/s;
+        const auto group_start = s*group;
+        const auto group_end = std::min(group_start+s, num_cells_);
+        cell_gid_type src = gid==group_start? group_end-1: gid-1;
+        cons.push_back(arb::cell_connection({src, 0}, {gid, 0}, event_weight_, min_delay_));
+
+        // Used to pick source cell for a connection.
+        std::uniform_int_distribution<cell_gid_type> dist(0, num_cells_-2);
+        // Used to pick delay for a connection.
+        std::uniform_real_distribution<float> delay_dist(0, 2*min_delay_);
+        auto src_gen = std::mt19937(gid);
+        for (unsigned i=1; i<ncons; ++i) {
+            // Make a connection with weight 0.
+            // The source is randomly picked, with no self connections.
+            src = dist(src_gen);
+            if (src==gid) ++src;
+            const float delay = min_delay_+delay_dist(src_gen);
+            //const float delay = min_delay_;
+            cons.push_back(
+                arb::cell_connection({src, 0}, {gid, i}, 0.f, delay));
+        }
+
+        return cons;
     }
 
-    // Return one event generator on gid 0. This generates a single event that will
-    // kick start the spiking.
+    // Return one event generator on the first cell of each ring.
+    // This generates a single event that will kick start the spiking on the sub-ring.
     std::vector<arb::event_generator> event_generators(cell_gid_type gid) const override {
         std::vector<arb::event_generator> gens;
-        if (!gid) {
-            gens.push_back(arb::explicit_generator(arb::pse_vector{{{0, 0}, 1.0, event_weight_}}));
+        if (gid%params_.ring_size == 0) {
+            gens.push_back(
+                arb::explicit_generator(
+                    arb::pse_vector{{{gid, 0}, 1.0, event_weight_}}));
         }
         return gens;
     }
@@ -109,8 +134,9 @@ public:
 
 private:
     cell_size_type num_cells_;
-    cell_parameters cell_params_;
     double min_delay_;
+    ring_params params_;
+
     float event_weight_ = 0.05;
 };
 
@@ -196,7 +222,7 @@ int main(int argc, char** argv) {
         meters.start(context);
 
         // Create an instance of our recipe.
-        ring_recipe recipe(params.num_cells, params.cell, params.min_delay);
+        ring_recipe recipe(params);
         cell_stats stats(recipe);
         std::cout << stats << "\n";
 
@@ -207,14 +233,17 @@ int main(int argc, char** argv) {
 
         // Set up the probe that will measure voltage in the cell.
 
-        // The id of the only probe on the cell: the cell_member type points to (cell 0, probe 0)
-        auto probe_id = cell_member_type{0, 0};
-        // The schedule for sampling is 10 samples every 1 ms.
-        auto sched = arb::regular_schedule(0.1);
         // This is where the voltage samples will be stored as (time, value) pairs
         arb::trace_data<double> voltage;
-        // Now attach the sampler at probe_id, with sampling schedule sched, writing to voltage
-        sim.add_sampler(arb::one_probe(probe_id), sched, arb::make_simple_sampler(voltage));
+        if (params.record_voltage) {
+            // The id of the only probe on the cell:
+            // the cell_member type points to (cell 0, probe 0)
+            auto probe_id = cell_member_type{0, 0};
+            // The schedule for sampling is 10 samples every 1 ms.
+            auto sched = arb::regular_schedule(0.1);
+            // Now attach the sampler at probe_id, with sampling schedule sched, writing to voltage
+            sim.add_sampler(arb::one_probe(probe_id), sched, arb::make_simple_sampler(voltage));
+        }
 
         // Set up recording of spikes to a vector on the root process.
         std::vector<arb::spike> recorded_spikes;
@@ -227,9 +256,10 @@ int main(int argc, char** argv) {
 
         meters.checkpoint("model-init", context);
 
+        // Run the simulation.
         std::cout << "running simulation" << std::endl;
-        // Run the simulation for 100 ms, with time steps of 0.025 ms.
-        sim.run(params.duration, 0.025);
+        sim.set_binning_policy(arb::binning_kind::regular, params.dt);
+        sim.run(params.duration, params.dt);
 
         meters.checkpoint("model-run", context);
 
@@ -254,8 +284,10 @@ int main(int argc, char** argv) {
             }
         }
 
-        // Write the samples to a json file.
-        if (root) write_trace_json(voltage);
+        // Write the samples to a json file samples were stored on this rank.
+        if (voltage.size()>0u) {
+            write_trace_json(voltage);
+        }
 
         auto report = arb::profile::make_meter_report(meters, context);
         std::cout << report;
@@ -345,12 +377,20 @@ arb::mc_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& params) 
     // Add spike threshold detector at the soma.
     cell.add_detector({0,0}, 10);
 
-    // Add a synapse to the mid point of the first dendrite.
-    cell.add_synapse({1, 0.5}, "expsyn");
+    // Add a synapse to the soma for ring network.
+    // Attach at the soma to minimise delay between event delivery
+    // and subsequent spikes, which makes it easier to tune firing rate.
+    cell.add_synapse({0, 0.5}, "expsyn");
 
-    // Add additional synapses that will not be connected to anything.
+    // Add additional synapses to random locations on the cell.
+    // Standard mersenne_twister_engine seeded with gid.
+    std::uniform_real_distribution<double> pos_dis(0, 1);
+    std::uniform_int_distribution<cell_lid_type> seg_dis(1, nsec-1);
     for (unsigned i=1u; i<params.synapses; ++i) {
-        cell.add_synapse({1, 0.5}, "expsyn");
+        const auto seg = seg_dis(gen);
+        const auto pos = pos_dis(gen);
+
+        cell.add_synapse({seg, pos}, "expsyn");
     }
 
     return cell;
