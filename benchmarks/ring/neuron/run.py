@@ -98,12 +98,12 @@ class ring_network:
                 self.stim_connections.append(stim_connection)
 
             # TODO: for loop that makes dummy connections
-            for i in range(1, self.synapses_per_cell):
+            for sid in range(1, self.synapses_per_cell):
                 src = random.randint(0, self.num_cells-2)
                 if src==gid:
                     src=src+1
                 delay = params.min_delay + random.uniform(0, 2*params.min_delay)
-                con = self.pc.gid_connect(src, self.cells[gid].synapses[i])
+                con = self.pc.gid_connect(src, self.cells[i].synapses[sid])
                 con.weight[0] = 0
                 con.delay = delay
                 self.connections.append(con)
@@ -135,6 +135,7 @@ meter.checkpoint('model-init')
 if env.dump_coreneuron:
     ctx.write_core(params.name+'_core')
     meter.checkpoint('model-output')
+    #quit()
 
 # run the simulation
 ctx.run(params.duration)

@@ -30,7 +30,7 @@ else:
 
 cell_range=[pow(2,x) for x in range(4,nc)]
 
-duration=10
+duration=200
 
 arb_run_fid = open('run_arb.sh', 'w')
 nrn_run_fid = open('run_nrn.sh', 'w')
@@ -65,7 +65,8 @@ for depth in depth_range:
 
         nrn_run_fid.write('nrn_ofile=$ns_ring_out/nrn_'+run_name+'.out\n')
         nrn_run_fid.write('run_with_mpi $ns_python neuron/run.py --mpi --param %s --opath $ns_ring_out --dump > $nrn_ofile\n'%(fname))
-        nrn_run_fid.write('./table_line.sh $nrn_ofile\n')
+        #nrn_run_fid.write('./table_line.sh $nrn_ofile\n')
+        nrn_run_fid.write('echo generating '+str(ncells*ns)+' cells\n')
 
         corenrn_run_fid.write('corenrn_ofile=$ns_ring_out/corenrn_'+run_name+'.out\n')
         corenrn_run_fid.write('run_with_mpi coreneuron_exec -mpi -d '+run_name+'_core -e '+str(duration)+' &> $corenrn_ofile\n')
