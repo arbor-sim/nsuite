@@ -23,6 +23,7 @@ usage() {
 
 # Load some utility functions.
 source ./scripts/util.sh
+source ./scripts/environment.sh
 
 # Set up default environment variables
 default_environment
@@ -119,20 +120,22 @@ echo
 msg "Installation finished"
 echo
 
-# find and record the python and binary paths
+# Find and record the python and binary paths.
 find_paths python_path site-packages
 find_paths bin_path bin
 
 msg "python paths: $python_path"
 msg "bin paths:    $bin_path"
 
-export PYTHONPATH="$python_path:$PYTHONPATH"
-export PATH="$bin_path:$PATH"
+config_path="${ns_base_path}/config"
+config_file="${config_path}/env.sh"
+mkdir -p "$config_path"
 
-ns_config_path="${ns_base_path}/config"
-mkdir -p "$ns_config_path"
-
-echo $python_path > "$ns_config_path/python_path"
-echo $bin_path    > "$ns_config_path/bin_path"
-echo $system_name > "$ns_config_path/target"
-
+echo "export PYTHONPATH=\"$python_path\$PYTHONPATH\""   > "$config_file"
+echo "export PATH=\"$bin_path\$PATH\""                 >> "$config_file"
+echo "source \"$ns_base_path/scripts/environment.sh\"" >> "$config_file"
+echo "default_environment"                             >> "$config_file"
+if [ "$ns_environment" != "" ]; then
+    full_env=$(full_path "$ns_environment")
+    echo "source \"$full_env\""                        >> "$config_file"
+fi

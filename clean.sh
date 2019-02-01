@@ -1,5 +1,6 @@
 rm -rf build
 rm -rf install
-rm -f log_arbor
-rm -f log_nest
-rm -f log_neuron
+rm -rf config
+rm -rf output
+rm -rf input
+rm -rf cache
