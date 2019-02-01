@@ -1,0 +1,20 @@
+#!/bin/bash
+
+. ../model_functions.sh
+
+sim="$1"
+paramset="$2"
+
+impl=$(find_model_impl "$sim")
+outdir=$(make_model_out "$sim" "$paramset")
+
+params=$(read_model_params "$paramset")
+$impl "$outdir/run.n4" $params
+
+if [ -z "$paramset" ]; then refdata=reference.n4; else refdata=reference_"$paramset".n4; fi
+[ -r "$refdata" ] || die "missing reference data paramset for $paramset"
+
+./linf_error "$outdir/run.n4" "$refdata" -o "$outdir/linf.n4"
+./threshold_test "$outdir/linf.n4" "v<1e-6" > "$outdir/status"
+
+
