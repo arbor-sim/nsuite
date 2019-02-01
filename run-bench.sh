@@ -11,6 +11,7 @@ usage() {
 
 # Load some utility functions.
 source ./scripts/util.sh
+source ./scripts/environment.sh
 
 # Set up default environment variables
 default_environment
@@ -37,10 +38,6 @@ do
             ns_bench_neuron=true
             ns_bench_coreneuron=true
             ;;
-        -e )
-            shift
-            ns_environment=$1
-            ;;
         * )
             echo "unknown option '$1'"
             usage
@@ -49,12 +46,12 @@ do
     shift
 done
 
+env_script="$ns_base_path/config/env.sh"
+[ -f "$env_script" ] && source "$env_script"
+
 # set up paths for finding the libraries/executables
 export PATH="${ns_install_path}/bin:${PATH}"
 export PYTHONPATH="${ns_base_path}/benchmarks/common:${PYTHONPATH}"
-cpath="${ns_base_path}/config"
-[ -f "${cpath}/bin_path" ]    && export PATH="$(cat ${cpath}/bin_path):${PATH}"
-[ -f "${cpath}/python_path" ] && export PYTHONPATH="$(cat ${cpath}/python_path):${PYTHONPATH}"
 
 # try to auto-detect the number of cores/sockets
 default_hardware
@@ -99,7 +96,7 @@ rm -f "$ns_ring_out/*"
 cd "$ns_ring_path"
 
 # generate the inputs
-$ns_python generate_inputs.py -c 14 -d 4 -n ring -s $ns_sockets
+$ns_python generate_inputs.py -c 10 -d 2 -n ring -s $ns_sockets
 
 if [ "$ns_bench_arbor" = "true" ]; then
     msg Arbor ring benchmark
