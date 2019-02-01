@@ -45,7 +45,6 @@ ring_params read_options(int argc, char** argv) {
 
     ring_params params;
     if (argc<2) {
-        std::cout << "Using default parameters.\n";
         return params;
     }
     if (argc>2) {
@@ -53,7 +52,6 @@ ring_params read_options(int argc, char** argv) {
     }
 
     std::string fname = argv[1];
-    std::cout << "Loading parameters from file: " << fname << "\n";
     std::ifstream f(fname);
 
     if (!f.good()) {

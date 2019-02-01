@@ -69,8 +69,7 @@ public:
 
     // The cell has one target synapse, which will be connected to cell gid-1.
     cell_size_type num_targets(cell_gid_type gid) const override {
-        //return params_.cell.synapses;;
-        return 0;
+        return params_.cell.synapses;
     }
 
     // Each cell has one incoming connection, from cell with gid-1,
