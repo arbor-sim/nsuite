@@ -1,17 +1,3 @@
-# sets the variable system_name
-detect_system() {
-    # default option
-    ns_system_name=linux;
-
-    local name=`hostname`
-
-    # by default target multicore on Piz Daint
-    if [[ "$name" == 'daint'* ]]
-    then
-        ns_system_name=daintmc
-    fi
-}
-
 # Sets up the default enviroment.
 # Variables defined here use the prefix ns_
 default_environment() {
@@ -28,6 +14,8 @@ default_environment() {
     ns_base_path=$(pwd)
     ns_install_path="$ns_base_path/install"
     ns_build_path="$ns_base_path/build"
+    ns_input_path="$ns_base_path/input"
+    ns_output_path="$ns_base_path/output"
 
     # Detect OS
     case "$OSTYPE" in
@@ -54,6 +42,9 @@ default_environment() {
         ns_cc=$(which mpicc)
         ns_cxx=$(which mpic++)
     fi
+
+    # detect the hardware resources
+    default_hardware
 
     # set the number of parallel build tasks
     ns_makej=6
@@ -125,3 +116,33 @@ run_with_mpi() {
     ARB_NUM_THREADS=$ns_threads_per_socket mpirun -n $ns_sockets --map-by socket:PE=$ns_threads_per_socket $*
 }
 
+# Save the environment used to build a simulation engine
+# to a shell script that can be used to reproduce that
+# environment for running the simulation engine.
+# arg 1:    name of the simulation engine, one of: {arb, nrn, corenrn}
+save_environment() {
+    sim="$1"
+    current_path=$(pwd)
+    cd "$ns_base_path"
+
+    # Find and record the python and binary paths.
+    find_paths python_path site-packages
+    find_paths bin_path bin
+
+    config_path="${ns_base_path}/config"
+    config_file="${config_path}/env_${sim}.sh"
+    mkdir -p "$config_path"
+
+    echo "export PATH=\"${ns_install_path}/bin:\${PATH}\""  > "$config_file"
+    echo "export PYTHONPATH=\"${ns_base_path}/common/python:\${PYTHONPATH}\"" >> "$config_file"
+    echo "export PYTHONPATH=\"$python_path\$PYTHONPATH\""   >> "$config_file"
+    echo "export PATH=\"$bin_path\$PATH\""                  >> "$config_file"
+    echo "source \"$ns_base_path/scripts/environment.sh\""  >> "$config_file"
+    echo "default_environment"                              >> "$config_file"
+    if [ "$ns_environment" != "" ]; then
+        full_env=$(full_path "$ns_environment")
+        echo "source \"$full_env\""                         >> "$config_file"
+    fi
+
+    cd "$current_path"
+}
