@@ -1,5 +1,6 @@
 import json
 import argparse
+import os
 
 def parse_clargs():
     P = argparse.ArgumentParser(description='Neuron Benchmark.')
@@ -13,6 +14,10 @@ def parse_clargs():
                    help='depth of generated cells.')
     P.add_argument('-g', '--gencorenrn', type=bool, default=False,
                    help='generate coreneuron outputs.')
+    P.add_argument('-i', '--idir', type=str, default='./input',
+                   help='path for generating input files.')
+    P.add_argument('-o', '--odir', type=str, default='./output',
+                   help='path for generating output files.')
 
     return P.parse_args()
 
@@ -22,6 +27,11 @@ name = args.name
 ns = args.sockets
 nc = args.cells
 dp = args.depth
+idir = args.idir + '/benchmark/ring'
+odir = args.odir + '/benchmark/ring'
+
+os.makedirs(idir, exist_ok=True)
+os.makedirs(odir, exist_ok=True)
 
 if dp==0:
     depth_range=[2, 4, 6]
@@ -35,6 +45,10 @@ duration=200
 arb_run_fid = open('run_arb.sh', 'w')
 nrn_run_fid = open('run_nrn.sh', 'w')
 corenrn_run_fid = open('run_corenrn.sh', 'w')
+
+arb_run_fid.write('odir="'+odir+'"\n')
+nrn_run_fid.write('odir="'+odir+'"\n')
+corenrn_run_fid.write('odir="'+odir+'"\n')
 for depth in depth_range:
     corenrn_run_fid.write('echo depth '+str(depth)+'\n')
     corenrn_run_fid.write('echo "  cells compartments    wall(s)  throughput  mem-tot(MB) mem-percell(MB)"\n')
@@ -58,21 +72,20 @@ for depth in depth_range:
             'lengths': [200, 20]
             }
 
-        fname = './input/'+run_name+'.json'
+        fname = idir+'/'+run_name+'.json'
         pfid = open(fname, 'w')
         pfid.write(json.dumps(d, indent=4))
         pfid.close()
 
-        nrn_run_fid.write('nrn_ofile=$ns_ring_out/nrn_'+run_name+'.out\n')
-        nrn_run_fid.write('run_with_mpi $ns_python neuron/run.py --mpi --param %s --opath $ns_ring_out --dump > $nrn_ofile\n'%(fname))
-        #nrn_run_fid.write('./table_line.sh $nrn_ofile\n')
-        nrn_run_fid.write('echo generating '+str(ncells*ns)+' cells\n')
+        nrn_run_fid.write('nrn_ofile="$odir/nrn_'+run_name+'".out\n')
+        nrn_run_fid.write('run_with_mpi $ns_python neuron/run.py --mpi --param %s --opath "%s" --dump > "$nrn_ofile"\n'%(fname, odir))
+        nrn_run_fid.write('./table_line.sh $nrn_ofile\n')
 
-        corenrn_run_fid.write('corenrn_ofile=$ns_ring_out/corenrn_'+run_name+'.out\n')
-        corenrn_run_fid.write('run_with_mpi coreneuron_exec -mpi -d '+run_name+'_core -e '+str(duration)+' &> $corenrn_ofile\n')
-        corenrn_run_fid.write('./corenrn_table_line.sh $corenrn_ofile\n')
+        corenrn_run_fid.write('corenrn_ofile="$odir/corenrn_'+run_name+'".out\n')
+        corenrn_run_fid.write('run_with_mpi coreneuron_exec -mpi -d '+run_name+'_core -e '+str(duration)+' &> "$corenrn_ofile"\n')
+        corenrn_run_fid.write('./corenrn_table_line.sh "$corenrn_ofile"\n')
 
-        arb_run_fid.write('arb_ofile=$ns_ring_out/arb_'+run_name+'.out\n')
+        arb_run_fid.write('arb_ofile="$odir/arb_'+run_name+'".out\n')
         arb_run_fid.write('run_with_mpi ./arbor/run %s > $arb_ofile\n'%(fname))
         arb_run_fid.write('./table_line.sh $arb_ofile\n')
 

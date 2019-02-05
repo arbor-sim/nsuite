@@ -3,6 +3,11 @@ build
 config
 install
 
+# paths with input/output of benchmarks and validation runs
+input
+output
+cache
+
 # vim temporary files
 *.sw[ponq]
 

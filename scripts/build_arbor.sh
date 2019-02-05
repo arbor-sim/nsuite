@@ -88,3 +88,6 @@ do
     make install &>> "$out"
     [ $? != 0 ] && exit_on_error "see ${out}"
 done
+
+msg "ARBOR: saving environment"
+save_environment arbor
