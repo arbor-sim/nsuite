@@ -16,6 +16,10 @@ source ./scripts/environment.sh
 # Set up default environment variables
 default_environment
 
+# Load the environment used to build the simulation engines.
+env_script="$ns_base_path/config/env.sh"
+[ -f "$env_script" ] && source "$env_script"
+
 ns_bench_arbor=false
 ns_bench_neuron=false
 ns_bench_coreneuron=false
@@ -45,25 +49,6 @@ do
     esac
     shift
 done
-
-env_script="$ns_base_path/config/env.sh"
-[ -f "$env_script" ] && source "$env_script"
-
-# set up paths for finding the libraries/executables
-export PATH="${ns_install_path}/bin:${PATH}"
-export PYTHONPATH="${ns_base_path}/benchmarks/common:${PYTHONPATH}"
-
-# try to auto-detect the number of cores/sockets
-default_hardware
-
-# load user-specified environment
-if [ "$ns_environment" != "" ]; then
-    if [ ! -f "$ns_environment" ]; then
-        err "file '$ns_environment' not found"
-        exit 1
-    fi
-    source "$ns_environment"
-fi
 
 export ARB_NUM_THREADS=$[ $ns_threads_per_core * $ns_cores_per_socket ]
 
