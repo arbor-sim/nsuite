@@ -51,9 +51,6 @@ msg "ARBOR: install"
 make install &>> "$out"
 [ $? != 0 ] && exit_on_error "see ${out}"
 
-# manually copy the json library from Arbor to the installation path.
-cp -R "$arb_repo_path/ext/json/single_include/nlohmann/" "$ns_install_path/include"
-
 src_path="$arb_build_path/bin"
 dst_path="$ns_install_path/bin"
 
