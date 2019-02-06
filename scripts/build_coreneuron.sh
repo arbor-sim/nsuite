@@ -52,5 +52,7 @@ msg "CoreNEURON: install"
 make install &>> "$out"
 [ $? != 0 ] && exit_on_error "see ${out}"
 
-cd $base_path
+cd $ns_base_path
 
+msg "CoreNeuron: saving environment"
+save_environment coreneuron

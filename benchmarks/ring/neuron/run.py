@@ -133,9 +133,12 @@ spikes = nrn.spike_record()
 meter.checkpoint('model-init')
 
 if env.dump_coreneuron:
-    ctx.write_core(params.name+'_core')
+    # The CoreNeuron model state is dumped into the input path, because
+    # it is used as input for CoreNeuron.
+    cnrn_output_path='%s/%s_core'%(env.ipath, params.name);
+    print('(((((', cnrn_output_path)
+    ctx.write_core(cnrn_output_path)
     meter.checkpoint('model-output')
-    #quit()
 
 # run the simulation
 ctx.run(params.duration)

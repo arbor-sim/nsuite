@@ -84,7 +84,7 @@ mkdir -p "$ns_input_path"
 cd "$ns_ring_path"
 
 # generate the inputs
-$ns_python generate_inputs.py -c 10 -d 2 -n ring -s $ns_sockets -i "$ns_input_path" -o "$ns_output_path"
+$ns_python generate_inputs.py -c 10 -d 2 -n ring -i "$ns_input_path" -o "$ns_output_path"
 
 if [ "$ns_sim" = "arbor" ]; then
     msg Arbor ring benchmark

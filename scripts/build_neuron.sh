@@ -86,4 +86,8 @@ cd "$nrn_repo_path/src/nrnpython"
 python setup.py install --prefix=$ns_install_path &>> ${out}
 [ $? != 0 ] && exit_on_error "see ${out}"
 
-cd $base_path
+cd $ns_base_path
+
+msg "NEURON: saving environment"
+save_environment neuron
+

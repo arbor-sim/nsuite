@@ -89,5 +89,7 @@ do
     [ $? != 0 ] && exit_on_error "see ${out}"
 done
 
+cd $ns_base_path
+
 msg "ARBOR: saving environment"
 save_environment arbor
