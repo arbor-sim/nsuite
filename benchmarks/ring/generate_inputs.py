@@ -53,7 +53,7 @@ for ncells in cell_range:
     d = {
         'name': run_name,
         'num-cells': ncells,
-        'synapses': 5000,
+        'synapses': 1,
         'min-delay': 5,
         'duration': duration,
         'ring-size': 10,
@@ -61,7 +61,8 @@ for ncells in cell_range:
         'depth': depth,
         'branch-probs': [1, 0.5],
         'compartments': [20, 2],
-        'lengths': [200, 20]
+        'lengths': [200, 20],
+        'odir': odir
         }
 
     fname = idir+'/'+run_name+'.json'
@@ -73,11 +74,17 @@ for ncells in cell_range:
     nrn_run_fid.write('run_with_mpi $ns_python neuron/run.py --mpi --param %s --opath "%s" --ipath "%s" --dump > "$nrn_ofile"\n'%(fname, odir, idir))
     nrn_run_fid.write('./table_line.sh $nrn_ofile\n')
 
-    corenrn_run_fid.write('corenrn_ofile="$odir/corenrn_'+run_name+'".out\n')
+    # coreneuron is more difficult than the others to run robustly:
+    #   * it requires input that we have to generate using NEURON
+    #   * it is a binary with a fixed interface, so for example
+    #     we can't find a way to store the spikes in a file that
+    #     isn't called "out.dat" in the path where the executable was run.
+    corenrn_run_fid.write('corenrn_ofile="$odir/corenrn_%s".out\n'%(run_name))
     cnrn_input_path=('%s/%s_core'%(idir, run_name))
     corenrn_run_fid.write('if [ -d "%s" ]; then\n'%(cnrn_input_path))
     corenrn_run_fid.write('  run_with_mpi coreneuron_exec -mpi -d "%s" -e %s --outpath "%s" &> "$corenrn_ofile"\n'%(cnrn_input_path, str(duration), odir))
     corenrn_run_fid.write('  ./corenrn_table_line.sh "$corenrn_ofile"\n')
+    corenrn_run_fid.write('  [ -f "$odir/out.dat" ] && mv "$odir/out.dat" "$odir/corenrn_%s_spikes.dat"\n'%(run_name))
     corenrn_run_fid.write('else\n')
     corenrn_run_fid.write('  echo "    %d:   run neuron to generate model input %s"\n'%(ncells, cnrn_input_path))
     corenrn_run_fid.write('fi\n')
