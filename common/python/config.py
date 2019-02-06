@@ -35,6 +35,8 @@ def parse_clargs():
                    help='file with parameters for the model')
     P.add_argument('--opath', type=str, default='.',
                    help='path for output files')
+    P.add_argument('--ipath', type=str, default='.',
+                   help='path for input files')
 
     return P.parse_args()
 
@@ -52,6 +54,7 @@ def load_env():
     env.mpi = args.mpi
     env.parameter_file = args.param
     env.opath = args.opath
+    env.ipath = args.ipath
     env.dump_coreneuron = args.dump
 
     return env
