@@ -18,8 +18,6 @@
 
 #include <arborenv/concurrency.hpp>
 #include <arborenv/gpu_env.hpp>
-// MOVE:
-//#include <sup/json_meter.hpp>
 
 #include "parameters.hpp"
 
@@ -37,7 +35,7 @@ using arb::time_type;
 using arb::cell_probe_address;
 
 // Writes voltage trace as a json file.
-void write_trace_json(const arb::trace_data<double>& trace);
+void write_trace_json(std::string fname, const arb::trace_data<double>& trace);
 
 // Generate a cell.
 arb::mc_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& params);
@@ -225,6 +223,9 @@ int main(int argc, char** argv) {
         cell_stats stats(recipe);
         if (root) std::cout << stats << "\n";
 
+        //arb::partition_hint_map hints;
+        //hints[cell_kind::cable1d_neuron].cpu_group_size = 4;
+        //auto decomp = arb::partition_load_balance(recipe, context, hints);
         auto decomp = arb::partition_load_balance(recipe, context);
 
         // Construct the model.
@@ -268,7 +269,7 @@ int main(int argc, char** argv) {
         if (root) {
             std::cout << "\n" << ns << " spikes generated at rate of "
                       << params.duration/ns << " ms between spikes\n";
-            std::ofstream fid("spikes.gdf");
+            std::ofstream fid(params.odir + "/arb_" + params.name + "_spikes.gdf");
             if (!fid.good()) {
                 std::cerr << "Warning: unable to open file spikes.gdf for spike output\n";
             }
@@ -285,7 +286,8 @@ int main(int argc, char** argv) {
 
         // Write the samples to a json file samples were stored on this rank.
         if (voltage.size()>0u) {
-            write_trace_json(voltage);
+            std::string fname = params.odir + "/arb_" + params.name + "_voltages.json";
+            write_trace_json(fname, voltage);
         }
 
         auto report = arb::profile::make_meter_report(meters, context);
@@ -299,9 +301,7 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-void write_trace_json(const arb::trace_data<double>& trace) {
-    std::string path = "./voltages.json";
-
+void write_trace_json(std::string fname, const arb::trace_data<double>& trace) {
     nlohmann::json json;
     json["name"] = "ring demo";
     json["units"] = "mV";
@@ -316,7 +316,7 @@ void write_trace_json(const arb::trace_data<double>& trace) {
         jy.push_back(sample.v);
     }
 
-    std::ofstream file(path);
+    std::ofstream file(fname);
     file << std::setw(1) << json << "\n";
 }
 
