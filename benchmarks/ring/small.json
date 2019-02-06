@@ -1,0 +1,7 @@
+{
+    "name": "ring",
+    "synapses": 1,
+    "depth": 2,
+    "min-cells": 4,
+    "max-cells": 8
+}
