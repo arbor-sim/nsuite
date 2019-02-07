@@ -6,7 +6,7 @@ find_package(arbor REQUIRED)
 
 add_executable(ring ring.cpp)
 target_link_libraries(ring PRIVATE arbor::arbor arbor::arborenv)
-target_include_directories(ring PRIVATE ../../../common/cpp/include)
+target_include_directories(ring PRIVATE ../../../../common/cpp/include)
 
 set_target_properties(ring PROPERTIES OUTPUT_NAME run)
 

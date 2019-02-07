@@ -10,8 +10,13 @@ usage() {
 
     exit 1;
 }
-ns_sim=
-ns_sim_set=false
+
+run_arb=false
+run_nrn=false
+run_corenrn=false
+
+models="ring"
+configs="small"
 
 # Load some utility functions.
 source ./scripts/environment.sh
@@ -23,21 +28,23 @@ while [ "$1" != "" ]
 do
     case $1 in
         arbor )
-            [ "$ns_sim_set" = "true" ] && exit_on_error "only one simulator can be benchmarked in one run"
-            ns_sim="arbor"
-            ns_sim_set=true
+            run_arb=true
             ;;
 
         neuron )
-            [ "$ns_sim_set" = "true" ] && exit_on_error "only one simulator can be benchmarked in one run"
-            ns_sim="neuron"
-            ns_sim_set=true
+            run_nrn=true
             ;;
 
         coreneuron )
-            [ "$ns_sim_set" = "true" ] && exit_on_error "only one simulator can be benchmarked in one run"
-            ns_sim="coreneuron"
-            ns_sim_set=true
+            run_corenrn=true
+            ;;
+        --model )
+            shift
+            models="$1"
+            ;;
+        --config )
+            shift
+            configs="$1"
             ;;
 
         * )
@@ -47,19 +54,17 @@ do
     shift
 done
 
-[ "$ns_sim_set" == "false" ] && usage;
-
-# Load the environment used to build the simulation engines.
-env_script="$ns_base_path/config/env_${ns_sim}.sh"
-if [ -f "$env_script" ]; then
-    msg "loading $env_script"
-    source "$env_script";
-    echo
-else
-    err "the simulation engine $ns_sim has not been installed"
-    exit 1
+if [ "$run_arb" == "true" ]; then
+    [ ! -f "$ns_base_path/config/env_arbor.sh" ] &&  err "Arbor must be installed to run Arbor benchmarks." && run_arb=false
+fi
+if [ "$run_nrn" == "true" ]; then
+    [ ! -f "$ns_base_path/config/env_neuron.sh" ] &&  err "NEURON must be installed to run NEURON benchmarks." && run_nrn=false
+fi
+if [ "$run_corenrn" == "true" ]; then
+    [ ! -f "$ns_base_path/config/env_coreneuron.sh" ] &&  err "CoreNeuron must be installed to run CoreNeuron benchmarks." && run_corenrn=false
 fi
 
+# TODO: this has to go into the configuration environment setup scripts
 export ARB_NUM_THREADS=$[ $ns_threads_per_core * $ns_cores_per_socket ]
 
 msg "---- Platform ----"
@@ -73,26 +78,44 @@ msg "mpi:               $ns_with_mpi"
 echo
 
 msg "---- Application ----"
-msg "simulation engine: $ns_sim"
+msg "Arbor:      $run_arb"
+msg "NEURON:     $run_nrn"
+msg "CoreNeuron: $run_corenrn"
 echo
 
 msg "---- Benchmarks ----"
 echo
 
-ns_ring_path="$ns_base_path/benchmarks/ring"
 mkdir -p "$ns_input_path"
-cd "$ns_ring_path"
+for model in $models
+do
+    model_config_path="$ns_base_path/benchmarks/models/$model"
 
-# generate the inputs
-$ns_python generate_inputs.py --idir "$ns_input_path" --odir "$ns_output_path" --conf "$ns_ring_path/small.json"
+    cd "$model_config_path"
 
-if [ "$ns_sim" = "arbor" ]; then
-    msg Arbor ring benchmark
-    source run_arb.sh
-elif [ "$ns_sim" = "neuron" ]; then
-    msg NEURON ring benchmark
-    source run_nrn.sh
-elif [ "$ns_sim" = "coreneuron" ]; then
-    msg CoreNeuron ring benchmark
-    source run_corenrn.sh
-fi
+    for config in $configs
+    do
+
+        msg $model-$config
+        echo
+
+        model_input_path="$ns_input_path/benchmarks/$model/$config"
+        model_output_path="$ns_input_path/benchmarks/$model/$config"
+
+        ./config.sh $config "$ns_base_path" "$model_input_path" "$model_output_path" "$ns_base_path/config"
+
+        # todo: hoist check for env file outside loop, which would unset any simulation engine that has not been installed
+        if [ "$run_arb" == "true" ]; then
+            msg "  arbor"
+            "$model_input_path/run_arb.sh"
+        fi
+        if [ "$run_nrn" == "true" ]; then
+            msg "  neuron"
+            "$model_input_path/run_nrn.sh"
+        fi
+        if [ "$run_corenrn" == "true" ]; then
+            msg "  coreneuron"
+            "$model_input_path/run_corenrn.sh"
+        fi
+    done
+done

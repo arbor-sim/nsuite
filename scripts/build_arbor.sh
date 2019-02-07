@@ -63,13 +63,13 @@ msg "ARBOR: building benchmark models"
 # find the Arbor library that was built and installed above.
 export CMAKE_PREFIX_PATH="$ns_install_path"
 
-benchmarks="ring"
+benchmarks="busyring"
 
 for bench in $benchmarks
 do
     echo
     msg "ARBOR: $bench benchmark"
-    source_path="${ns_base_path}/benchmarks/${bench}/arbor"
+    source_path="${ns_base_path}/benchmarks/engines/${bench}/arbor"
     build_path="${ns_build_path}/${bench}_arbor"
     mkdir -p "$build_path"
     cd "$build_path"
