@@ -100,7 +100,7 @@ do
         echo
 
         model_input_path="$ns_input_path/benchmarks/$model/$config"
-        model_output_path="$ns_input_path/benchmarks/$model/$config"
+        model_output_path="$ns_output_path/benchmarks/$model/$config"
 
         ./config.sh $config "$ns_base_path" "$model_input_path" "$model_output_path" "$ns_base_path/config"
 

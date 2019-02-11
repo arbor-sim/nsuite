@@ -13,7 +13,7 @@ config_name="ring-$config"
 engine_path="$base_path/benchmarks/engines/busyring"
 generator="$engine_path/generate_inputs.py"
 
-python "$generator" --idir "$input_path" --odir "$output_path" --config "$config_json" --bdir "$engine_path" --edir "$env_path" --sdir "$base_path/scripts"
+python3 "$generator" --idir "$input_path" --odir "$output_path" --config "$config_json" --bdir "$engine_path" --edir "$env_path" --sdir "$base_path/scripts"
 
 chmod +x "$input_path/run_arb.sh"
 chmod +x "$input_path/run_nrn.sh"
