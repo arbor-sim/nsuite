@@ -1,0 +1,154 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+import argparse
+import sys
+import warnings
+
+import numpy as np
+import xarray
+import scipy.interpolate as interpolate
+
+def parse_clargs():
+    P = argparse.ArgumentParser()
+
+    P.description = 'Compare netcdf data against reference data.'
+    P.epilog =  """\
+Compare each variable in both the input-data set and the reference-data set
+which has the same rank and which is defined over the same named dimensions.
+
+If the variable is 1-d, and is defined over a dimension named _dim_, then the
+reference data is interpolated and the input data is compared against that.
+
+Othewise, the reference and input data are compared point-by-point at equal
+dimension values. If the dimension values are not identical across the input
+and reference datasets, then issue a warning if the -W option is supplied.
+
+Output data will consist of the following variables for each compared input
+variable X:
+    X.delta             Input minus interpolated reference.
+    X.interperr         Estimate of interpolation error in interpolated
+                        reference data.
+
+    X.abserr            max |delta|
+    X.abserr.lb         max(0, abserr-interperr)
+    X.relerr            abserr / max |reference|
+    X.relerr.lb         abserr.lb / max |reference|
+"""
+
+    P.add_argument('input', metavar='FILE', help='input dataset')
+    P.add_argument('-r', '--ref', metavar='FILE', required=True, dest='reference', help='reference dataset')
+    P.add_argument('-W', '--warn', action='store_true', dest='warnings', help='enable warnings')
+    P.add_argument('-o', '--output', metavar='FILE', dest='output', help='output dataset')
+    P.add_argument('-i', '--interpolate', metavar='DIM', dest='interpolate', help='interpolate reference over DIM')
+
+    P.formatter_class = argparse.RawDescriptionHelpFormatter
+
+    opts = P.parse_args()
+    opts.prog = P.prog
+
+    if opts.output is None:
+        opts.output = 'out.nc'
+
+    try:
+        opts.input = xarray.open_dataset(opts.input)
+    except BaseException as e:
+        P.error("unable to open dataset '"+opts.input+"': "+str(e))
+    try:
+        opts.reference = xarray.open_dataset(opts.reference)
+    except BaseException as e:
+        P.error("unable to open dataset '"+opts.reference+"': "+str(e))
+
+    return opts
+
+def common_variables(ds1, ds2):
+    return {x for x in ds1.data_vars if x in ds2.data_vars if len(ds1[x].shape)==len(ds2[x].shape)}
+
+def warn(prog, str, *rest):
+    print(('{}: '+str).format(prog,*rest), file=sys.stderr)
+
+def interpolate_array(x, t, tnew):
+    xi = interpolate.InterpolatedUnivariateSpline(t, x)
+
+    x4_est = interpolate.InterpolatedUnivariateSpline(t, x, k=5).derivative(4)
+    max_x4 = np.max(abs(x4_est(t)))
+    max_h = np.max(abs(np.ediff1d(t)))
+    xi_err = 5./384.*pow(max_x4*max_h, 4)
+
+    return (xi(tnew), xi_err)
+
+def interpolate_var(x, d):
+    if d.name not in x.dims:
+        raise RuntimeError('no dimension '+d.name+' in '+x.name)
+
+    # At some point, we should support this.
+    if x.dims!=(d.name,):
+        raise RuntimeError('cannot interpolate higher dimensional variable '+x.name)
+
+    if x.coords[d.name].size<=5:
+        raise RuntimeError('interpolation on '+d.name+' requires ≥ 6 elements in '+x.name)
+
+    xidata, xerr = interpolate_array(x.data, x.coords[d.name], d.data)
+
+    xi = xarray.DataArray(xidata, coords=[(d.name, d.data)])
+    return (xi, xerr)
+
+opts = parse_clargs()
+if opts.warnings and opts.interpolate is not None and opts.interpolate not in opts.reference.dims:
+    warn(opts.prog, 'no dimension named \'{}\' in reference dataset.', opts.interpolate)
+
+out = xarray.Dataset()
+
+for var in common_variables(opts.input, opts.reference):
+    v = opts.input[var]
+    r = opts.reference[var]
+
+    if v.dims!=r.dims:
+        if opts.warnings:
+            warn(opts.prog, 'dimensions of variable \'{}\' differ between input and reference dataset.', var)
+        continue
+
+    if len(v.shape)>1 and opts.interpolate in v.dims and opts.warning:
+        warn(opts.prog, 'will not interpolate over \'{}\' for multi-dimensional variable \'{}\'', opts.interpolate, var)
+
+    interperr = 0.0
+    if r.dims==(opts.interpolate,):
+        if r.coords[opts.interpolate].size<=5:
+            if opts.warnings:
+                warn(opts.prog, 'interpolation on \'{}\' requires ≥ 6 elements in \'{}\'', opts.interpolate, x.name)
+        else:
+            # TODO: add warning for extrapolation
+            r, interperr = interpolate_var(r, v.coords[opts.interpolate])
+    elif opts.warnings:
+        for dim in v.dims:
+            if not np.array_equal(v.coords[dim].data, r.coords[dim].data):
+                warn(opts.prog, 'dimension \'{}\' values not aligned for variable \'{}\'', dim, var)
+
+    for dname, dvar in v.coords.items():
+        if dname not in out.coords:
+            out.coords[dname] = dvar
+
+    delta = v - r
+    if delta.size==0:
+        if opts.warnings:
+            warn(opts.prog, 'no common points for variable \'{}\'', var)
+        continue
+
+    abserr = np.asscalar(np.max(abs(delta)))
+    abserr_lb = max(0, abserr - interperr)
+
+    r_absmax = np.asscalar(np.max(abs(r.reindex_like(delta))))
+    relerr = abserr/r_absmax if r_absmax>0 else 0
+    relerr_lb = abserr_lb/r_absmax if r_absmax>0 else 0
+
+    out[var+'.delta'] = delta
+    out[var+'.interperr'] = interperr
+    out[var+'.abserr'] = abserr
+    out[var+'.abserr.lb'] = abserr_lb
+    out[var+'.relerr'] = relerr
+    out[var+'.relerr.lb'] = relerr_lb
+
+out.to_netcdf(opts.output)
+
+
