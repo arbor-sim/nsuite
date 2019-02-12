@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 
 #include <netcdf.h>
 
@@ -18,7 +19,7 @@ struct rc_expsyn_recipe: public arb::recipe {
     static constexpr double cm = 0.01;       // total membrane capacitance [nF]
     static constexpr double erev = -65;      // reversal potential [mV]
     static constexpr double syntau = 1.0;    // synapse exponential time constant [ms]
-    static constexpr double syng0 = 1.0;     // synaptic conductance at time 0 [µS]
+    static constexpr double syng0 = 0.1;     // synaptic conductance at time 0 [µS]
 
     static segment_location soma_centre() {
         return segment_location(0u, 0.5);
@@ -106,10 +107,10 @@ int main() {
     auto ctx = make_context();
     simulation sim(rec, trivial_dd(rec), ctx);
 
-    trace_data<double> vtrace;
-    sim.add_sampler(all_probes, regular_schedule(0.1), make_simple_sampler(vtrace));
+    time_type t_end = 10., dt = 0.001, sample_dt = 5*dt; // [ms]
 
-    time_type t_end = 10., dt = 0.025; // [ms]
+    trace_data<double> vtrace;
+    sim.add_sampler(all_probes, regular_schedule(sample_dt), make_simple_sampler(vtrace));
     sim.run(t_end, dt);
 
     write_netcdf_trace("out.nc", vtrace, "voltage");
