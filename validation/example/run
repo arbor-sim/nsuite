@@ -1,20 +1,25 @@
 #!/bin/bash
 
-. ../model_functions.sh
+source ../model_functions.sh
+
+set -x
 
 sim="$1"
 paramset="$2"
 
-impl=$(find_model_impl "$sim")
-outdir=$(make_model_out "$sim" "$paramset")
+# Set model variables and paths:
+#   model, model_impl, model_outdir, model_params,
+#   model_output_default, model_ref_default, model_generate_default
+model_setup "$sim" "$paramset"
 
-params=$(read_model_params "$paramset")
-$impl "$outdir/run.n4" $params
+"$model_impl" "$model_output_default" $model_params
 
-if [ -z "$paramset" ]; then refdata=reference.n4; else refdata=reference_"$paramset".n4; fi
-[ -r "$refdata" ] || die "missing reference data paramset for $paramset"
+if [ ! -r "$model_ref_default" ]; then
+    [ -x "$model_generate_default" ] || die "unable to find reference data generation script"
+    "$model_generate_default" "$model_ref_default" $model_params
+fi
 
-./comparex "$outdir/run.n4" --ref "$refdata" -o "$outdir/linf.n4"
-./threshold_test "$outdir/linf.n4" "v.abserr.lb<1e-6" > "$outdir/status"
+./comparex "$model_output_default" --ref "$model_ref_default" -o "$model_outdir/delta.n4"
 
-
+# Not implemented yet:
+#./threshold_test "$outdir/linf.n4" "v.abserr.lb<1e-6" > "$outdir/status"

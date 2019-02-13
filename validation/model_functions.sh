@@ -1,29 +1,27 @@
-model="$(basename $(pwd))"
+function model_name {
+    echo "$(basename $(pwd))"
+}
 
 function die {
-    echo "$model: $@" >&2
+    echo "$(model_name): $@" >&2
     exit 1
 }
 
-function find_model_impl {
-    local sim="$1" impl="$model_$sim"
+function find_exe {
+    local exe="$1"
 
-    if [ -x "./$impl" ]; then
-	local impl_exe="./$impl"
-    else
-	local impl_exe=$(which "$impl") || die "unable to find executable implementation $impl"
-    fi
-    echo "$impl_exe"
+    # seach cwd and nsuite paths:
+    for dir in . "$ns_install_path/bin" "$ns_common_dir/bin"; do
+        if [ -x "$dir/$exe" ]; then
+            echo "$dir/$exe"
+            return
+        fi
+    done
 }
 
 function make_model_out {
-    local sim="$1" pset="$2"
-
-    if [ -z "$pset" ]; then
-	local config="$model/$sim"
-    else
-	local config="$model/$pset/$sim"
-    fi
+    local model="$1" sim="$2" pset="$3"
+    local config="$sim-$model-$pset"
 
     # Replace '.' with correct NS base dir when that's sorted.
     local outdir="./$config"
@@ -33,12 +31,36 @@ function make_model_out {
 }
 
 function read_model_params {
-    local pset="$1"
-    if [ -n "$pset" ]; then
-	if [ -r "./$pset.param" ]; then
-	    cat "./$pset.param"
-	else
-	    die "unable to read parameter set file $pset.param"
-	fi
+    local pset_path="$1"
+    [ -n "$pset" ] || pset="default"
+
+    [ -r "./$pset.param" ] || die "unable to read parameter set file $pset.param"
+    cat "./$pset.param"
+}
+
+function cache_if_not_local {
+    local file="$1"
+    if [ -r "$file" ]; then
+        echo "$file";
+    else
+        mkdir -p "$ns_cache_dir"
+        echo "$ns_cache_dir/$file"
     fi
+}
+
+function model_setup {
+    local sim="$1" pset="$2"
+
+    model=$(model_name)
+
+    model_impl_basename="run-${model}-${sim}"
+    model_impl=$(find_exe "$model_impl_basename")
+    [ -n "$model_impl" ] || die "unable to find executable implementation $model_impl_basename"
+
+    model_outdir=$(make_model_out "$model" "$sim" "$pset")
+    model_params=$(read_model_params "$pset")
+
+    model_output_default="${model_outdir}/run.n4"
+    model_ref_default=$(cache_if_not_local "${model}-${pset}-ref.n4")
+    model_generate_default=$(find_exe "generate-${model}")
 }

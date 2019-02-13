@@ -16,6 +16,8 @@ default_environment() {
     ns_build_path="$ns_base_path/build"
     ns_input_path="$ns_base_path/input"
     ns_output_path="$ns_base_path/output"
+    ns_cache_dir="$ns_base_path/output/cache"
+    ns_common_dir="$ns_base_path/common"
 
     # Detect OS
     case "$OSTYPE" in
