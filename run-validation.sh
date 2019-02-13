@@ -99,9 +99,7 @@ for sim in $sims; do
             continue
         fi
 
-        cd "$model_config_path"
-
-        if [ ! -r "$param.param" ]; then
+        if [ ! -r "$model_config_path/$param.param" ]; then
             echo "Missing parameter file $param.param for model $basemodel, skipping."
             continue
         fi
@@ -112,6 +110,8 @@ for sim in $sims; do
         (
           source "$sim_env";
           export ns_base_path ns_install_path ns_output_path ns_cache_dir ns_common_dir
+
+          cd "$model_config_path"
           ./run "$sim" "$param"
         )
     done

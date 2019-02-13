@@ -24,7 +24,7 @@ function make_model_out {
     local config="$sim-$model-$pset"
 
     # Replace '.' with correct NS base dir when that's sorted.
-    local outdir="./$config"
+    local outdir="$ns_output_path/validation/$config"
     mkdir -p "$outdir" || die "unable to create output director $outdir"
 
     echo "$outdir"

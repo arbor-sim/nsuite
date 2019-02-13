@@ -1,4 +1,7 @@
+#include <cstring>
 #include <iostream>
+#include <map>
+#include <string>
 #include <vector>
 
 #include <netcdf.h>
@@ -99,27 +102,39 @@ struct nc_error: std::runtime_error {
     std::string call;
 };
 
-void write_netcdf_trace(const char* path, const trace_data<double>& trace, const char* varname);
+using paramset = std::map<std::string, double>;
+struct arg_data {
+    std::string output;
+    paramset params;
+};
 
-int main() {
-    rc_expsyn_recipe rec;
+void common_parse_arguments(char** argv, arg_data& args);
+void write_netcdf_trace(const char* path, const trace_data<double>& trace, const char* varname, const paramset& ps = paramset{});
+
+int main(int argc, char** argv) {
+    arg_data args;
+    args.params["dt"] = 0.01; // default
+    common_parse_arguments(argv, args);
 
     auto ctx = make_context();
+    rc_expsyn_recipe rec;
     simulation sim(rec, trivial_dd(rec), ctx);
 
-    time_type t_end = 10., dt = 0.01, sample_dt = 0.05; // [ms]
+    time_type t_end = 10., sample_dt = 0.05; // [ms]
+    time_type dt = args.params["dt"];
 
     trace_data<double> vtrace;
     sim.add_sampler(all_probes, regular_schedule(sample_dt), make_simple_sampler(vtrace));
     sim.run(t_end, dt);
 
-    write_netcdf_trace("out.nc", vtrace, "voltage");
+    std::string output = args.output.empty()? "out.nc": args.output;
+    write_netcdf_trace(output.c_str(), vtrace, "voltage", args.params);
 }
 
 #define nc_check(fn, ...)\
 if (auto r = fn(__VA_ARGS__)) { throw nc_error(#fn, r); } else {}
 
-void write_netcdf_trace(const char* path, const trace_data<double>& trace, const char* varname) {
+void write_netcdf_trace(const char* path, const trace_data<double>& trace, const char* varname, const paramset& ps) {
     std::size_t len = trace.size();
 
     int ncid;
@@ -129,6 +144,14 @@ void write_netcdf_trace(const char* path, const trace_data<double>& trace, const
     nc_check(nc_def_dim, ncid, "time", len, &time_dimid);
     nc_check(nc_def_var, ncid, "time", NC_DOUBLE, 1, &time_dimid, &timeid);
     nc_check(nc_def_var, ncid, varname, NC_DOUBLE, 1, &time_dimid, &varid);
+
+    std::vector<int> param_ids;
+    for (const auto& kv: ps) {
+        int id;
+        nc_check(nc_def_var, ncid, kv.first.c_str(), NC_DOUBLE, 0, nullptr, &id);
+        param_ids.push_back(id);
+    }
+
     nc_check(nc_enddef, ncid);
 
     std::vector<double> times, values;
@@ -139,8 +162,29 @@ void write_netcdf_trace(const char* path, const trace_data<double>& trace, const
         values.push_back(e.v);
     }
 
+    unsigned pidx = 0;
+    for (const auto& kv: ps) {
+        int id;
+        nc_check(nc_put_var_double, ncid, param_ids[pidx++], &kv.second);
+    }
+
     nc_check(nc_put_var_double, ncid, timeid, times.data())
     nc_check(nc_put_var_double, ncid, varid, values.data())
 
     nc_check(nc_close, ncid);
+}
+
+void common_parse_arguments(char** argv, arg_data& args) {
+    args.output = "out.nc";
+
+    char** a = argv+1;
+    if (*a) {
+        args.output = *a++;
+    }
+
+    for (; *a; ++a) {
+        if (char* eq = std::strrchr(*a, '=')) {
+            args.params[std::string{*a, eq}] = std::stod(eq+1);
+        }
+    }
 }
