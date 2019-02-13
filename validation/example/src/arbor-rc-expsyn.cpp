@@ -107,7 +107,7 @@ int main() {
     auto ctx = make_context();
     simulation sim(rec, trivial_dd(rec), ctx);
 
-    time_type t_end = 10., dt = 0.001, sample_dt = 5*dt; // [ms]
+    time_type t_end = 10., dt = 0.01, sample_dt = 0.05; // [ms]
 
     trace_data<double> vtrace;
     sim.add_sampler(all_probes, regular_schedule(sample_dt), make_simple_sampler(vtrace));

@@ -9,6 +9,7 @@ import warnings
 import numpy as np
 import xarray
 import scipy.interpolate as interpolate
+import scipy.ndimage.filters as filters
 
 def parse_clargs():
     P = argparse.ArgumentParser()
@@ -32,7 +33,7 @@ variable X:
                         reference data.
 
     X.abserr            max |delta|
-    X.abserr.lb         max(0, abserr-interperr)
+    X.abserr.lb         max(0, |delta|-interperr)
     X.relerr            abserr / max |reference|
     X.relerr.lb         abserr.lb / max |reference|
 """
@@ -71,11 +72,24 @@ def warn(prog, str, *rest):
 def interpolate_array(x, t, tnew):
     xi = interpolate.InterpolatedUnivariateSpline(t, x)
 
-    x4_est = interpolate.InterpolatedUnivariateSpline(t, x, k=5).derivative(4)
-    max_x4 = np.max(abs(x4_est(t)))
-    max_h = np.max(abs(np.ediff1d(t)))
-    xi_err = 5./384.*pow(max_x4*max_h, 4)
+    # Global cubic spline error bounds given by 5/384 ||d⁴f/dx⁴|| ||δx||⁴ in L-infinity norm,
+    # under the assumption that f is C⁴.
+    #
+    # Use a quintic spline to estimate 4th derivative, and take a windowed maxima to obtain
+    # a (rough) localized error estimate. Apply a fudge factor for end intervals to accommodate
+    # 'not-a-knot' end point conditions. (See Beatson and Chacko 1992 doi:10.1137/0913059, fig. 6.)
 
+    x4_est = np.abs(interpolate.InterpolatedUnivariateSpline(t, x, k=5).derivative(4)(t))
+    x4_est[0] *= 3  # end-interval fudge factors
+    x4_est[-1] *= 3
+
+    x4_windowmax = np.pad(filters.maximum_filter1d(x4_est, 4, origin=-2), (1, 0), mode='edge')
+    local_x4max = interpolate.interp1d(t, np.resize(x4_windowmax, x.size), assume_sorted=True, kind='previous', fill_value='extrapolate')
+
+    dt_windowmax = np.pad(filters.maximum_filter1d(np.ediff1d(t), 3, origin=-1), (1, 0), mode='edge')
+    local_dtmax = interpolate.interp1d(t, np.resize(dt_windowmax, x.size), assume_sorted=True, kind='previous', fill_value='extrapolate')
+
+    xi_err = 5./384.*pow(local_dtmax(tnew), 4)*local_x4max(tnew)
     return (xi(tnew), xi_err)
 
 def interpolate_var(x, d):
@@ -112,7 +126,7 @@ for var in common_variables(opts.input, opts.reference):
     if len(v.shape)>1 and opts.interpolate in v.dims and opts.warning:
         warn(opts.prog, 'will not interpolate over \'{}\' for multi-dimensional variable \'{}\'', opts.interpolate, var)
 
-    interperr = 0.0
+    interperr = np.zeros_like(v)
     if r.dims==(opts.interpolate,):
         if r.coords[opts.interpolate].size<=5:
             if opts.warnings:
@@ -136,7 +150,7 @@ for var in common_variables(opts.input, opts.reference):
         continue
 
     abserr = np.asscalar(np.max(abs(delta)))
-    abserr_lb = max(0, abserr - interperr)
+    abserr_lb = max(0, np.asscalar(np.max(abs(delta)-interperr)))
 
     r_absmax = np.asscalar(np.max(abs(r.reindex_like(delta))))
     relerr = abserr/r_absmax if r_absmax>0 else 0
@@ -150,5 +164,3 @@ for var in common_variables(opts.input, opts.reference):
     out[var+'.relerr.lb'] = relerr_lb
 
 out.to_netcdf(opts.output)
-
-
