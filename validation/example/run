@@ -21,6 +21,5 @@ reffile=$(model_find_cacheable "ref-example-${model_param}.nc") || \
 deltafile="$model_output_dir/delta.nc"
 comparex "$outfile" --warn --ref "$reffile" --interpolate time -o "$deltafile"
 
-# Not implemented yet:
-threshold_test "$deltafile" -e "v.abserr.lb<1e-4" > "$model_status_path"
+thresholdx "$deltafile" -e "voltage.relerr.lb<0.01" > "$model_status_path"
 model_notify_pass_fail $?
