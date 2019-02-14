@@ -12,48 +12,57 @@ Parameter sets are simple text files containing a series of _key_=_value_
 pairs, terminated by newlines. A parameter set named `set` for the model
 `example` will be found in the file `example/set.param`.
 
-A model configuration is referred to by either the model name _model_ alone
-(corresponding to no parameter set) or by _model_/_paramsetname_; the
-example configuration above would have the name `example/set`.
+A model configuration is referred to by '_model_/_paramsetname_'; '_model_'
+alone is a shorthand for '_model_/default'.
+
 
 ## Run scripts
 
 A 'run script' is an executable script that runs the model and validation for a particular
-simulator. It will:
-    1. Take the name of the simulator as the first argument.
-    2. Confirm that the simulator model implementation exists and is executable.
-    3. Test (and create if required) the output subdirectory.
-    4. Collect any configuration key/value pairs from the command line.
-    5. Run the simulator model implementation with the configuration key/values, directing output
+simulator. It takes two arguments: the name of the simulator and the name of the parameter
+set.
+
+Run scripts attempt to change to the directory in which the script resides, and then:
+
+    1. Make any required cache and output directories.
+
+    2. Run the simulator-specific model script. Conventionally, this will be a script
+       in the current directory called 'run-_sim_', and will take an output file in the
+       output directory as the first argument, followed by a key=value parameter settings
+       taken from the .param file.
+
+    3. Generate any required reference data for comparison, optionally checking for
+       cached reference data.
+
+    4. Run an analysis script on the simulator model output + reference data, directing output
        to the output subdirectory.
-    6. Generate any required validation reference data (use the cache directory as required).
-    7. Run an analysis script on the simulator model output + reference data, directing output
-       to the output subdirectory.
 
-The simulator model implementation will be an executable program or script with the name
-_model__sim_ found either in the model directory or the binary installation directory.
+    5. Run a pass/fail test on the generated analysis data.
 
-The run scripts will generally use helper functions defined in `model_functions.sh`:
+The run scripts will generally use helper functions defined in `model_common.sh`.
+These require the `ns_base_path` variable to be set to the nsuite root directory.
 
-   * `find_model_impl`
-     Takes name of simulator as first argument, and deduces model name from CWD.
-     Exit with error if missing implementation script for model+sim, or else return
-     path to script.
+   * `model_setup`
 
-   * `make_model_out`
-     Takes name of simulator and parameter set name.
-     Create output directory for this model configuration and simulator run, based
-     on nsuite environment set up. Returns path to this directory.
+     Takes three arguments: name of model, name of simulator, and name of parameter set.
 
-   * `read_model_params`
-     Takes name of pararmeter set as argument.
-     If paramer set name is non-empty, assert existence of corresponding `.param`
-     file and emit the contents.
+     * Defines variables `model_name`, `model_sim`, `model_param` from the arguments.
 
-   * `die`
-     Emit argument to stderr and exit with non-zero status.
+     * Sets the corresponding `model_cache_dir` and `model_output_dir` paths, and creates
+       these directories if they do not exist.
 
+     * Prefixes the PATH variable with the current working directory and the nsuite
+       install and common binary directories.
 
+   * `model_find_cacheable`
+
+     Looks for file in the current directory, and then in the model cache directory.
+     Prints the path to the local or else cached file, and returns non-zero if the
+     file does not exist.
+
+## TODO
+
+Write and describe `model_notify_pass_fail`
 
 
 

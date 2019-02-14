@@ -93,26 +93,21 @@ for sim in $sims; do
         param="${model#*/}"
         basemodel="${model%/*}"
 
-        model_config_path="$ns_base_path/validation/$basemodel"
-        if [ ! -x "$model_config_path/run" ]; then
+        model_path="$ns_base_path/validation/$basemodel"
+        if [ ! -x "$model_path/run" ]; then
             echo "Missing run file for model $basemodel, skipping."
             continue
         fi
 
-        if [ ! -r "$model_config_path/$param.param" ]; then
+        if [ ! -r "$model_path/$param.param" ]; then
             echo "Missing parameter file $param.param for model $basemodel, skipping."
             continue
         fi
 
-        echo "-- model $model:"
-
-        set -x
         (
           source "$sim_env";
-          export ns_base_path ns_install_path ns_output_path ns_cache_dir ns_common_dir
-
-          cd "$model_config_path"
-          ./run "$sim" "$param"
+          export ns_base_path ns_install_path ns_output_path
+	  "$model_path/run" "$sim" "$param"
         )
     done
 done

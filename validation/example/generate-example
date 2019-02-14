@@ -35,7 +35,6 @@ syng0 =  0.1;   # synaptic conductance at time zero [µS]
 #
 # But it's empirically better just to use LSODA on the ODE directly.
 
-
 def membrane_conductance(t, v):
     return 1/rm + syng0*math.exp(-t/syntau)
 
@@ -52,8 +51,6 @@ nsamp = 1000
 ts = np.linspace(0., tend, num=nsamp)
 
 result = integrate.solve_ivp(dv_dt, (0., tend), [Erev], method='LSODA', t_eval=ts, jac=jacobian, atol=1e-10/nsamp, rtol=1e-10/nsamp)
-
-#print(result.y[0])
 
 out = xarray.Dataset({'voltage': (['time'], result.y[0])}, coords={'time': ts})
 out.to_netcdf(output)

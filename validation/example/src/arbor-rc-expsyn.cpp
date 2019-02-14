@@ -14,21 +14,32 @@
 
 using namespace arb;
 
+using paramset = std::map<std::string, double>;
+paramset default_parameters = {
+    {"dt", 0.01},
+    {"g0", 0.1}
+};
+
 struct rc_expsyn_recipe: public arb::recipe {
     static constexpr double pi = 3.141592653589793238462643383279502884;
+
+    // Fixed parameters:
+
     static constexpr double r = 9e-6;        // soma radius [m]
     static constexpr double area = 4*pi*r*r; // soma surface area [m²]
     static constexpr double rm = 100;        // total membrane resistance [MΩ]
     static constexpr double cm = 0.01;       // total membrane capacitance [nF]
     static constexpr double erev = -65;      // reversal potential [mV]
     static constexpr double syntau = 1.0;    // synapse exponential time constant [ms]
-    static constexpr double syng0 = 0.1;     // synaptic conductance at time 0 [µS]
+
+    // Customizable parameters:
+    double g0;                               // synaptic conductance at time 0 [µS]
 
     static segment_location soma_centre() {
         return segment_location(0u, 0.5);
     }
 
-    rc_expsyn_recipe() {}
+    explicit rc_expsyn_recipe(const paramset& ps): g0(ps.at("g0")) {}
 
     cell_size_type num_cells() const override { return 1; }
     cell_size_type num_targets(cell_gid_type) const override { return 1; }
@@ -51,7 +62,7 @@ struct rc_expsyn_recipe: public arb::recipe {
         spike_event ev;
         ev.target = {0u, 0u};
         ev.time = 0;
-        ev.weight = syng0;
+        ev.weight = g0;
 
         return {explicit_generator(pse_vector{{ev}})};
     }
@@ -102,33 +113,51 @@ struct nc_error: std::runtime_error {
     std::string call;
 };
 
-using paramset = std::map<std::string, double>;
 struct arg_data {
     std::string output;
-    paramset params;
+    paramset params = default_parameters;
 };
 
 void common_parse_arguments(char** argv, arg_data& args);
 void write_netcdf_trace(const char* path, const trace_data<double>& trace, const char* varname, const paramset& ps = paramset{});
 
+int usage(char* argv0) {
+    char* basename = std::strrchr(argv0, '/');
+    basename = basename? basename+1: argv0;
+
+    std::cerr << "Usage: " << basename << " OUTFILE [ PARAM=VALUE ... ]\n";
+    return 1;
+}
+
 int main(int argc, char** argv) {
-    arg_data args;
-    args.params["dt"] = 0.01; // default
-    common_parse_arguments(argv, args);
+    paramset params{default_parameters};
+    const char* output = argv[1];
+
+    if (!output) return usage(argv[0]);
+    try {
+        for (auto a = argv+2; *a; ++a) {
+            if (char* eq = std::strrchr(*a, '=')) {
+                params[std::string{*a, eq}] = std::stod(eq+1);
+            }
+            else return usage(argv[0]);
+        }
+    }
+    catch (...) {
+        return usage(argv[0]);
+    }
 
     auto ctx = make_context();
-    rc_expsyn_recipe rec;
+    rc_expsyn_recipe rec(params);
     simulation sim(rec, trivial_dd(rec), ctx);
 
     time_type t_end = 10., sample_dt = 0.05; // [ms]
-    time_type dt = args.params["dt"];
+    time_type dt = params["dt"];
 
     trace_data<double> vtrace;
     sim.add_sampler(all_probes, regular_schedule(sample_dt), make_simple_sampler(vtrace));
     sim.run(t_end, dt);
 
-    std::string output = args.output.empty()? "out.nc": args.output;
-    write_netcdf_trace(output.c_str(), vtrace, "voltage", args.params);
+    write_netcdf_trace(output, vtrace, "voltage", params);
 }
 
 #define nc_check(fn, ...)\
@@ -172,19 +201,4 @@ void write_netcdf_trace(const char* path, const trace_data<double>& trace, const
     nc_check(nc_put_var_double, ncid, varid, values.data())
 
     nc_check(nc_close, ncid);
-}
-
-void common_parse_arguments(char** argv, arg_data& args) {
-    args.output = "out.nc";
-
-    char** a = argv+1;
-    if (*a) {
-        args.output = *a++;
-    }
-
-    for (; *a; ++a) {
-        if (char* eq = std::strrchr(*a, '=')) {
-            args.params[std::string{*a, eq}] = std::stod(eq+1);
-        }
-    }
 }

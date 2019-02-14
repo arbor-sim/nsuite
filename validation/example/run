@@ -1,25 +1,26 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-source ../model_functions.sh
+# Change to script directory and attempt to find nsuite base directory.
+unset CDPATH
+cd "${BASH_SOURCE[0]%/*}"
+[ -n "$ns_base_path" ] || ns_base_path="$(cd ../..; pwd)"
 
-set -x
+# Set up model paths and model_XXX variables.
+source "$ns_base_path/scripts/model_common.sh"
+model_setup example "$1" "$2"
 
-sim="$1"
-paramset="$2"
+# Run sim-specific model with parameter data.
+outfile="$model_output_dir/run.nc"
+./"run-$model_sim" "$outfile" $model_param_data
 
-# Set model variables and paths:
-#   model, model_impl, model_outdir, model_params,
-#   model_output_default, model_ref_default, model_generate_default
-model_setup "$sim" "$paramset"
+# Generate reference data if required.
+reffile=$(model_find_cacheable "ref-example-${model_param}.nc") || \
+    generate-example "$reffile" $model_param_data
 
-"$model_impl" "$model_output_default" $model_params
-
-if [ ! -r "$model_ref_default" ]; then
-    [ -x "$model_generate_default" ] || die "unable to find reference data generation script"
-    "$model_generate_default" "$model_ref_default" $model_params
-fi
-
-./comparex "$model_output_default" --ref "$model_ref_default" -o "$model_outdir/delta.n4"
+# Run comparison.
+deltafile="$model_output_dir/delta.nc"
+comparex "$outfile" --warn --ref "$reffile" --interpolate time -o "$deltafile"
 
 # Not implemented yet:
-#./threshold_test "$outdir/linf.n4" "v.abserr.lb<1e-6" > "$outdir/status"
+threshold_test "$deltafile" -e "v.abserr.lb<1e-4" > "$model_status_path"
+model_notify_pass_fail $?
