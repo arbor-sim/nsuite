@@ -40,7 +40,7 @@ function try_build_project {
     cd "$build"
 
     echo "Configuring ${src##*/}."
-    cmake -DCMAKE_INSTALL_PREFIX:PATH="$install" "$src" &> config.log || {
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH="$install" "$src" &> config.log || {
 	echo "Error: refer to log file '$build/config.log'"
     	return 1
     }
