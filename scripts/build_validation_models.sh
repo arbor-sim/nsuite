@@ -3,7 +3,6 @@
 # Build any CMake projects living in validation/src/<proj>/.
 
 # If not set, attempt to deduce nsuite paths from script directory.
-
 if [ -z "$ns_base_path" ]; then
     unset CDPATH
     ns_base_path=$(cd "${BASH_SOURCE[0]%/*}/.."; pwd)
@@ -47,7 +46,7 @@ function try_build_project {
     }
     
     echo "Building ${src##*/}."
-    make install $> build.log || {
+    make install &> build.log || {
 	echo "Error: refer to log file '$build/build.log'"
 	return 1
     }
