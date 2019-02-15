@@ -5,38 +5,55 @@ import math
 import scipy.integrate as integrate
 import numpy as np
 import xarray
+import re
 import sys
 
-def die(msg):
-    print(msg, file=sys.stderr)
+def usage(msg=None):
+    prog = re.search(r'[^/]*$', sys.argv[0]).group(0)
+    if msg is not None:
+        print(prog+': '+msg, file=sys.stderr)
+    print('usage: '+prog+' output [key=value ...]', file=sys.stderr)
     sys.exit(1)
 
 if len(sys.argv)<2:
-    die("require output filename as first argument")
-
+    usage("missing output file")
 output = sys.argv[1]
+
+cl_params = {}
+for arg in sys.argv[2:]:
+    m = re.fullmatch(r'\s*((?!\d)[\w_]+)\s*=\s*(.*)', arg)
+    if m is None: usage()
+    try:
+        cl_params[m.group(1)] = float(m.group(2))
+    except ValueError:
+        usage('value is not a number')
+
 
 rm =     100;    # total membrane resistance [MΩ]
 cm =    0.01;    # total membrane capacitance [nF]
 Erev =   -65;    # reversal potential [mV]
 syntau = 1.0;    # synapse exponential time constant [ms]
-syng0 =  0.1;   # synaptic conductance at time zero [µS] 
+g0 =  0.1;       # synaptic conductance at time zero [µS] 
+
+# Only recognize 'g0' parameter from command-line.
+if 'g0' in cl_params:
+    g0 = cl_params['g0']
 
 # Voltage given by ODE:
 #
-# cm · dv/dt = - 1/rm · (v - Erev) - syng0 · exp(-t/syntau) · v
+# cm · dv/dt = - 1/rm · (v - Erev) - g0 · exp(-t/syntau) · v
 #
 # Solution is:
 #
 # v(t) = Erev · exp(-F(t)) · (F(0) + 1/tau · integral(exp(F(u)), u=0..t)
 # where:
 #     tau = rm · cm
-#     F(u) = u/tau - syntau · syng0 · exp(-u/syntau).
+#     F(u) = u/tau - syntau · g0 · exp(-u/syntau).
 #
 # But it's empirically better just to use LSODA on the ODE directly.
 
 def membrane_conductance(t, v):
-    return 1/rm + syng0*math.exp(-t/syntau)
+    return 1/rm + g0*math.exp(-t/syntau)
 
 def dv_dt(t, v):
     return -1/cm * (membrane_conductance(t, v)*v - Erev/rm)
@@ -53,5 +70,6 @@ ts = np.linspace(0., tend, num=nsamp)
 result = integrate.solve_ivp(dv_dt, (0., tend), [Erev], method='LSODA', t_eval=ts, jac=jacobian, atol=1e-10/nsamp, rtol=1e-10/nsamp)
 
 out = xarray.Dataset({'voltage': (['time'], result.y[0])}, coords={'time': ts})
+out['g0'] = g0
 out.to_netcdf(output)
 

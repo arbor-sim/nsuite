@@ -15,7 +15,7 @@ outfile="$model_output_dir/run.nc"
 
 # Generate reference data if required.
 reffile=$(model_find_cacheable "ref-example-${model_param}.nc") || \
-    generate-example "$reffile" $model_param_data
+    generate-rc-expsyn "$reffile" $model_param_data
 
 # Run comparison.
 deltafile="$model_output_dir/delta.nc"
