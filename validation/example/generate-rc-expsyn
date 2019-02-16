@@ -8,36 +8,16 @@ import xarray
 import re
 import sys
 
-def usage(msg=None):
-    prog = re.search(r'[^/]*$', sys.argv[0]).group(0)
-    if msg is not None:
-        print(prog+': '+msg, file=sys.stderr)
-    print('usage: '+prog+' output [key=value ...]', file=sys.stderr)
-    sys.exit(1)
-
-if len(sys.argv)<2:
-    usage("missing output file")
-output = sys.argv[1]
-
-cl_params = {}
-for arg in sys.argv[2:]:
-    m = re.fullmatch(r'\s*((?!\d)[\w_]+)\s*=\s*(.*)', arg)
-    if m is None: usage()
-    try:
-        cl_params[m.group(1)] = float(m.group(2))
-    except ValueError:
-        usage('value is not a number')
-
+import nsuite.stdarg as stdarg
 
 rm =     100;    # total membrane resistance [MΩ]
 cm =    0.01;    # total membrane capacitance [nF]
 Erev =   -65;    # reversal potential [mV]
 syntau = 1.0;    # synapse exponential time constant [ms]
-g0 =  0.1;       # synaptic conductance at time zero [µS] 
+g0 =     0.1;    # synaptic conductance at time zero [µS] 
 
-# Only recognize 'g0' parameter from command-line.
-if 'g0' in cl_params:
-    g0 = cl_params['g0']
+output, params = stdarg.parse_run_stdarg()
+stdarg.assign_globals_from(params, 'g0')
 
 # Voltage given by ODE:
 #
