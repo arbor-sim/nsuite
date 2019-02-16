@@ -7,15 +7,17 @@ cd "${BASH_SOURCE[0]%/*}"
 
 # Set up model paths and model_XXX variables.
 source "$ns_base_path/scripts/model_common.sh"
-model_setup example "$1" "$2"
+model_setup example "$@"
 
 # Run sim-specific model with parameter data.
 outfile="$model_output_dir/run.nc"
 ./"run-$model_sim" "$outfile" $model_param_data
 
 # Generate reference data if required.
-reffile=$(model_find_cacheable "ref-example-${model_param}.nc") || \
+reffile=$(model_find_cacheable "ref-example-${model_param}.nc")
+if [ $? -ne 0 -o -n "$model_refresh" ]; then 
     generate-rc-expsyn "$reffile" $model_param_data
+fi
 
 # Run comparison.
 deltafile="$model_output_dir/delta.nc"

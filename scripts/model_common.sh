@@ -21,6 +21,10 @@ function die {
 
 function model_setup {
     model_name="$1"
+
+    model_refresh=""
+    if [ "$2" = "-r" ]; then model_refresh="-r"; shift; fi
+
     model_sim="$2"
     model_param="$3"
 

@@ -17,7 +17,8 @@ syntau = 1.0;    # synapse exponential time constant [ms]
 g0 =     0.1;    # synaptic conductance at time zero [µS] 
 
 output, params = stdarg.parse_run_stdarg()
-stdarg.assign_globals_from(params, 'g0')
+if 'g0' in params:
+    g0 = params['g0']
 
 # Voltage given by ODE:
 #

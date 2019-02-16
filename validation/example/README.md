@@ -18,9 +18,9 @@ alone is a shorthand for '_model_/default'.
 
 ## Run scripts
 
-A 'run script' is an executable script that runs the model and validation for a particular
-simulator. It takes two arguments: the name of the simulator and the name of the parameter
-set.
+A 'run script' is an executable script that runs the model and validation for a
+particular simulator. It takes an optional flag '-r' followed by two arguments:
+the name of the simulator and the name of the parameter set.
 
 Run scripts attempt to change to the directory in which the script resides, and then:
 
@@ -32,7 +32,8 @@ Run scripts attempt to change to the directory in which the script resides, and 
        taken from the .param file.
 
     3. Generate any required reference data for comparison, optionally checking for
-       cached reference data.
+       cached reference data. If '-r' was given to the run script, force the regeneration
+       of any cached reference data.
 
     4. Run an analysis script on the simulator model output + reference data, directing output
        to the output subdirectory.

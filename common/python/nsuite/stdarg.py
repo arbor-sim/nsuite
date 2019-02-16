@@ -33,9 +33,3 @@ def parse_run_stdarg():
 
     return Stdarg(sys.argv[1], params)
 
-
-def assign_globals_from(vardict, *varlist):
-    for v in varlist:
-        if v in vardict:
-            globals()[v] = vardict[v]
-

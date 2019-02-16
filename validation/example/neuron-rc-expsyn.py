@@ -19,7 +19,8 @@ sample_dt = 0.05
 tend = 10
 
 output, params = stdarg.parse_run_stdarg()
-stdarg.assign_globals_from(params, 'dt', 'g0')
+for v in ['dt', 'g0']:
+    if v in params: globals()[v] = params[v]
 
 # TODO: resolve routines below with exisiting neuron support code.
 
@@ -54,13 +55,12 @@ soma.e_pas = Erev
 
 syn  = h.ExpSyn(soma(0.5))
 syn.tau = syntau
+syn.e = 0
 
 stim = h.NetStim()
 stim.number = 1
 stim.start = 0
-nc = h.NetCon(stim, syn)
-nc.delay = 0
-nc.weight[0] = g0
+nc = h.NetCon(stim, syn, 0, 0, g0)
 
 # Run model
 

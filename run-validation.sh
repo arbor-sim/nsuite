@@ -1,9 +1,14 @@
 #!/usr/bin/bash
 
 usage() {
-    echo "run-validation.sh [--list-models] [--model MODEL[/PARAMSET]] SIMULATOR [SIMULATOR...]"
+    echo "run-validation.sh [OPTIONS] SIMULATOR [SIMULATOR...]"
+    echo "Options:"
+    echo "  -l, --list-models          List available model/parameter tests."
+    echo "  -r, --refresh              Regenerate any cached reference data."
+    echo "  -m, --model MODEL/[PARAM]  Run given model/parameter test."
     echo
     echo "SIMULATOR is one of: arbor, neuron"
+    echo "If no model is explicitly provided, all available tests will be run."
 
     exit 1;
 }
@@ -31,17 +36,22 @@ for modeldir in "$ns_base_path/validation/"*; do
     fi
 done
 
+ns_refresh_cache=""
 while [ -n "$1" ]; do
     case $1 in
-        --list-models )
+        -l | --list-models )
             for m in "$all_models"; do echo $m; done
             exit 0
             ;;
 
-        --model )
+        -m | --model )
             shift
             models="$models $1"
             ;;
+
+	-r | --refresh )
+	    ns_refresh_cache="-r"
+	    ;;
 
         neuron )
             sims="$sims neuron"
@@ -107,7 +117,7 @@ for sim in $sims; do
         (
           source "$sim_env";
           export ns_base_path ns_install_path ns_output_path
-	  "$model_path/run" "$sim" "$param"
+	  "$model_path/run" $ns_refresh_cache "$sim" "$param"
         )
     done
 done
