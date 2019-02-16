@@ -47,7 +47,7 @@ soma_area = 4*pi*soma_radius**2;  # [m²]
 soma = h.Section(name='soma')
 soma.diam = 2e6*soma_radius       # [µm]
 soma.L = 2e6*soma_radius          # [µm]
-soma.cm = cm
+soma.cm = cm*1e-7/soma_area       # [µF/cm² = 10⁷ nF/m²]
 
 soma.insert('pas')
 soma.g_pas = 1e-10/(rm*soma_area) # [S/cm²]
@@ -61,6 +61,8 @@ stim = h.NetStim()
 stim.number = 1
 stim.start = 0
 nc = h.NetCon(stim, syn, 0, 0, g0)
+
+h.v_init = Erev
 
 # Run model
 
