@@ -5,8 +5,6 @@
 #include <fstream>
 #include <random>
 
-#include <arbor/mc_cell.hpp>
-
 #include <common/json_params.hpp>
 
 // Parameters used to generate the random cell morphologies.

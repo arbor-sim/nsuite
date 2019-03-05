@@ -122,24 +122,3 @@ echo
 msg "Installation finished"
 echo
 
-# Find and record the python and binary paths.
-find_paths python_path site-packages
-find_paths bin_path bin
-
-msg "python paths: $python_path"
-msg "bin paths:    $bin_path"
-
-#config_path="${ns_base_path}/config"
-#config_file="${config_path}/env.sh"
-#mkdir -p "$config_path"
-
-#echo "export PATH=\"${ns_install_path}/bin:\${PATH}\""  > "$config_file"
-#echo "export PYTHONPATH=\"${ns_base_path}/common/python:\${PYTHONPATH}\"" >> "$config_file"
-#echo "export PYTHONPATH=\"$python_path\$PYTHONPATH\""   >> "$config_file"
-#echo "export PATH=\"$bin_path\$PATH\""                  >> "$config_file"
-#echo "source \"$ns_base_path/scripts/environment.sh\""  >> "$config_file"
-#echo "default_environment"                              >> "$config_file"
-#if [ "$ns_environment" != "" ]; then
-#    full_env=$(full_path "$ns_environment")
-#    echo "source \"$full_env\""                         >> "$config_file"
-#fi

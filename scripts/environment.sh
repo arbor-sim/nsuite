@@ -57,8 +57,7 @@ default_environment() {
     # Arbor specific
 
     ns_arb_repo=https://github.com/arbor-sim/arbor.git
-    #ns_arb_branch=v0.1
-    ns_arb_branch=master
+    ns_arb_branch=v0.2
 
     ns_arb_arch=native
     ns_arb_with_gpu=OFF
@@ -71,9 +70,6 @@ default_environment() {
 
     # The path of the unpacked tar ball. It can't be determined from
     # inspecting the name of the tar ball.
-    #ns_nrn_path=nrn-7.5
-    #ns_nrn_tarball=nrn-7.5.tar.gz
-    #ns_nrn_url=https://neuron.yale.edu/ftp/neuron/versions/v7.5/${ns_nrn_tarball}
     ns_nrn_path=nrn-7.6
     ns_nrn_tarball=nrn-7.6.5.tar.gz
     ns_nrn_url=https://neuron.yale.edu/ftp/neuron/versions/v7.6/7.6.5/${ns_nrn_tarball}
@@ -87,7 +83,7 @@ default_environment() {
 
     # CoreNeuron specific
     ns_cnrn_git_repo=https://github.com/BlueBrain/CoreNeuron.git
-    ns_cnrn_sha=
+    ns_cnrn_sha=0.14
 }
 
 # Attempts to detect harware resouces available on node
