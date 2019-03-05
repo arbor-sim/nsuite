@@ -20,7 +20,7 @@ ns_cc=$(which mpicc)
 ns_cxx=$(which mpicxx)
 ns_with_mpi=ON
 
-ns_arb_arch=skylake
+ns_arb_arch=skylake-avx512
 
 ns_makej=20
 
