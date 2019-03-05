@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+# Change to script directory and attempt to find nsuite base directory.
+unset CDPATH
+cd "${BASH_SOURCE[0]%/*}"
+[ -n "$ns_base_path" ] || ns_base_path="$(cd ../..; pwd)"
+
+# Set up model paths and model_XXX variables.
+source "$ns_base_path/scripts/model_common.sh"
+model_setup rc-expsyn "$@"
+
+# Run sim-specific model with parameter data.
+outfile="$model_output_dir/run.nc"
+./"run-$model_sim" "$outfile" $model_param_data
+
+# Generate reference data if required.
+reffile=$(model_find_cacheable "ref-example-${model_param}.nc")
+if [ $? -ne 0 -o -n "$model_refresh" ]; then 
+    generate-rc-expsyn "$reffile" $model_param_data
+fi
+
+# Run comparison.
+deltafile="$model_output_dir/delta.nc"
+comparex "$outfile" --warn --ref "$reffile" --interpolate time -o "$deltafile"
+
+thresholdx "$deltafile" -e "voltage.relerr.lb<0.01" > "$model_status_path"
+model_notify_pass_fail $?
