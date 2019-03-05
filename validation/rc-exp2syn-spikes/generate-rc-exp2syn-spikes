@@ -1,0 +1,95 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+import math
+import scipy.integrate as integrate
+import numpy as np
+import xarray
+import re
+import sys
+
+import nsuite.stdarg as stdarg
+
+rm =        100;    # total membrane resistance [MΩ]
+cm =       0.01;    # total membrane capacitance [nF]
+Erev =      -65;    # reversal potential [mV]
+tau1 =      0.5;    # synapse double exponential time constants [ms]
+tau2 =      4.0;
+g0 =        0.1;    # synaptic conductance upon first spike arrival [µS]
+delay =     3.3;    # delay on connection from cell 0 to cell 1 [ms]
+threshold = -10;    # spike threshold [mV]
+
+output, params = stdarg.parse_run_stdarg()
+if 'g0' in params:
+    g0 = params['g0']
+if 'delay' in params:
+    delay = params['delay']
+if 'threshold' in params:
+    threshold = params['threshold']
+
+# Voltage on one cell given by ODE:
+#
+# cm · dv/dt = - 1/rm · (v - Erev) - g₀ · Θ(t-t₀) · N · (exp(-t/τ₂)-exp(-t/τ₁)) · v
+#
+# Where Θ(t) is the unit step function, t₀ is the spike arrival time,
+# and N is a normalizing factor:
+#
+#     1/N = (τ₁/τ₂)^(τ₁/(τ₂-τ₁) - (τ₁/τ₂)^(τ₂/(τ₂-τ₁).
+#
+#
+# Solve ODE to get voltages on cell 0 and threshold crossing time T.
+# Solve again with t0=T to get voltages and crossing on cell 1.
+
+gN = g0 / ((tau1/tau2)**(tau1/(tau2-tau1))-(tau1/tau2)**(tau2/(tau2-tau1)))
+t0 = 0
+
+def membrane_conductance(t, v):
+    td = t-t0
+    return 1/rm + gN*(math.exp(-td/tau2)-math.exp(-td/tau1))*(1 if td>=0 else 0)
+
+def dv_dt(t, v):
+    return -1/cm * (membrane_conductance(t, v)*v - Erev/rm)
+
+def jacobian(t, v):
+    return np.array([[-1/cm * membrane_conductance(t, v)]])
+
+# RC time constant is rm*cm = 1 ms, delay should be < 5 ms.
+# Simulatng up to 8 ms should suffice.
+
+tend = 8.
+nsamp = 300
+ts = np.linspace(0., tend, num=nsamp)
+
+def run_integration():
+    def crossing(t, v):
+        return v[0] - threshold
+
+    crossing.direction = 1
+
+    r = integrate.solve_ivp(dv_dt, (0., tend), [Erev], method='LSODA', t_eval=ts, jac=jacobian, atol=1e-10/nsamp, rtol=1e-10/nsamp, events=crossing)
+    spike = np.asscalar(r.t_events[0]) if r.t_events[0].size>0 else np.NaN
+
+    return (r.y[0], spike)
+
+# Cell 0:
+
+v0, spike0 = run_integration()
+
+# Cell 1:
+
+t0 = 0 if np.isnan(spike0) else spike0+delay
+v1, spike1 = run_integration()
+
+# Output:
+
+out = xarray.Dataset({'v0': (['t0'], v0), 'v1': (['t1'], v1)}, coords={'t0': ts, 't1': ts})
+out['spike0'] = spike0
+out['spike1'] = spike1
+
+out['g0'] =        np.float64(g0)
+out['tau1'] =      np.float64(tau1)
+out['tau2'] =      np.float64(tau2)
+out['threshold'] = np.float64(threshold)
+
+out.to_netcdf(output)
+

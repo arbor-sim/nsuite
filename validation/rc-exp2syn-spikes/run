@@ -7,16 +7,26 @@ cd "${BASH_SOURCE[0]%/*}"
 
 # Set up model paths and model_XXX variables.
 source "$ns_base_path/scripts/model_common.sh"
-model_setup rc-expsyn "$@"
+model_setup rc-exp2syn-spikes "$@"
 
 # Run sim-specific model with parameter data.
+#
+# Expected output variables:
+#     v0      voltage trace of cell 0 soma (dimension time)
+#     v1      voltage trace of cell 1 soma (dimension time)
+#     spike0  scalar time of first spike cell 0
+#     spike1  scalar time of first spike cell 1
+#
+# For CoreNEURON, voltage traces will be omitted; pass/fail
+# test only looks at spike time differences.
+
 outfile="$model_output_dir/run.nc"
 ./"run-$model_sim" "$outfile" $model_param_data
 
 # Generate reference data if required.
 reffile=$(model_find_cacheable "ref-${model_name}-${model_param}.nc")
 if [ $? -ne 0 -o -n "$model_refresh" ]; then 
-    generate-rc-expsyn "$reffile" $model_param_data
+    generate-rc-exp2syn-spikes "$reffile" $model_param_data
 fi
 
 # Run comparison.
