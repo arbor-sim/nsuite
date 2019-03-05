@@ -7,7 +7,7 @@ cd "${BASH_SOURCE[0]%/*}"
 
 # Set up model paths and model_XXX variables.
 source "$ns_base_path/scripts/model_common.sh"
-model_setup example "$@"
+model_setup rc-expsyn "$@"
 
 # Run sim-specific model with parameter data.
 outfile="$model_output_dir/run.nc"

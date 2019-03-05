@@ -118,6 +118,10 @@ cd "$ns_base_path"
 [ "$ns_build_coreneuron" = true ] && echo && source "$ns_base_path/scripts/build_coreneuron.sh"
 cd "$ns_base_path"
 
+# Always attempt to build validation models/generators, regardless of simulator.
+source "$ns_base_path/scripts/build_validation_models.sh"
+cd "$ns_base_path"
+
 echo
 msg "Installation finished"
 echo
