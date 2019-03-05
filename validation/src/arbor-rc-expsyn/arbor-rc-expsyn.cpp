@@ -6,7 +6,7 @@
 
 #include <netcdf.h>
 
-#include <arbor/mc_cell.hpp>
+#include <arbor/cable_cell.hpp>
 #include <arbor/recipe.hpp>
 #include <arbor/sampling.hpp>
 #include <arbor/simple_sampler.hpp>
@@ -44,12 +44,12 @@ struct rc_expsyn_recipe: public arb::recipe {
     cell_size_type num_cells() const override { return 1; }
     cell_size_type num_targets(cell_gid_type) const override { return 1; }
     cell_size_type num_probes(cell_gid_type) const override { return 1; }
-    cell_kind get_cell_kind(cell_gid_type) const override { return cell_kind::cable1d_neuron; }
+    cell_kind get_cell_kind(cell_gid_type) const override { return cell_kind::cable; }
 
     util::any get_global_properties(cell_kind kind) const override {
-        if (kind!=cell_kind::cable1d_neuron) return util::any{};
+        if (kind!=cell_kind::cable) return util::any{};
 
-        mc_cell_global_properties props;
+        cable_cell_global_properties props;
         props.init_membrane_potential_mV = erev;
         return props;
     }
@@ -68,7 +68,7 @@ struct rc_expsyn_recipe: public arb::recipe {
     }
 
     util::unique_any get_cell_description(cell_gid_type) const override {
-        mc_cell c;
+        cable_cell c;
 
         mechanism_desc pas("pas");
         pas["g"] = 1e-10/(rm*area);    // [S/cm^2]
