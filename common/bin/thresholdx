@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+import argparse
+import io
+import re
+import sys
+
+import numpy as np
+import xarray
+
+def parse_expr(e):
+    R = r"\s*(?P<var>(?!\d)[\w.]+)\s*(?P<op><|<=|>|>=|==|!=)\s*(?P<value>.*)"
+    match = re.fullmatch(R, e)
+    if match is None:
+        raise ValueError
+    return (match.group('var'), match.group('op'), float(match.group('value')))
+
+def parse_clargs():
+    P = argparse.ArgumentParser()
+
+    P.description = 'Perform simple predicates over netcdf data.'
+    P.epilog = """\
+For each supplied expression, test if the predicate is satisfied
+by each element of the variable in the NetCDF file FILE. Predicates
+are of the form '<variable-name> <comparator> <value>' where
+<comparator> is one of '=', '<', '>', '<=', '>='.
+
+Print test results to stdout, and exit with success if and only
+if all tests pass.
+"""
+
+    P.add_argument('-e', dest='exprs', metavar='EXPR', required=True, action='append', help='predicate')
+    P.add_argument('-q', dest='quiet', action='store_true', help='suppress test output')
+    P.add_argument('input', metavar='FILE', help='NetCDF dataset')
+
+    P.formatter_class = argparse.RawDescriptionHelpFormatter
+
+    opts = P.parse_args()
+    try:
+        opts.input = xarray.open_dataset(opts.input)
+        True
+    except BaseException as e:
+        P.error("unable to open dataset '"+opts.input+"': "+str(e))
+
+    for i, e in enumerate(opts.exprs):
+        try:
+            opts.exprs[i] = parse_expr(e)
+        except BaseException as e:
+            P.error("unable to parse expression '"+expr+"'.")
+
+    return opts
+
+
+
+opts = parse_clargs()
+success = True
+for var, op, value in opts.exprs:
+    status = ''
+    if var not in opts.input.data_vars:
+        status = 'no such variable'
+    else:
+        v = opts.input[var]
+        if op=='<':
+            status = np.asscalar(np.all(v<value))
+        elif op=='<=':
+            status = np.asscalar(np.all(v<=value))
+        elif op=='>':
+            status = np.asscalar(np.all(v>value))
+        elif op=='>=':
+            status = np.asscalar(np.all(v>=value))
+        elif op=='==' or op=='=':
+            status = np.asscalar(np.all(v==value))
+        elif op=='!=':
+            status = np.asscalar(np.all(v!=value))
+        else:
+            status = 'unknown operation'
+
+    if status is not True: success = False
+    if not opts.quiet:
+        status = 'pass' if status is True else 'fail' if status is False else status
+        print("{}{}{}: {}".format(var, op, value, status))
+
+sys.exit(0 if success else 1)
