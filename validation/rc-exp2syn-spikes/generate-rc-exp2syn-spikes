@@ -19,13 +19,17 @@ g0 =        0.1;    # synaptic conductance upon first spike arrival [µS]
 delay =     3.3;    # delay on connection from cell 0 to cell 1 [ms]
 threshold = -10;    # spike threshold [mV]
 
+# RC time constant is rm*cm = 1 ms, delay should be < 5 ms.
+# Simulatng up to 8 ms should suffice.
+
+tend = 8.
+nsamp = 300
+ts = np.linspace(0., tend, num=nsamp)
+
 output, params = stdarg.parse_run_stdarg()
-if 'g0' in params:
-    g0 = params['g0']
-if 'delay' in params:
-    delay = params['delay']
-if 'threshold' in params:
-    threshold = params['threshold']
+param_vars = ['g0', 'delay', 'threshold']
+for v in param_vars:
+    if v in params: globals()[v] = params[v]
 
 # Voltage on one cell given by ODE:
 #
@@ -53,13 +57,6 @@ def dv_dt(t, v):
 def jacobian(t, v):
     return np.array([[-1/cm * membrane_conductance(t, v)]])
 
-# RC time constant is rm*cm = 1 ms, delay should be < 5 ms.
-# Simulatng up to 8 ms should suffice.
-
-tend = 8.
-nsamp = 300
-ts = np.linspace(0., tend, num=nsamp)
-
 def run_integration():
     def crossing(t, v):
         return v[0] - threshold
@@ -86,10 +83,8 @@ out = xarray.Dataset({'v0': (['t0'], v0), 'v1': (['t1'], v1)}, coords={'t0': ts,
 out['spike0'] = spike0
 out['spike1'] = spike1
 
-out['g0'] =        np.float64(g0)
-out['tau1'] =      np.float64(tau1)
-out['tau2'] =      np.float64(tau2)
-out['threshold'] = np.float64(threshold)
+for v in param_vars:
+    out[v] = np.float64(globals()[v])
 
 out.to_netcdf(output)
 
