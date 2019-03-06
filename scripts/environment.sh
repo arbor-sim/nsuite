@@ -133,6 +133,10 @@ save_environment() {
     echo "export PYTHONPATH=\"${ns_base_path}/common/python:\${PYTHONPATH}\"" >> "$config_file"
     echo "export PYTHONPATH=\"$python_path\$PYTHONPATH\""   >> "$config_file"
     echo "export PATH=\"$bin_path\$PATH\""                  >> "$config_file"
+    for libdir in lib lib64; do
+	libpath="${ns_install_path}/${libdir}"
+	echo "export LD_LIBRARY_PATH=\"${libpath}:\$LD_LIBRARY_PATH\"" >> "$config_file"
+    done
     echo "source \"$ns_base_path/scripts/environment.sh\""  >> "$config_file"
     echo "default_environment"                              >> "$config_file"
     if [ "$ns_environment" != "" ]; then
