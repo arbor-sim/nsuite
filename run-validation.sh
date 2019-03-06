@@ -32,7 +32,7 @@ for modeldir in "$ns_base_path/validation/"*; do
         for paramfile in "$modeldir"/*.param; do
             model_add="$model_add $m/$(basename "$paramfile" .param)"
         done
-        all_models="$models $model_add"
+        all_models="$all_models $model_add"
     fi
 done
 
