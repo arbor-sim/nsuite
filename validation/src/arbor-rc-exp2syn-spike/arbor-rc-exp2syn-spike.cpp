@@ -32,7 +32,6 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
     static constexpr double rm = 100;        // total membrane resistance [MΩ]
     static constexpr double cm = 0.01;       // total membrane capacitance [nF]
     static constexpr double erev = -65;      // reversal potential [mV]
-    static constexpr double delay = 3.3;     // connection delay [ms]
     static constexpr double tau1 = 0.5;      // synapse exponential time constants [ms]
     static constexpr double tau2 = 4.0;
 
@@ -50,6 +49,7 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
     {}
 
     cell_size_type num_cells() const override { return 2; }
+    cell_size_type num_sources(cell_gid_type) const override { return 1; }
     cell_size_type num_targets(cell_gid_type) const override { return 1; }
     cell_size_type num_probes(cell_gid_type) const override { return 1; }
     cell_kind get_cell_kind(cell_gid_type) const override { return cell_kind::cable; }
@@ -94,11 +94,12 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
         expsyn["e"] = 0;
         c.add_synapse(soma_centre(), expsyn);
 
+        c.add_detector(soma_centre(), threshold);
         return c;
     }
 
     std::vector<arb::cell_connection> connections_on(cell_gid_type gid) const override {
-        if (gid!=1) return {}
+        if (gid!=1) return {};
 
         return {arb::cell_connection({0u, 0}, {1u, 0}, g0, delay)};
     }
@@ -170,7 +171,7 @@ int main(int argc, char** argv) {
     }
 
     auto ctx = make_context();
-    rc_expsyn_recipe rec(params);
+    rc_exp2syn_spike_recipe rec(params);
     simulation sim(rec, trivial_dd(rec), ctx);
 
     time_type t_end = 10., sample_dt = 0.05; // [ms]
@@ -187,7 +188,7 @@ int main(int argc, char** argv) {
     sim.set_global_spike_callback(
         [&](const std::vector<arb::spike>& spikes) {
             for (auto s: spikes) {
-                auto gid = s.source;
+                auto gid = s.source.gid;
                 auto t = s.time;
 
                 if (gid<2 && (std::isnan(first_spike[gid]) || first_spike[gid]>t)) {
@@ -219,8 +220,8 @@ void write_netcdf_traces(const char* path, const std::vector<named_trace>& trace
         std::size_t len = traces[i].trace.size();
         int time_dimid;
         nc_check(nc_def_dim, ncid, traces[i].t_name.c_str(), len, &time_dimid);
-        nc_check(nc_def_var, ncid, traces[i].t_name.c_str(), NC_DOUBLE, 1, &time_dimid, &timeid[i]);
-        nc_check(nc_def_var, ncid, traces[i].v_name.c_str(), NC_DOUBLE, 1, &time_dimid, &varid[i]);
+        nc_check(nc_def_var, ncid, traces[i].t_name.c_str(), NC_DOUBLE, 1, &time_dimid, &timeids[i]);
+        nc_check(nc_def_var, ncid, traces[i].v_name.c_str(), NC_DOUBLE, 1, &time_dimid, &varids[i]);
     }
 
     std::vector<int> scalar_ids;
