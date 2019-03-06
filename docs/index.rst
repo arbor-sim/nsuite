@@ -10,6 +10,8 @@ NSuite's development was fully funded by the European Union's Horizon 2020
 Framework Programme for Research and Innovation under the Specific Grant
 Agreement No. 785907 (Human Brain Project SGA2).
 
+**The technical documentation is currently under consctruction, and will be ready by the end of March 2019**
+
 .. toctree::
    :caption: The Framework:
 
