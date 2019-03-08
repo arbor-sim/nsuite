@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-# Build any CMake projects living in validation/src/<proj>/.
+# Build any CMake projects living in validation/src/<proj>/
+# such that .../<proj>/BUILDLIST contains one or more of the
+# targets specified as arguments.
+
+TODO...
 
 # If not set, attempt to deduce nsuite paths from script directory.
 if [ -z "$ns_base_path" ]; then

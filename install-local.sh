@@ -1,24 +1,22 @@
 usage() {
-    echo
-    echo "nsuite installer options:"
-    echo
-    echo "   arbor       : build Arbor"
-    echo "   neuron      : build NEURON"
-    echo "   coreneuron  : build CoreNEURON"
-    echo "   all         : build all simulators"
-    echo "   -e filename : source filename before building"
-    echo
-    echo "examples:"
-    echo
-    echo "install only Arbor:"
-    echo "$ install arbor"
-    echo
-    echo "install Arbor, NEURON and CoreNEURON:"
-    echo "$ install all"
-    echo
-    echo "install NEURON using environment configured in config.sh:"
-    echo "$ install neuron -e config.sh"
-    echo
+    cat <<'_end_'
+Usage: install-local.sh [-e SCRIPT] TARGET
+
+Setup NSuite framework, build and install simulators, benchmarks,
+and validation tests.
+
+Options:
+    -e SCRIPT     Source SCRIPT before building.
+
+TARGET is one of:
+   arbor          Build Arbor.
+   neuron         Build NEURON.
+   coreneuron     Build CoreNEURON.
+   all            Build all simulators.
+
+Building a TARGET will also build any associated tests and
+benchmarks as required.
+_end_
 }
 
 # Load some utility functions.
