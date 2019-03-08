@@ -1,21 +1,25 @@
+# Set the base paths to working directories.
+# Variables defined here use the prefix ns_
+set_working_paths() {
+    if [ -z "$ns_prefix" ]; then
+	echo "error: empty ns_prefix"
+	exit 1
+    fi
+
+    # Paths to working directories
+    ns_install_path="$ns_prefix/install"
+    ns_build_path="$ns_prefix/build"
+    ns_cache_path="$ns_prefix/cache"
+    ns_input_path="$ns_prefix/input"
+    ns_config_path="$ns_prefix/config"
+    ns_benchmark_output="$ns_prefix/output/benchmark"
+    ns_validation_output="$ns_prefix/output/validation"
+}
+
 # Sets up the default enviroment.
 # Variables defined here use the prefix ns_
 default_environment() {
-    # By default do not build any of the packages.
-    ns_build_arbor=false
-    ns_build_nest=false
-    ns_build_neuron=false
-    ns_build_coreneuron=false
-
-    # No additional environment script to run.
-    ns_environment=
-
-    # Where software packages will be built then installed.
-    ns_base_path=$(pwd)
-    ns_install_path="$ns_base_path/install"
-    ns_build_path="$ns_base_path/build"
-    ns_input_path="$ns_base_path/input"
-    ns_output_path="$ns_base_path/output"
+    set_working_paths
 
     # Detect OS
     case "$OSTYPE" in
@@ -112,37 +116,39 @@ run_with_mpi() {
     ARB_NUM_THREADS=$ns_threads_per_socket mpirun -n $ns_sockets --map-by socket:PE=$ns_threads_per_socket $*
 }
 
+find_installed_paths() {
+    find "$ns_install_path" -type d -name "$2" -printf '%p:'
+}
+
 # Save the environment used to build a simulation engine
 # to a shell script that can be used to reproduce that
 # environment for running the simulation engine.
 # arg 1:    name of the simulation engine, one of: {arb, nrn, corenrn}
 save_environment() {
+    set_working_paths
     sim="$1"
-    current_path=$(pwd)
-    cd "$ns_base_path"
 
-    # Find and record the python and binary paths.
-    find_paths python_path site-packages
-    find_paths bin_path bin
+    # Find and record python, bin, and lib paths.
+    python_path=$(find_installed_paths site-packages)"$ns_base_path/common/python"
+    bin_path=$(find_installed_paths bin)
+    lib_path=$(find_installed_paths lib)$(find_installed_paths lib64)
 
-    config_path="${ns_base_path}/config"
-    config_file="${config_path}/env_${sim}.sh"
-    mkdir -p "$config_path"
+    config_file="${ns_config_path}/env_${sim}.sh"
+    mkdir -p "$ns_config_path"
 
-    echo "export PATH=\"${ns_install_path}/bin:\${PATH}\""  > "$config_file"
-    echo "export PYTHONPATH=\"${ns_base_path}/common/python:\${PYTHONPATH}\"" >> "$config_file"
-    echo "export PYTHONPATH=\"$python_path\$PYTHONPATH\""   >> "$config_file"
-    echo "export PATH=\"$bin_path\$PATH\""                  >> "$config_file"
-    for libdir in lib lib64; do
-	libpath="${ns_install_path}/${libdir}"
-	echo "export LD_LIBRARY_PATH=\"${libpath}:\$LD_LIBRARY_PATH\"" >> "$config_file"
-    done
-    echo "source \"$ns_base_path/scripts/environment.sh\""  >> "$config_file"
-    echo "default_environment"                              >> "$config_file"
-    if [ "$ns_environment" != "" ]; then
-        full_env=$(full_path "$ns_environment")
-        echo "source \"$full_env\""                         >> "$config_file"
+    source_env_script=
+    if [ -n "$ns_environment" ]; then
+	source_env_script='source '$(full_path "$ns_environment")
     fi
 
-    cd "$current_path"
+    cat <<_end_ > "$ns_config_path/env_$sim.sh"
+ns_prefix="$ns_prefix"
+export PATH="$bin_path\${PATH}"
+export PYTHONPATH="$python_path\$PYTHONPATH"
+export PATH="$bin_path\$PATH"
+export LD_LIBRARY_PATH="${lib_path}:\$LD_LIBRARY_PATH"
+source "$ns_base_path/scripts/environment.sh"
+default_environment
+$source_env_script
+_end_
 }

@@ -1,19 +1,9 @@
 #!/usr/bin/env bash
 
-# Build any CMake projects living in validation/src/<proj>/
-# such that .../<proj>/BUILDLIST contains one or more of the
-# targets specified as arguments.
-
-TODO...
-
-# If not set, attempt to deduce nsuite paths from script directory.
-if [ -z "$ns_base_path" ]; then
-    unset CDPATH
-    ns_base_path=$(cd "${BASH_SOURCE[0]%/*}/.."; pwd)
+if [ -z "$ns_install_path" -o -z "$ns_build_path" -o -z "$ns_base_path" ]; then
+    echo "build_validation_models.sh: missing required ns_ paths" &>2
+    exit 1
 fi
-
-[ -n "$ns_install_path" ] || ns_install_path="$ns_base_path/install"
-[ -n "$ns_build_path" ] || ns_build_path="$ns_base_path/build"
 
 function try_build_project {
     local src="$1" build="$2" install="$3"
@@ -56,12 +46,31 @@ function try_build_project {
     }
 }
 
+# Build any CMake projects living in validation/src/<proj>/.
+# If the project has a file BUILDFOR, scan it for patterns
+# that match a simulator that has been installed, and only
+# attempt to build that project if there is a match.
+
 for ppath in "$ns_base_path"/validation/src/*/CMakeLists.txt; do
     project_dir="${ppath%/*}"
     project_name="${project_dir##*/}"
     build_dir="$ns_build_path/validation/$project_name"
 
-    try_build_project "$project_dir" "$build_dir" "$ns_install_path"
-    if [ $? -gt 1 ]; then exit $?; fi
+    if [ -r "$project_dir/BUILDFOR" ]; then
+	build=
+	for pat in $(< $project_dir/BUILDFOR); do
+	    [[ $ns_build_arbor == true ]] && [[ arbor == $pat ]] && build=true
+	    [[ $ns_build_nest == true ]] && [[ nest == $pat ]] && build=true
+	    [[ $ns_build_neuron == true ]] && [[ neuron == $pat ]] && build=true
+	    [[ $ns_build_coreneuron == true ]] && [[ coreneuron == $pat ]] && build=true
+	done
+    else
+	build=true
+    fi
+
+    if [ -n "$build" ]; then
+	try_build_project "$project_dir" "$build_dir" "$ns_install_path"
+	if [ $? -gt 1 ]; then exit $?; fi
+    fi
 done
 
