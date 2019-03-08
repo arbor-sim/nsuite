@@ -60,12 +60,12 @@ do
             ns_environment=$1
             ;;
         --prefix=* )
-        ns_prefix=${1#--prefix=}
-        ;;
+            ns_prefix=${1#--prefix=}
+            ;;
         --prefix )
             shift
             ns_prefix=$1
-        ;;
+            ;;
         * )
             echo "unknown option '$1'"
             usage
