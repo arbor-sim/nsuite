@@ -117,7 +117,7 @@ run_with_mpi() {
 }
 
 find_installed_paths() {
-    find "$ns_install_path" -type d -name "$2" -printf '%p:'
+    find "$ns_install_path" -type d -name "$1" -printf '%p:'
 }
 
 # Save the environment used to build a simulation engine
@@ -129,8 +129,8 @@ save_environment() {
     sim="$1"
 
     # Find and record python, bin, and lib paths.
-    python_path=$(find_installed_paths site-packages)"$ns_base_path/common/python"
-    bin_path=$(find_installed_paths bin)
+    python_path=$(find_installed_paths site-packages)"$ns_base_path/common/python:"
+    bin_path=$(find_installed_paths bin)"$ns_base_path/common/bin:"
     lib_path=$(find_installed_paths lib)$(find_installed_paths lib64)
 
     config_file="${ns_config_path}/env_${sim}.sh"

@@ -2,9 +2,12 @@
 
 # Common set-up for validation models.
 
-# Expects ns_base_path to be set; default paths to
-# output and cache directories can be overridden with
-# ns_output_path and ns_base_path respectively.
+# Requires PATH, PYTHONPATH and LD_LIBRARY_PATH to be already configured
+# for installed and common binaries, scripts and libraries.
+#
+# The following nsuite working paths are also required:
+#     ns_validation_output
+#     ns_cache_path
 
 function die {
     echo "$@" >&2; exit 1
@@ -16,10 +19,13 @@ function die {
 #
 # Sets variables model_output_dir, model_cache_dir, model_param_data
 # and model_status_path.
-#
-# Prefixes path with cwd, nsuite common/bin and nsuite install/bin.
 
 function model_setup {
+    if [ -z "$ns_validation_output" -o -z "$ns_cache_path" ]; then
+	echo "error: missing required ns_ path variables"
+	exit 1
+    fi
+
     model_name="$1"
 
     model_refresh=""
@@ -28,23 +34,16 @@ function model_setup {
     model_sim="$2"
     model_param="$3"
 
-    local output_dir="${ns_output_path:-$ns_base_path/output}"
-    local cache_dir="${ns_cache_path:-$ns_base_path/cache}"
-
-    model_cache_dir="$cache_dir/$model_name"
+    model_cache_dir="$ns_cache_path/$model_name"
     mkdir -p "$model_cache_dir" || die "$model_name: cannot create directory '$model_cache_dir'"
 
-    model_output_dir="$output_dir/$model_sim/$model_name/$model_param"
+    model_output_dir="$ns_validation_output/$model_sim/$model_name/$model_param"
     mkdir -p "$model_output_dir" || die "$model_name: cannot create directory '$model_output_dir'"
 
     model_status_path="$model_output_dir/status"
 
     [ -r "${model_param}.param" ] || die "$model_name: unable to read parameter data '${pset}.param'"
     model_param_data=$(< ${model_param}.param)
-
-    local install_dir="${ns_install_path:-$ns_base_path/install}"
-    local common_dir="${ns_common_path:-$ns_base_path/common}"
-    export PATH=".:${install_dir}/bin:${common_dir}/bin:$PATH"
 }
 
 # Print path to file if in CWD, or else relative to cache dir.

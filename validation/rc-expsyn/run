@@ -16,7 +16,7 @@ outfile="$model_output_dir/run.nc"
 # Generate reference data if required.
 reffile=$(model_find_cacheable "ref-example-${model_param}.nc")
 if [ $? -ne 0 -o -n "$model_refresh" ]; then 
-    generate-rc-expsyn "$reffile" $model_param_data
+    ./generate-rc-expsyn "$reffile" $model_param_data
 fi
 
 # Run comparison.

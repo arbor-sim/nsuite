@@ -74,7 +74,7 @@ do
 done
 
 models=${models:-ring}
-configs=${models:-small}
+configs=${configs:-small}
 
 # Load utility functions and set up default environment.
 
@@ -85,13 +85,13 @@ default_environment
 # Check simulator installation status.
 
 if [ "$run_arb" == "true" ]; then
-    [ ! -f "$ns_base_path/config/env_arbor.sh" ] &&  err "Arbor must be installed to run Arbor benchmarks." && run_arb=false
+    [ ! -f "$ns_prefix/config/env_arbor.sh" ] &&  err "Arbor must be installed to run Arbor benchmarks." && run_arb=false
 fi
 if [ "$run_nrn" == "true" ]; then
-    [ ! -f "$ns_base_path/config/env_neuron.sh" ] &&  err "NEURON must be installed to run NEURON benchmarks." && run_nrn=false
+    [ ! -f "$ns_prefix/config/env_neuron.sh" ] &&  err "NEURON must be installed to run NEURON benchmarks." && run_nrn=false
 fi
 if [ "$run_corenrn" == "true" ]; then
-    [ ! -f "$ns_base_path/config/env_coreneuron.sh" ] &&  err "CoreNeuron must be installed to run CoreNeuron benchmarks." && run_corenrn=false
+    [ ! -f "$ns_prefix/config/env_coreneuron.sh" ] &&  err "CoreNeuron must be installed to run CoreNeuron benchmarks." && run_corenrn=false
 fi
 
 # TODO: this has to go into the configuration environment setup scripts
@@ -129,7 +129,7 @@ do
         echo
 
         model_input_path="$ns_input_path/benchmarks/$model/$config"
-        model_output_path="$ns_output_path/benchmarks/$model/$config"
+	model_output_path="$ns_benchmark_output/$model/$config"
 
         ./config.sh $config "$ns_base_path" "$model_input_path" "$model_output_path" "$ns_prefix/config"
 

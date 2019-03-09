@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-neuron-rc-expsyn.py "${@}"
+./neuron-rc-expsyn.py "${@}"

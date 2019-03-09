@@ -61,6 +61,7 @@ while [ -n "$1" ]; do
         -m | --model )
             shift
             models="$models $1"
+	    ;;
 	-r | --refresh )
 	    ns_refresh_cache="-r"
 	    ;;
@@ -130,7 +131,7 @@ for sim in $sims; do
 
         (
           source "$sim_env";
-          export ns_base_path ns_prefix ns_install_path ns_output_path
+          export ns_base_path ns_prefix ns_validation_output ns_cache_path
 	  "$model_path/run" $ns_refresh_cache "$sim" "$param"
         )
     done
