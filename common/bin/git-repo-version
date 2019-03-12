@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+usage() {
+    cat <<_end_
+Usage: git-repo-version [--format=FORMAT] [path]
+
+FORMAT substitutes the following:
+    %m      '+' if modified else ''
+    %M      'modified' if modified else ''
+    %c      commit hash
+    %d      ISO 8601 format date
+    %t      all tags on HEAD (space separated)
+    %v      first tag that matches v[0-9].*
+    %%      literal '%'
+_end_
+}
+
+while [ -n "$1" ]; do
+    case $1 in
+	-h | --help )
+	    usage
+	    exit 0
+	    ;;
+	--format )
+	    shift
+	    format="$1"
+	    ;;
+	--format=* )
+	    format="${1#--format=}"
+	    ;;
+	* )
+	    cd "$1"
+    esac
+    shift
+done
+
+default_format="%c%m"
+
+if git_commit=$(git log -1 --pretty=format:%H 2>/dev/null); then
+    git_modified=""
+    git diff --quiet HEAD 2>/dev/null || git_modified="modified"
+
+    git_mplus=${git_modified:++}
+
+    git_date=$(git log -1 --pretty=format:%cI)
+
+    git_versiontag=""
+    git_tags=$(git tag --points-at)
+    for tag in $git_tags; do
+	if [[ $tag == v* ]]; then
+	    git_versiontag="$tag"
+	    break
+	fi
+    done
+
+    subformat "m=$git_mplus" "M=$git_modified" "c=$git_commit" "d=$git_date" "t=$git_tags" "v=$git_versiontag" <<< "${format:-$default_format}"
+else
+    echo "failed to inspect git repo" >&2
+    exit 1
+fi
+
