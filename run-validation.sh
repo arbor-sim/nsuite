@@ -56,7 +56,7 @@ while [ -n "$1" ]; do
             ns_prefix=$1
             ;;
         --model=* )
-	    models="$models $(1#--model=)"
+	    models="$models ${1#--model=}"
             ;;
         -m | --model )
             shift
