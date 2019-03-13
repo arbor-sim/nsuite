@@ -12,10 +12,8 @@ model_setup rc-exp2syn-spike "$@"
 # Run sim-specific model with parameter data.
 #
 # Expected output variables:
-#     v0      voltage trace of cell 0 soma (dimension t0)
-#     v1      voltage trace of cell 1 soma (dimension t1)
-#     spike0  scalar time of first spike cell 0
-#     spike1  scalar time of first spike cell 1
+#     v0      voltage trace of cell 0 soma (dimension 'time')
+#     spike   time to first spike on cell (dimension 'gid')
 #
 # For CoreNEURON, voltage traces will be omitted; the pass/fail
 # test only looks at spike time differences.
@@ -31,7 +29,7 @@ fi
 
 # Run comparison.
 deltafile="$model_output_dir/delta.nc"
-comparex "$outfile" --warn --ref "$reffile" --var spike0 --var spike1 -o "$deltafile"
+comparex "$outfile" --warn --ref "$reffile" --var spike -o "$deltafile"
 
 # Get threshold from parameter data 'max_error'
 max_error=
@@ -45,5 +43,5 @@ if [ -z "$max_error" ]; then
     exit 1
 fi
 
-thresholdx "$deltafile" -e "spike0.abserr<$max_error" -e "spike1.abserr<$max_error" > "$model_status_path"
+thresholdx "$deltafile" -e "spike.abserr<$max_error" > "$model_status_path"
 model_notify_pass_fail $?

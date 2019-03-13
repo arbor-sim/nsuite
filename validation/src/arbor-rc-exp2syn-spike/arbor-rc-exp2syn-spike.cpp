@@ -18,8 +18,9 @@ using paramset = std::map<std::string, double>;
 paramset default_parameters = {
     {"dt", 0.01},
     {"g0", 0.1},
-    {"delay", 3.3},
-    {"threshold", -10}
+    {"threshold", -10},
+    {"mindelay", 4.0},
+    {"ncell", 101}
 };
 
 struct rc_exp2syn_spike_recipe: public arb::recipe {
@@ -37,21 +38,37 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
 
     // Customizable parameters:
     double g0;                               // synaptic conductance at time 0 [µS]
-    double delay;                            // connection delay
-    double threshold;                        // spike voltage threshold
+    double threshold;                        // spike voltage threshold [mV]
+    double mindelay;                         // minimum connection delay from gid 0 [ms]
+    int ncell;                               // total number of cells
+
+    // Computed values:
+    std::vector<double> delay;               // delay[i] is connection delay from gid 0 to gid i
 
     static segment_location soma_centre() {
         return segment_location(0u, 0.5);
     }
 
     explicit rc_exp2syn_spike_recipe(const paramset& ps):
-        g0(ps.at("g0")), delay(ps.at("delay")), threshold(ps.at("threshold"))
-    {}
+        g0(ps.at("g0")), threshold(ps.at("threshold")),
+        mindelay(ps.at("mindelay")), ncell((int)ps.at("ncell"))
+    {
+        double phi = (std::sqrt(5)-1)/2;
+        double d = 0;
+        delay.push_back(d);
+        for (int i = 1; i<ncell; ++i) {
+            d += phi;
+            d -= std::floor(d);
+            delay.push_back(d+mindelay);
+        }
+    }
 
-    cell_size_type num_cells() const override { return 2; }
+    cell_size_type num_cells() const override { return ncell; }
     cell_size_type num_sources(cell_gid_type) const override { return 1; }
     cell_size_type num_targets(cell_gid_type) const override { return 1; }
-    cell_size_type num_probes(cell_gid_type) const override { return 1; }
+    cell_size_type num_probes(cell_gid_type gid) const override {
+        return gid==0? 1: 0;
+    }
     cell_kind get_cell_kind(cell_gid_type) const override { return cell_kind::cable; }
 
     util::any get_global_properties(cell_kind kind) const override {
@@ -99,9 +116,9 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
     }
 
     std::vector<arb::cell_connection> connections_on(cell_gid_type gid) const override {
-        if (gid!=1) return {};
+        if (gid==0) return {};
 
-        return {arb::cell_connection({0u, 0}, {1u, 0}, g0, delay)};
+        return {arb::cell_connection({0, 0}, {gid, 0}, g0, delay[gid])};
     }
 };
 
@@ -137,13 +154,8 @@ struct arg_data {
     paramset params = default_parameters;
 };
 
-struct named_trace {
-    std::string v_name, t_name;
-    arb::trace_data<double> trace;
-};
-
 void common_parse_arguments(char** argv, arg_data& args);
-void write_netcdf_traces(const char* path, const std::vector<named_trace>& traces, const paramset& scalars = paramset{});
+void write_netcdf_traces(const char* path, const arb::trace_data<double>& v0, const std::vector<double>& spikes, const std::vector<double>& delay, const paramset& scalars);
 
 int usage(char* argv0) {
     char* basename = std::strrchr(argv0, '/');
@@ -177,21 +189,17 @@ int main(int argc, char** argv) {
     time_type t_end = 10., sample_dt = 0.05; // [ms]
     time_type dt = params["dt"];
 
-    std::vector<named_trace> traces = {
-        {"v0", "t0", {}},
-        {"v1", "t1", {}}
-    };
-    sim.add_sampler(one_probe({0u, 0u}), regular_schedule(sample_dt), make_simple_sampler(traces[0].trace));
-    sim.add_sampler(one_probe({1u, 0u}), regular_schedule(sample_dt), make_simple_sampler(traces[1].trace));
+    arb::trace_data<double> v0;
+    sim.add_sampler(one_probe({0u, 0u}), regular_schedule(sample_dt), make_simple_sampler(v0));
 
-    time_type first_spike[2] = { NAN, NAN };
+    std::vector<double> first_spike(params["ncell"], NAN);
     sim.set_global_spike_callback(
         [&](const std::vector<arb::spike>& spikes) {
             for (auto s: spikes) {
                 auto gid = s.source.gid;
                 auto t = s.time;
 
-                if (gid<2 && (std::isnan(first_spike[gid]) || first_spike[gid]>t)) {
+                if (std::isnan(first_spike.at(gid)) || first_spike.at(gid)>t) {
                     first_spike[gid] = t;
                 }
             }
@@ -200,29 +208,26 @@ int main(int argc, char** argv) {
     sim.run(t_end, dt);
 
     auto scalars = params;
-    scalars["spike0"] = first_spike[0];
-    scalars["spike1"] = first_spike[1];
-
-    write_netcdf_traces(output, traces, scalars);
+    write_netcdf_traces(output, v0, first_spike, rec.delay,  scalars);
 }
 
 #define nc_check(fn, ...)\
 if (auto r = fn(__VA_ARGS__)) { throw nc_error(#fn, r); } else {}
 
-void write_netcdf_traces(const char* path, const std::vector<named_trace>& traces, const paramset& scalars) {
+void write_netcdf_traces(const char* path, const arb::trace_data<double>& v0, const std::vector<double>& spikes, const std::vector<double>& delay, const paramset& scalars) {
     int ncid;
     nc_check(nc_create, path, 0, &ncid);
 
-    unsigned n_trace = traces.size();
-    std::vector<int> timeids(n_trace), varids(n_trace);
+    std::size_t tlen = v0.size();
+    std::size_t slen = spikes.size();
+    int time_dimid, gid_dimid, time_id, v0_id, spike_id, delay_id;
 
-    for (unsigned i = 0; i<n_trace; ++i) {
-        std::size_t len = traces[i].trace.size();
-        int time_dimid;
-        nc_check(nc_def_dim, ncid, traces[i].t_name.c_str(), len, &time_dimid);
-        nc_check(nc_def_var, ncid, traces[i].t_name.c_str(), NC_DOUBLE, 1, &time_dimid, &timeids[i]);
-        nc_check(nc_def_var, ncid, traces[i].v_name.c_str(), NC_DOUBLE, 1, &time_dimid, &varids[i]);
-    }
+    nc_check(nc_def_dim, ncid, "time",  tlen, &time_dimid);
+    nc_check(nc_def_dim, ncid, "gid",  slen, &gid_dimid);
+    nc_check(nc_def_var, ncid, "time", NC_DOUBLE, 1, &time_dimid, &time_id);
+    nc_check(nc_def_var, ncid, "v0",  NC_DOUBLE, 1, &time_dimid, &v0_id);
+    nc_check(nc_def_var, ncid, "spike", NC_DOUBLE, 1, &gid_dimid, &spike_id);
+    nc_check(nc_def_var, ncid, "delay", NC_DOUBLE, 1, &gid_dimid, &delay_id);
 
     std::vector<int> scalar_ids;
     for (const auto& kv: scalars) {
@@ -239,20 +244,18 @@ void write_netcdf_traces(const char* path, const std::vector<named_trace>& trace
         nc_check(nc_put_var_double, ncid, scalar_ids[pidx++], &kv.second);
     }
 
-    for (unsigned i = 0; i<n_trace; ++i) {
-        std::size_t len = traces[i].trace.size();
-        std::vector<double> times, values;
-
-        times.reserve(len);
-        values.reserve(len);
-        for (auto e: traces[i].trace) {
-            times.push_back(e.t);
-            values.push_back(e.v);
-        }
-
-        nc_check(nc_put_var_double, ncid, timeids[i], times.data())
-        nc_check(nc_put_var_double, ncid, varids[i], values.data())
+    std::vector<double> time, voltage;
+    time.reserve(tlen);
+    voltage.reserve(tlen);
+    for (auto e: v0) {
+        time.push_back(e.t);
+        voltage.push_back(e.v);
     }
+
+    nc_check(nc_put_var_double, ncid, time_id, time.data())
+    nc_check(nc_put_var_double, ncid, v0_id, voltage.data())
+    nc_check(nc_put_var_double, ncid, spike_id, spikes.data())
+    nc_check(nc_put_var_double, ncid, delay_id, delay.data())
 
     nc_check(nc_close, ncid);
 }
