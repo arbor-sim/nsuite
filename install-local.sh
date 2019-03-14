@@ -1,34 +1,40 @@
 usage() {
-    echo
-    echo "nsuite installer options:"
-    echo
-    echo "   arbor       : build Arbor"
-    echo "   neuron      : build NEURON"
-    echo "   coreneuron  : build CoreNEURON"
-    echo "   all         : build all simulators"
-    echo "   -e filename : source filename before building"
-    echo
-    echo "examples:"
-    echo
-    echo "install only Arbor:"
-    echo "$ install arbor"
-    echo
-    echo "install Arbor, NEURON and CoreNEURON:"
-    echo "$ install all"
-    echo
-    echo "install NEURON using environment configured in config.sh:"
-    echo "$ install neuron -e config.sh"
-    echo
+    cat <<'_end_'
+Usage: install-local.sh [--env=SCRIPT] [--prefix=PATH] TARGET [TARGET...]
+
+Setup NSuite framework, build and install simulators, benchmarks,
+and validation tests.
+
+Options:
+    --env=SCRIPT       Source SCRIPT before building.
+    --prefix=PATH   Use PATH as base for install and other run-time
+                    working directories.
+
+TARGET is one of:
+   arbor            Build Arbor.
+   neuron           Build NEURON.
+   coreneuron       Build CoreNEURON.
+   all              Build all simulators.
+
+Building a TARGET will also build any associated tests and
+benchmarks as required.
+_end_
 }
 
-# Load some utility functions.
-source ./scripts/util.sh
-source ./scripts/environment.sh
+# Determine NSuite root and default ns_prefix.
 
-# Set up default environment variables
-default_environment
+unset CDPATH
+ns_base_path=$(cd "${BASH_SOURCE[0]%/*}"; pwd)
+ns_prefix=${NS_PREFIX:-$(pwd)}
 
-# parse arguments
+# Parse arguments.
+
+ns_build_arbor=false
+ns_build_nest=false
+ns_build_neuron=false
+ns_build_coreneuron=false
+ns_environment=
+
 while [ "$1" != "" ]
 do
     case $1 in
@@ -46,10 +52,20 @@ do
             ns_build_neuron=true
             ns_build_coreneuron=true
             ;;
-        -e )
+        --env=* )
+            ns_environment=${1#--env=}
+            ;;
+        --env )
             shift
             ns_environment=$1
             ;;
+        --prefix=* )
+	    ns_prefix=${1#--prefix=}
+	    ;;
+        --prefix )
+            shift
+            ns_prefix=$1
+	    ;;
         * )
             echo "unknown option '$1'"
             usage
@@ -58,8 +74,18 @@ do
     shift
 done
 
+# Load utility functions and set up default environment.
+
+source "$ns_base_path/scripts/util.sh"
+mkdir -p "$ns_prefix"
+ns_prefix=$(full_path "$ns_prefix")
+
+source "$ns_base_path/scripts/environment.sh"
+default_environment
+
 # Run a user supplied configuration script if it was provided with the -e flag.
 # This will make changes to the configuration variables ns_* set in environment()
+
 if [ "$ns_environment" != "" ]; then
     msg "using additional configuration: $ns_environment"
     if [ ! -f "$ns_environment" ]; then
@@ -76,35 +102,36 @@ msg "build neuron:      $ns_build_neuron"
 msg "build coreneuron:  $ns_build_coreneuron"
 echo
 msg "---- PATHS ----"
-msg "working path:  $ns_base_path"
-msg "install path:  $ns_install_path"
-msg "build path:    $ns_build_path"
-msg "input path:    $ns_input_path"
-msg "output path:   $ns_output_path"
+msg "nsuite root:     $ns_base_path"
+msg "work dir prefix: $ns_prefix"
+msg "install path:    $ns_install_path"
+msg "build path:      $ns_build_path"
+msg "input path:      $ns_input_path"
+msg "output path:     $ns_output_path"
 echo
 msg "---- SYSTEM ----"
-msg "system:        $ns_system"
-msg "using mpi:     $ns_with_mpi"
-msg "C compiler:    $ns_cc"
-msg "C++ compiler:  $ns_cxx"
-msg "python:        $ns_python"
+msg "system:          $ns_system"
+msg "using mpi:       $ns_with_mpi"
+msg "C compiler:      $ns_cc"
+msg "C++ compiler:    $ns_cxx"
+msg "python:          $ns_python"
 echo
 msg "---- ARBOR ----"
-msg "repo:          $ns_arb_repo"
-msg "branch:        $ns_arb_branch"
-msg "arch:          $ns_arb_arch"
-msg "gpu:           $ns_arb_with_gpu"
-msg "vectorize:     $ns_arb_vectorize"
+msg "repo:            $ns_arb_repo"
+msg "branch:          $ns_arb_branch"
+msg "arch:            $ns_arb_arch"
+msg "gpu:             $ns_arb_with_gpu"
+msg "vectorize:       $ns_arb_vectorize"
 echo
 msg "---- NEURON ----"
-msg "tarball:       $ns_nrn_tarball"
-msg "url:           $ns_nrn_url"
-msg "repo:          $ns_nrn_git_repo"
-msg "branch:        $ns_nrn_branch"
+msg "tarball:         $ns_nrn_tarball"
+msg "url:             $ns_nrn_url"
+msg "repo:            $ns_nrn_git_repo"
+msg "branch:          $ns_nrn_branch"
 echo
 msg "---- CoreNEURON ----"
-msg "repo:          $ns_cnrn_git_repo"
-msg "sha:           $ns_cnrn_sha"
+msg "repo:            $ns_cnrn_git_repo"
+msg "sha:             $ns_cnrn_sha"
 
 mkdir -p "$ns_build_path"
 
