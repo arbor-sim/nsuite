@@ -97,7 +97,7 @@ class ring_network:
                 self.stims.append(stim)
                 self.stim_connections.append(stim_connection)
 
-            # TODO: for loop that makes dummy connections
+            # generate dummy connections with random source and zero weights.
             for sid in range(1, self.synapses_per_cell):
                 src = random.randint(0, self.num_cells-2)
                 if src==gid:
@@ -136,7 +136,6 @@ if env.dump_coreneuron:
     # The CoreNeuron model state is dumped into the input path, because
     # it is used as input for CoreNeuron.
     cnrn_output_path='%s/%s_core'%(env.ipath, params.name);
-    print('(((((', cnrn_output_path)
     ctx.write_core(cnrn_output_path)
     meter.checkpoint('model-output')
 
@@ -154,19 +153,3 @@ report.to_file(prefix+'meters.json')
 
 spikes.print(prefix+'spikes.gdf')
 
-#data=open('/home/bcumming/software/github/arbor/build/bin/meters.json').read()
-#orep = metering.report_from_json(data)
-#print(orep.to_json())
-
-
-## BEFORE h.stdinit
-#if do_plot and ctx.is_root:
-#    soma_voltage, dend_voltage, time_points = model.cells[0].set_recorder()
-
-## After simulation
-#if do_plot and ctx.is_root:
-#    soma_plot = pyplot.plot(time_points, soma_voltage, color='black')
-#    dend_plot = pyplot.plot(time_points, dend_voltage, color='red')
-#    pyplot.legend(soma_plot + dend_plot, ['soma', 'dend(0.5)'])
-#    pyplot.xlabel('time (ms)')
-#    pyplot.show()
