@@ -6,6 +6,8 @@
 module load daint-mc
 module load CMake
 
+module load cray-hdf5 cray-netcdf
+
 # PyExtensions is needed for cython, mpi4py and others.
 # It loads cray-python/3.6.5.1
 module load PyExtensions/3.6.5.1-CrayGNU-18.08
