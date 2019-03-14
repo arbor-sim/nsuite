@@ -1,0 +1,104 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+import math
+import scipy.integrate as integrate
+import numpy as np
+import xarray
+import re
+import sys
+
+import nsuite.stdarg as stdarg
+
+rm =        100;    # total membrane resistance [MΩ]
+cm =       0.01;    # total membrane capacitance [nF]
+Erev =      -65;    # reversal potential [mV]
+tau1 =      0.5;    # synapse double exponential time constants [ms]
+tau2 =      4.0;
+g0 =        0.1;    # synaptic conductance upon first spike arrival [µS]
+mindelay =  4.0;    # minimum delay on connections from cell 0 [ms]
+ncell =     101;
+threshold = -10;    # spike threshold [mV]
+
+# RC time constant is rm*cm = 1 ms, delay should be < 5 ms.
+# Simulatng up to 8 ms should suffice.
+
+tend = 8.
+nsamp = 300
+ts = np.linspace(0., tend, num=nsamp)
+
+output, params = stdarg.parse_run_stdarg()
+param_vars = ['g0', 'mindelay', 'threshold']
+for v in param_vars:
+    if v in params: globals()[v] = params[v]
+
+# Voltage on one cell given by ODE:
+#
+# cm · dv/dt = - 1/rm · (v - Erev) - g₀ · Θ(t-t₀) · N · (exp(-t/τ₂)-exp(-t/τ₁)) · v
+#
+# Where Θ(t) is the unit step function, t₀ is the spike arrival time,
+# and N is a normalizing factor:
+#
+#     1/N = (τ₁/τ₂)^(τ₁/(τ₂-τ₁) - (τ₁/τ₂)^(τ₂/(τ₂-τ₁).
+#
+#
+# Solve ODE to get voltages on cell 0 and threshold crossing time T.
+# Threshold crossing times of other cells will be T+delay, as the initial
+# conditions correspond to the steady state solution.
+
+gN = g0 / ((tau1/tau2)**(tau1/(tau2-tau1))-(tau1/tau2)**(tau2/(tau2-tau1)))
+t0 = 0
+
+def membrane_conductance(t, v):
+    td = t-t0
+    return 1/rm + gN*(math.exp(-td/tau2)-math.exp(-td/tau1))*(1 if td>=0 else 0)
+
+def dv_dt(t, v):
+    return -1/cm * (membrane_conductance(t, v)*v - Erev/rm)
+
+def jacobian(t, v):
+    return np.array([[-1/cm * membrane_conductance(t, v)]])
+
+def run_integration():
+    def crossing(t, v):
+        return v[0] - threshold
+
+    crossing.direction = 1
+
+    r = integrate.solve_ivp(dv_dt, (0., tend), [Erev], method='LSODA', t_eval=ts, jac=jacobian, atol=1e-10/nsamp, rtol=1e-10/nsamp, events=crossing)
+    spike = np.asscalar(r.t_events[0]) if r.t_events[0].size>0 else np.NaN
+
+    return (r.y[0], spike)
+
+# Cell 0:
+
+v0, spike0 = run_integration()
+spikes = [spike0]
+delays = [0]
+
+# Remaining cells:
+#
+# Pick delay d(n) in (d₀, d₀+1) on cell n via low-discrepency sequence
+# d(n) = d₀ + {n·φ}, where φ = (√5 - 1)/2.
+#
+# Spike time will be 2*spike0 + d(n)
+
+phi = (math.sqrt(5)-1)/2
+delta = 0
+for n in range(ncell-1):
+    delta += (math.sqrt(5)-1)/2
+    delta -= math.floor(delta)
+
+    d = mindelay + delta
+    spikes.append(2*spike0+d)
+    delays.append(d)
+
+# Output:
+
+out = xarray.Dataset({'v0': (['time'], v0), 'spike': (['gid'], spikes), 'delay': (['gid'], delays)}, coords={'time': ts, 'gid': np.int32(range(ncell))})
+
+for v in param_vars:
+    out[v] = np.float64(globals()[v])
+
+out.to_netcdf(output)
+

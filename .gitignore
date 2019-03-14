@@ -31,7 +31,6 @@ out
 log_*
 
 # generated simulation run scripts
-run
 run_*.sh
 
 # CoreNEURON inputs generated from NEURON.
