@@ -1,23 +1,28 @@
 #!/usr/bin/bash
 
 usage() {
-    echo "run-validation.sh [OPTIONS] SIMULATOR [SIMULATOR...]"
-    echo "Options:"
-    echo "  -l, --list-models          List available model/parameter tests."
-    echo "  -r, --refresh              Regenerate any cached reference data."
-    echo "  -m, --model MODEL/[PARAM]  Run given model/parameter test."
-    echo
-    echo "SIMULATOR is one of: arbor, neuron"
-    echo "If no model is explicitly provided, all available tests will be run."
+    cat <<_end_
+Usage: run-validation.sh [OPTIONS] SIMULATOR [SIMULATOR...]
 
+Options:
+    --prefix=PREFIX            Use PATH as base for working directories.
+    -l, --list-models          List available model/parameter tests.
+    -r, --refresh              Regenerate any cached reference data.
+    -m, --model=MODEL/[PARAM]  Run given model/parameter test.
+
+SIMULATOR is one of: arbor, neuron
+If no model is explicitly provided, all available tests will be run.
+_end_
     exit 1;
 }
 
+# Determine NSuite root and default ns_prefix.
 
-# Load some utility functions.
-source ./scripts/environment.sh
-source ./scripts/util.sh
-default_environment
+unset CDPATH
+ns_base_path=$(cd "${BASH_SOURCE[0]%/*}"; pwd)
+ns_prefix=${NS_PREFIX:-$(pwd)}
+
+# Parse arguments.
 
 sims=""
 models=""
@@ -43,24 +48,29 @@ while [ -n "$1" ]; do
             for m in "$all_models"; do echo $m; done
             exit 0
             ;;
-
+        --prefix=* )
+            ns_prefix="${1#--prefix=}"
+            ;;
+        --prefix )
+	    shift
+            ns_prefix=$1
+            ;;
+        --model=* )
+	    models="$models ${1#--model=}"
+            ;;
         -m | --model )
             shift
             models="$models $1"
-            ;;
-
+	    ;;
 	-r | --refresh )
 	    ns_refresh_cache="-r"
 	    ;;
-
         neuron )
             sims="$sims neuron"
             ;;
-
         arbor )
             sims="$sims arbor"
             ;;
-
         * )
             echo "unknown option '$1'"
             usage
@@ -70,11 +80,19 @@ done
 
 [ -z "$models" ] && models="$all_models"
 
+# Load utility functions and set up default environment.
+
+source "$ns_base_path/scripts/util.sh"
+mkdir -p "$ns_prefix"
+ns_prefix=$(full_path "$ns_prefix")
+
+source "$ns_base_path/scripts/environment.sh"
+default_environment
+
 # TODO: this has to go into the configuration environment setup scripts
 export ARB_NUM_THREADS=$[ $ns_threads_per_core * $ns_cores_per_socket ]
 
 msg "---- Platform ----"
-msg "configuration:     $ns_environment"
 msg "platform:          $ns_system ($(uname -or))"
 msg "cores per socket:  $ns_cores_per_socket"
 msg "threads per core:  $ns_threads_per_core"
@@ -87,7 +105,7 @@ msg "---- Validation ----"
 echo
 
 for sim in $sims; do
-    sim_env="$ns_base_path/config/env_$sim.sh"
+    sim_env="$ns_prefix/config/env_$sim.sh"
     if [ ! -f "$sim_env" ]; then
         echo "Simulator $sim has not been locally installed, skipping."
         continue
@@ -116,7 +134,7 @@ for sim in $sims; do
 
         (
           source "$sim_env";
-          export ns_base_path ns_install_path ns_output_path
+          export ns_base_path ns_prefix ns_validation_output ns_cache_path
 	  "$model_path/run" $ns_refresh_cache "$sim" "$param"
         )
     done
