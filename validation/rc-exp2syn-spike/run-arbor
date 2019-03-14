@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+arbor-rc-exp2syn-spike "${@}"
