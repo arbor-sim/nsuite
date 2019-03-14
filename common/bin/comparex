@@ -17,9 +17,12 @@ def parse_clargs():
     P.epilog =  """\
 Compare each variable in both the input-data set and the reference-data set
 which has the same rank and which is defined over the same named dimensions.
+A subset of variables can be specified with the -v/--var option.
 
-If the variable is 1-d, and is defined over a dimension named _dim_, then the
-reference data is interpolated and the input data is compared against that.
+If a dimension is specified with -i/--interpolate to be a candidate for
+interpolation, and a variable is 1-d and defined over that dimentions, then
+the reference data is interpolated and the input data is compared against that.
+The -i/--interpolate option can be given multiple times.
 
 Othewise, the reference and input data are compared point-by-point at equal
 dimension values. If the dimension values are not identical across the input
@@ -41,7 +44,8 @@ variable X:
     P.add_argument('-r', '--ref', metavar='FILE', required=True, dest='reference', help='reference dataset')
     P.add_argument('-W', '--warn', action='store_true', dest='warnings', help='enable warnings')
     P.add_argument('-o', '--output', metavar='FILE', dest='output', help='output dataset')
-    P.add_argument('-i', '--interpolate', metavar='DIM', dest='interpolate', help='interpolate reference over DIM')
+    P.add_argument('-i', '--interpolate', metavar='DIM', dest='interpolate', action='append', help='interpolate reference over DIM')
+    P.add_argument('-v', '--var', metavar='VAR', dest='vars', action='append', help='compare only VAR')
 
     P.formatter_class = argparse.RawDescriptionHelpFormatter
 
@@ -108,12 +112,23 @@ def interpolate_var(x, d):
     return (xi, xerr)
 
 opts = parse_clargs()
-if opts.warnings and opts.interpolate is not None and opts.interpolate not in opts.reference.dims:
-    warn(opts.prog, 'no dimension named \'{}\' in reference dataset.', opts.interpolate)
+opts.interpolate = set(opts.interpolate) if opts.interpolate else set() 
+opts.vars = set(opts.vars) if opts.vars else set()
+
+if opts.warnings and opts.interpolate is not None and not opts.interpolate<=set(opts.reference.dims):
+    warn(opts.prog, 'missing dimensions in reference dataset: {}', ', '.join(opts.interpolate))
 
 out = xarray.Dataset()
 
-for var in common_variables(opts.input, opts.reference):
+varlist = common_variables(opts.input, opts.reference)
+if opts.vars:
+    if opts.warnings:
+        missing = opts.vars - varlist
+        if missing:
+            warn(opts.prog, 'missing variables in common: '+', '.join(missing))
+    varlist = varlist & opts.vars
+
+for var in varlist:
     v = opts.input[var]
     r = opts.reference[var]
 
@@ -122,17 +137,20 @@ for var in common_variables(opts.input, opts.reference):
             warn(opts.prog, 'dimensions of variable \'{}\' differ between input and reference dataset.', var)
         continue
 
-    if len(v.shape)>1 and opts.interpolate in v.dims and opts.warning:
-        warn(opts.prog, 'will not interpolate over \'{}\' for multi-dimensional variable \'{}\'', opts.interpolate, var)
+    interp_var = opts.interpolate & set(v.dims)
+    interp_var = next(iter(interp_var)) if interp_var else None
+
+    if len(v.shape)>1 and interp_var and opts.warning:
+        warn(opts.prog, 'will not interpolate over \'{}\' for multi-dimensional variable \'{}\'', interp_var, var)
 
     interperr = np.zeros_like(v)
-    if r.dims==(opts.interpolate,):
-        if r.coords[opts.interpolate].size<=5:
+    if r.dims==(interp_var,):
+        if r.coords[interp_var].size<=5:
             if opts.warnings:
-                warn(opts.prog, 'interpolation on \'{}\' requires ≥ 6 elements in \'{}\'', opts.interpolate, x.name)
+                warn(opts.prog, 'interpolation on \'{}\' requires ≥ 6 elements in \'{}\'', interp_var, x.name)
         else:
             # TODO: add warning for extrapolation
-            r, interperr = interpolate_var(r, v.coords[opts.interpolate])
+            r, interperr = interpolate_var(r, v.coords[interp_var])
     elif opts.warnings:
         for dim in v.dims:
             if not np.array_equal(v.coords[dim].data, r.coords[dim].data):
