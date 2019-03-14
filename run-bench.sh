@@ -45,7 +45,7 @@ do
             ns_prefix="${1#--prefix=}"
             ;;
         --prefix )
-	    shift
+        shift
             ns_prefix=$1
             ;;
         --model )
@@ -132,9 +132,9 @@ do
         echo
 
         model_input_path="$ns_input_path/benchmarks/$model/$config"
-	model_output_path="$ns_benchmark_output/$model/$config"
+        model_output_path="$ns_benchmark_output/$model/$config"
 
-        ./config.sh $config "$ns_base_path" "$model_input_path" "$model_output_path" "$ns_prefix/config"
+        ./config.sh $config "$ns_base_path" "$model_input_path" "$model_output_path" "$ns_prefix"
 
         # todo: hoist check for env file outside loop, which would unset any simulation engine that has not been installed
         if [ "$run_arb" == "true" ]; then
