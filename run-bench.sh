@@ -1,6 +1,6 @@
 usage() {
     cat <<_end_
-Usage: run-bench.sh [--prefix=PATH] [--model MODEL] [--config CONFIG] SIMULATOR
+Usage: run-bench.sh [OPTIONS] SIMULATOR
 
 Run NSuite benchmarks for SIMULATOR.
 
@@ -79,6 +79,9 @@ configs=${configs:-small}
 # Load utility functions and set up default environment.
 
 source "$ns_base_path/scripts/util.sh"
+mkdir -p "$ns_prefix"
+ns_prefix=$(full_path "$ns_prefix")
+
 source "$ns_base_path/scripts/environment.sh"
 default_environment
 

@@ -83,6 +83,9 @@ done
 # Load utility functions and set up default environment.
 
 source "$ns_base_path/scripts/util.sh"
+mkdir -p "$ns_prefix"
+ns_prefix=$(full_path "$ns_prefix")
+
 source "$ns_base_path/scripts/environment.sh"
 default_environment
 

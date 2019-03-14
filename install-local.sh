@@ -1,12 +1,12 @@
 usage() {
     cat <<'_end_'
-Usage: install-local.sh [-e SCRIPT] [--prefix=PATH] TARGET
+Usage: install-local.sh [--env=SCRIPT] [--prefix=PATH] TARGET [TARGET...]
 
 Setup NSuite framework, build and install simulators, benchmarks,
 and validation tests.
 
 Options:
-    -e SCRIPT       Source SCRIPT before building.
+    --env=SCRIPT       Source SCRIPT before building.
     --prefix=PATH   Use PATH as base for install and other run-time
                     working directories.
 
@@ -52,12 +52,15 @@ do
             ns_build_neuron=true
             ns_build_coreneuron=true
             ;;
-        -e )
+        --env=* )
+            ns_environment=${1#--env=}
+            ;;
+        --env )
             shift
             ns_environment=$1
             ;;
         --prefix=* )
-	    ns_prefix=${1#--prefix=}:
+	    ns_prefix=${1#--prefix=}
 	    ;;
         --prefix )
             shift
@@ -74,6 +77,9 @@ done
 # Load utility functions and set up default environment.
 
 source "$ns_base_path/scripts/util.sh"
+mkdir -p "$ns_prefix"
+ns_prefix=$(full_path "$ns_prefix")
+
 source "$ns_base_path/scripts/environment.sh"
 default_environment
 
