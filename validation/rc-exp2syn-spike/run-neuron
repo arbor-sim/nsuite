@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-neuron-rc-exp2syn-spike.py "${@}"
+./neuron-rc-exp2syn-spike.py "${@}"

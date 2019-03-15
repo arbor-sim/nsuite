@@ -269,7 +269,7 @@ int main(int argc, char** argv) {
         if (root) {
             std::cout << "\n" << ns << " spikes generated at rate of "
                       << params.duration/ns << " ms between spikes\n";
-            std::ofstream fid(params.odir + "/arb_" + params.name + "_spikes.gdf");
+            std::ofstream fid(params.odir + "/" + params.name + "_spikes.gdf");
             if (!fid.good()) {
                 std::cerr << "Warning: unable to open file spikes.gdf for spike output\n";
             }
@@ -286,7 +286,7 @@ int main(int argc, char** argv) {
 
         // Write the samples to a json file samples were stored on this rank.
         if (voltage.size()>0u) {
-            std::string fname = params.odir + "/arb_" + params.name + "_voltages.json";
+            std::string fname = params.odir + "/" + params.name + "_voltages.json";
             write_trace_json(fname, voltage);
         }
 

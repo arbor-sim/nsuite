@@ -118,7 +118,7 @@ echo
 msg "---- Benchmarks ----"
 echo
 
-mkdir -p "$ns_input_path"
+mkdir -p "$ns_bench_input_path"
 for model in $models
 do
     model_config_path="$ns_base_path/benchmarks/models/$model"
@@ -131,12 +131,14 @@ do
         msg $model-$config
         echo
 
-        model_input_path="$ns_input_path/benchmarks/$model/$config"
-        model_output_path="$ns_benchmark_output/$model/$config"
+        # This will be some default string like "%m/%p/%s" that can be provided
+        # overriden by the user on the command line, or by setting a variable in
+        # a custom config file).
+        run_name="$model/$config"
+        model_input_path="$ns_bench_input_path/$run_name"
 
-        ./config.sh $config "$ns_base_path" "$model_input_path" "$model_output_path" "$ns_prefix"
+        ./config.sh $config "$ns_base_path" "$ns_config_path" "$ns_bench_input_path" "$ns_bench_output_path" "$run_name"
 
-        # todo: hoist check for env file outside loop, which would unset any simulation engine that has not been installed
         if [ "$run_arb" == "true" ]; then
             msg "  arbor"
             "$model_input_path/run_arb.sh"

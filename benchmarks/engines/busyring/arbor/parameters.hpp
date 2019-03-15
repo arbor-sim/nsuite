@@ -46,10 +46,11 @@ ring_params read_options(int argc, char** argv) {
     if (argc<2) {
         return params;
     }
-    if (argc>2) {
+    if (argc>3) {
         throw std::runtime_error("More than command line one option not permitted.");
     }
 
+    // Assume that the first argument is a json parameter file
     std::string fname = argv[1];
     std::ifstream f(fname);
 
@@ -67,7 +68,6 @@ ring_params read_options(int argc, char** argv) {
     param_from_json(params.dt, "dt", json);
     param_from_json(params.min_delay, "min-delay", json);
     param_from_json(params.record_voltage, "record", json);
-    param_from_json(params.odir, "odir", json);
     param_from_json(params.cell.max_depth, "depth", json);
     param_from_json(params.cell.branch_probs, "branch-probs", json);
     param_from_json(params.cell.compartments, "compartments", json);
@@ -79,6 +79,11 @@ ring_params read_options(int argc, char** argv) {
             std::cout << "  Warning: unused input parameter: \"" << it.key() << "\"\n";
         }
         std::cout << "\n";
+    }
+
+    // Set optional output path if a second argument was passed
+    if (argc==3) {
+        params.odir = argv[2];
     }
 
     return params;
