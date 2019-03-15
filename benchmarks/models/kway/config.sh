@@ -1,8 +1,12 @@
-config=$1
-base_path=$2
-input_path=$3
-output_path=$4
-prefix=$5
+config="$1"
+base_path="$2"
+env_path="$3"
+input_base="$4"
+output_base="$5"
+run_name="$6"
+
+input_path="$input_base/$run_name"
+output_path="$output_base/$run_name"
 
 config_json="`pwd`/$config.json"
 
@@ -13,7 +17,7 @@ config_name="ring-$config"
 engine_path="$base_path/benchmarks/engines/busyring"
 generator="$engine_path/generate_inputs.py"
 
-python3 "$generator" --idir "$input_path" --odir "$output_path" --config "$config_json" --bdir "$engine_path" --prefix "$prefix" --sdir "$base_path/scripts"
+python3 "$generator" --idir "$input_path" --odir "$output_path" --config "$config_json" --bdir "$engine_path" --sdir "$base_path/scripts" --edir="$env_path"
 
 chmod +x "$input_path/run_arb.sh"
 chmod +x "$input_path/run_nrn.sh"
