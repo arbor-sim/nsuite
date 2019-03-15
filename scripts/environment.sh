@@ -2,17 +2,17 @@
 # Variables defined here use the prefix ns_
 set_working_paths() {
     if [ -z "$ns_prefix" ]; then
-	echo "error: empty ns_prefix"
-	exit 1
+        echo "error: empty ns_prefix"
+        exit 1
     fi
 
     # Paths to working directories
     ns_install_path="$ns_prefix/install"
     ns_build_path="$ns_prefix/build"
     ns_cache_path="$ns_prefix/cache"
-    ns_input_path="$ns_prefix/input"
     ns_config_path="$ns_prefix/config"
-    ns_benchmark_output="$ns_prefix/output/benchmark"
+    ns_bench_output_path="$ns_prefix/output/benchmarks"
+    ns_bench_input_path="$ns_prefix/input/benchmarks"
     ns_validation_output="$ns_prefix/output/validation"
 }
 
@@ -138,7 +138,7 @@ save_environment() {
 
     source_env_script=
     if [ -n "$ns_environment" ]; then
-	source_env_script='source '$(full_path "$ns_environment")
+        source_env_script='source '$(full_path "$ns_environment")
     fi
 
     cat <<_end_ > "$ns_config_path/env_$sim.sh"
