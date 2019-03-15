@@ -183,6 +183,8 @@ int main(int argc, char** argv) {
     try {
         bool root = true;
 
+        auto params = read_options(argc, argv);
+
         arb::proc_allocation resources;
         if (auto nt = arbenv::get_env_num_threads()) {
             resources.num_threads = nt;
@@ -212,8 +214,6 @@ int main(int argc, char** argv) {
             std::cout << "mpi:      " << (has_mpi(context)? "yes": "no") << "\n";
             std::cout << "ranks:    " << num_ranks(context) << "\n" << std::endl;
         }
-
-        auto params = read_options(argc, argv);
 
         arb::profile::meter_manager meters;
         meters.start(context);

@@ -40,6 +40,11 @@ struct ring_params {
 };
 
 ring_params read_options(int argc, char** argv) {
+    const char* usage = "Usage:  arbor-busyring [params [opath]]\n\n"
+                        "Driver for the Arbor busyring benchmark\n\n"
+                        "Options:\n"
+                        "   params: JSON file with model parameters.\n"
+                        "   opath: output path.\n";
     using sup::param_from_json;
 
     ring_params params;
@@ -47,6 +52,7 @@ ring_params read_options(int argc, char** argv) {
         return params;
     }
     if (argc>3) {
+        std::cout << usage << std::endl;
         throw std::runtime_error("More than command line one option not permitted.");
     }
 
