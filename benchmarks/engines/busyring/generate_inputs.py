@@ -75,6 +75,11 @@ arb_run_fid.write('[[ ! $(type -P arbor-busyring) ]]  && echo "Arbor needs to be
 nrn_run_fid.write('[[ ! $(type -P nrniv) ]]           && echo "NEURON needs to be installed before running benchmark"     && exit\n')
 cnr_run_fid.write('[[ ! $(type -P coreneuron_exec) ]] && echo "CoreNeuron needs to be installed before running benchmark" && exit\n')
 
+# quit early if required simulation engine is not in path
+arb_run_fid.write('[[ ! $(type -P arbor-busyring) ]]  && echo "Arbor needs to be installed before running benchmark"      && exit\n')
+nrn_run_fid.write('[[ ! $(type -P nrniv) ]]           && echo "NEURON needs to be installed before running benchmark"     && exit\n')
+cnr_run_fid.write('[[ ! $(type -P coreneuron_exec) ]] && echo "CoreNeuron needs to be installed before running benchmark" && exit\n')
+
 header='echo "  cells compartments    wall(s)  throughput  mem-tot(MB) mem-percell(MB)"\n'
 cnr_run_fid.write(header)
 nrn_run_fid.write(header)
