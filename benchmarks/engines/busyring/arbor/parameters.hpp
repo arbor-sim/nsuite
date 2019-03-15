@@ -53,7 +53,7 @@ ring_params read_options(int argc, char** argv) {
     }
     if (argc>3) {
         std::cout << usage << std::endl;
-        throw std::runtime_error("More than command line one option not permitted.");
+        throw std::runtime_error("More than two command line options is not permitted.");
     }
 
     // Assume that the first argument is a json parameter file
