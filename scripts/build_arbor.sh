@@ -57,8 +57,6 @@ dst_path="$ns_install_path/bin"
 msg "ARBOR: library build completed"
 cd $ns_base_path
 
-msg "ARBOR: building benchmark models"
-
 # Required for the CMake scripts that build the benchmarks to
 # find the Arbor library that was built and installed above.
 export CMAKE_PREFIX_PATH="$ns_install_path"
@@ -77,7 +75,7 @@ do
     msg "ARBOR: cmake"
     # Set install path to the source path.
     # This will install the "run" executable in the source path.
-    cmake "$source_path" -DCMAKE_INSTALL_PREFIX:PATH="$source_path" &>> "$out"
+    cmake "$source_path" -DCMAKE_INSTALL_PREFIX:PATH="$ns_install_path" &>> "$out"
     [ $? != 0 ] && exit_on_error "see ${out}"
 
     msg "ARBOR: make"
@@ -91,5 +89,6 @@ done
 
 cd $ns_base_path
 
+echo
 msg "ARBOR: saving environment"
 save_environment arbor
