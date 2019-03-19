@@ -134,7 +134,7 @@ private:
     double min_delay_;
     ring_params params_;
 
-    float event_weight_ = 0.05;
+    float event_weight_ = 0.01;
 };
 
 struct cell_stats {
