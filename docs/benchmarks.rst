@@ -13,13 +13,3 @@ Results form a benchmark sweep are stored in a simple file format
 
 CSV example:
 
-.. code-block::
-
-    cells, compartments, time, memory, energy, name
-    2,     128,          2.3,   10.7,  2.05,   ring_2
-    3,     270,          4.7,   20.1,  4.1,    ring_4
-
-JSON:
-
-.. code-block::
-
