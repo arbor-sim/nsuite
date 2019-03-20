@@ -53,7 +53,7 @@ table_line() {
     tts=$(awk '/^model-run/ {print $2}' "$fid")
     ncell=$(awk '/^cell stats/ {print $3}' "$fid")
 
-    line=$(printf "%9d,%12.3f," $ncell $tts)
+    line=$(printf %9d,%12.3f, $ncell $tts)
     nranks=$(awk '/^ranks:/ {print $2}' "$fid")
 
     mempos=$(awk '/^meter / {j=-1; for(i=1; i<=NF; ++i) if($i =="memory(MB)") j=i; print j}' "$fid")
@@ -61,14 +61,14 @@ table_line() {
     then
         rankmem=$(awk "/^meter-total/ {print \$$mempos}" "$fid")
         totalmem=$(echo $rankmem*$nranks | bc -l)
-        line="$line$(printf "%12.3f," $totalmem)"
+        line="$line"$(printf %12.3f, $totalmem)
     else
-        line="$line$(printf "%12s," "")"
+        line="$line"$(printf %12s, '')
     fi
 
     nthreads=$(awk '/^threads:/ {print $2}' "$fid")
     hasgpu=$(awk '/^gpu:/ {print $2}' "$fid")
-    line="$line$(printf "%7d,%7d,%7s" $nranks $nthreads $hasgpu)"
+    line="$line"$(printf %7d,%7d,%7s $nranks $nthreads $hasgpu)
 }
 
 # NOTE: this is very fragile and will almost certainly break from version to
@@ -91,7 +91,7 @@ table_line_cnr() {
     # we can't run CoreNeuron with GPU for now, so always no.
     hasgpu="no"
 
-    line=$(printf "%9d,%12.3f,%12.3f,%7d,%7d,%7s" $ncell $tts $totalmem $nranks $nthreads $hasgpu)
+    line=$(printf %9d,%12.3f,%12.3f,%7d,%7d,%7s $ncell $tts $totalmem $nranks $nthreads $hasgpu)
 }
 
 # Use tmp file to generate unsorted table.
@@ -104,7 +104,7 @@ do
     [[ "$parse_coreneuron" == "true" ]]  && table_line_cnr $f
     echo "$line" >> "$tmp"
 done
-printf "%9s,%12s,%12s,%7s,%7s,%7s\n" \
+printf %9s,%12s,%12s,%7s,%7s,%7s\n \
        "cells" "wall time(s)" "memory (MB)" "ranks" "threads" "gpu" \
        > "$results"
 
