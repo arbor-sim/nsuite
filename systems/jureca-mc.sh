@@ -1,5 +1,8 @@
 ### environment ###
 
+# record system name
+ns_sysname="jureca-mc"
+
 # set up environment for building on the multicore part of jureca
 
 module load CMake/3.13.0

@@ -123,7 +123,12 @@ find_installed_paths() {
 # Save the environment used to build a simulation engine
 # to a shell script that can be used to reproduce that
 # environment for running the simulation engine.
-# arg 1:    name of the simulation engine, one of: {arb, nrn, corenrn}
+#
+# Record prefix to writable data (ns_prefix) and other
+# installation-time information, viz. ns_timestamp and
+# ns_sysname.
+# 
+# Takes one argument: name of the simulation engine, one of: {arb, nrn, corenrn}
 save_environment() {
     set_working_paths
     sim="$1"
@@ -143,6 +148,8 @@ save_environment() {
 
     cat <<_end_ > "$ns_config_path/env_$sim.sh"
 ns_prefix="$ns_prefix"
+ns_timestamp="$ns_timestamp"
+ns_sysname="$ns_sysname"
 export PATH="$bin_path\${PATH}"
 export PYTHONPATH="$python_path\$PYTHONPATH"
 export PATH="$bin_path\$PATH"

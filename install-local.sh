@@ -135,6 +135,15 @@ msg "sha:             $ns_cnrn_sha"
 
 mkdir -p "$ns_build_path"
 
+# Record system configuration name, timestamp.
+# (This data will also be recorded in constructed environments.)
+
+ns_timestamp=$(date -Isec)
+echo "$ns_timestamp" > "$ns_build_path/timestamp"
+echo "${ns_sysname:=$(hostname -s)}" > "$ns_build_path/sysname"
+
+# Build simulator targets.
+
 export CC="$ns_cc"
 export CXX="$ns_cxx"
 
