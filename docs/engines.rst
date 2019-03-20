@@ -48,3 +48,6 @@ List of features required for inclusion
    provided by CoreNeuron is spike times, so validation tests that require
    other information such as voltage traces are not supported.
 
+because bash is supported everywhere, because bash is
+used by continuous integration systems like (Travis) and (Jenkins), and because
+NSuite does not require anything more sophisticated.
