@@ -50,24 +50,24 @@ table_line() {
     fid="$1"
     line=
 
-    tts=`awk '/^model-run/ {print $2}' "$fid"`
-    ncell=`awk '/^cell stats/ {print $3}' "$fid"`
+    tts=$(awk '/^model-run/ {print $2}' "$fid")
+    ncell=$(awk '/^cell stats/ {print $3}' "$fid")
 
-    line="$(printf "%9d,%12.3f," $ncell $tts)"
-    nranks=`awk '/^ranks:/ {print $2}' "$fid"`
+    line=$(printf "%9d,%12.3f," $ncell $tts)
+    nranks=$(awk '/^ranks:/ {print $2}' "$fid")
 
-    mempos=`awk '/^meter / {j=-1; for(i=1; i<=NF; ++i) if($i =="memory(MB)") j=i; print j}' "$fid"`
+    mempos=$(awk '/^meter / {j=-1; for(i=1; i<=NF; ++i) if($i =="memory(MB)") j=i; print j}' "$fid")
     if [ "$mempos" != "-1" ]
     then
         rankmem=$(awk "/^meter-total/ {print \$$mempos}" "$fid")
-        totalmem=`echo $rankmem*$nranks | bc -l`
+        totalmem=$(echo $rankmem*$nranks | bc -l)
         line="$line$(printf "%12.3f," $totalmem)"
     else
         line="$line$(printf "%12s," "")"
     fi
 
-    nthreads=`awk '/^threads:/ {print $2}' "$fid"`
-    hasgpu=`awk '/^gpu:/ {print $2}' "$fid"`
+    nthreads=$(awk '/^threads:/ {print $2}' "$fid")
+    hasgpu=$(awk '/^gpu:/ {print $2}' "$fid")
     line="$line$(printf "%7d,%7d,%7s" $nranks $nthreads $hasgpu)"
 }
 
@@ -76,31 +76,29 @@ table_line() {
 # only information we have available is whatever CoreNeuron outputs to stdout.
 table_line_cnr() {
     fid="$1"
-    line=
 
-    tts=`grep "Solver Time" "$fid" | awk '{print $4}'`
-    ncell=`grep "Number of cells" "$fid" | awk '{print $4}'`
+    tts=$(awk '/Solver Time/ {print $4}' "$fid")
+    ncell=$(awk '/Number of cells/ {print $4}' "$fid")
 
-    rankmem_start=`grep "After MPI_Init" "$fid" | awk '{print $12}'`
-    rankmem_end=`grep "After nrn_finitialize" "$fid" | awk '{print $12}'`
-    rankmem=`echo $rankmem_end-$rankmem_start | bc -l`
+    rankmem_start=$(awk '/After MPI_Init/ {print $12}' "$fid")
+    rankmem_end=$(awk '/After nrn_finitialize/ {print $12}' "$fid")
+    rankmem=$(echo $rankmem_end-$rankmem_start | bc -l)
     # num_mpi and num_omp_thread are printed more than once (for redundancy?)
     # So use awk to discard all but the last occurence of each variable
-    nranks=`awk '/num_mpi/ {split($1,line,"="); x=line[2]} END{print x}' "$fid"`
-    nthreads=`awk '/num_omp_thread/ {split($1,line,"="); x=line[2]} END{print x}' "$fid"`
-    totalmem=`echo $rankmem*$nranks | bc -l`
-    hasgpu="no" # we can't run CoreNeuron with GPU for now, so always no.
+    nranks=$(awk -F= '/num_mpi/ {x=$2} END{print x}' "$fid")
+    nthreads=$(awk -F= '/num_omp_thread/ {x=$2} END{print x}' "$fid")
+    totalmem=$(echo $rankmem*$nranks | bc -l)
+    # we can't run CoreNeuron with GPU for now, so always no.
+    hasgpu="no"
 
-    line="$line$(printf "%9d,%12.3f,%12.3f,%7d,%7d,%7s" $ncell $tts $totalmem $nranks $nthreads $hasgpu)"
+    line=$(printf "%9d,%12.3f,%12.3f,%7d,%7d,%7s" $ncell $tts $totalmem $nranks $nthreads $hasgpu)
 }
-
-files=$(ls "$path"/*.out)
 
 # Use tmp file to generate unsorted table.
 tmp="$path/tmp"
 results="$path/results.csv"
 rm -f "$tmp"
-for f in $files
+for f in "$path"/*.out
 do
     [[ "$parse_coreneuron" == "false" ]] && table_line $f
     [[ "$parse_coreneuron" == "true" ]]  && table_line_cnr $f
