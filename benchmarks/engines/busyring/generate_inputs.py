@@ -66,9 +66,13 @@ cnr_run_fid.write('source "%s/bench_output.sh"\n'%(scriptdir))
 arb_run_fid.write('odir="%s/arbor"\n'%(odir))
 nrn_run_fid.write('odir="%s/neuron"\n'%(odir))
 cnr_run_fid.write('odir="%s/coreneuron"\n'%(odir))
+# make output paths if they don't exist, and clean them.
 arb_run_fid.write('mkdir -p "$odir"\n')
 nrn_run_fid.write('mkdir -p "$odir"\n')
 cnr_run_fid.write('mkdir -p "$odir"\n')
+arb_run_fid.write('rm -f "$odir/*"\n')
+nrn_run_fid.write('rm -f "$odir/*"\n')
+cnr_run_fid.write('rm -f "$odir/*"\n')
 
 # quit early if required simulation engine is not in path
 arb_run_fid.write('[[ ! $(type -P arbor-busyring) ]]  && echo "Arbor needs to be installed before running benchmark"      && exit\n')
@@ -132,6 +136,10 @@ for ncells in cell_range:
 nrn_run_fid.write('echo\n')
 cnr_run_fid.write('echo\n')
 arb_run_fid.write('echo\n')
+
+arb_run_fid.write('%s/csv_bench.sh --path="$odir"\n'%(scriptdir))
+nrn_run_fid.write('%s/csv_bench.sh --path="$odir"\n'%(scriptdir))
+cnr_run_fid.write('%s/csv_bench.sh --path="$odir" --coreneuron\n'%(scriptdir))
 
 nrn_run_fid.close()
 arb_run_fid.close()
