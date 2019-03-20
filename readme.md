@@ -1,10 +1,7 @@
-# nsuite
+# NSuite
 
-A suite for benchmarking and validating NEURON, Nest and Arbor neuron network simulators/libraries.
+NSuite is a framework for the implementation and execution of benchmarks and numerical validations for multi-compartment neural network simulators. The framework currently supports Arbor, NEURON, and CoreNeuron, while allowing other simulation engines to be added.
 
-This is in very early prototype stage. It currently can check out and build the 3 software on generic linux and Daint-mc, and has benchmarks for NEURON that match those implemented as examples in Arbor.
+NSuite is specifically designed to allow easy deployment on HPC systems in testing workflows, such as benchmark-driven development or continuous integration.
 
-* `systems`: scripts that detect and set environment and modules for target systems.
-* `scripts`: contains scripts for building and installing the simulation codes/libraries for benchmarking.
-* `install`: path where the software is installed.
-* `benchmarks`: benchmarks for comparing.
+To get started using NSuite please refer to the online documentation at [Read the Docs](http://nsuite.readthedocs.io/en/latest/).
