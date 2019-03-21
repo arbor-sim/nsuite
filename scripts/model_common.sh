@@ -41,7 +41,8 @@ function model_setup {
     local -a fmtkeys
     fmtkeys=("T=$ns_timestamp" "S=$ns_sysname" "s=$model_sim" "m=$model_name" "p=$model_param")
     fmtkeys+=("H=$(git-repo-hash)" "h=$(git-repo-hash --short)")
-    model_output_dir=$(pathsub --base="$ns_validation_output" "${fmtkeys[@]}" ${NS_VALIDATION_PATH_FORMAT:-%s/%m/%p})
+
+    model_output_dir=$(pathsub --base="$ns_validation_output" "${fmtkeys[@]}" -- "${ns_validation_output_format:-%s/%m/%p}")
 
     mkdir -p "$model_output_dir" || die "$model_name: cannot create directory '$model_output_dir'"
 

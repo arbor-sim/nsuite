@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-usage() {
+function usage {
     cat <<'_end_'
 Usage: pathsub [--help|-h] [--base=PATH] [key=value ...] [--] [FORMAT ...]
 
@@ -47,7 +47,7 @@ done
 
 strings+=("${@}")
 
-function subformat() {
+function subformat {
     awk -e \
        'BEGIN {
            lookup["%%"] = "%"
@@ -85,7 +85,7 @@ function subformat() {
         }' <(for a in "${@}"; do echo "$a"; done; echo --) -
 }
 
-function prepend_dir() {
+function prepend_dir {
     if [[ -z $1 || $2 =~ ^/.* ]]; then
         echo "$2"
     else
