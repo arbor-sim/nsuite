@@ -13,7 +13,8 @@ function die {
     echo "$@" >&2; exit 1
 }
 
-# Sets model_name, model_sim and model_param from arguments,
+# Sets model_name, model_sim and model_param from arguments, provided in
+# this order.
 #
 # Creates if required output dir and cache dir.
 #
@@ -22,8 +23,8 @@ function die {
 
 function model_setup {
     if [ -z "$ns_validation_output" -o -z "$ns_cache_path" ]; then
-	echo "error: missing required ns_ path variables"
-	exit 1
+        echo "error: missing required ns_ path variables"
+        exit 1
     fi
 
     model_name="$1"
@@ -37,7 +38,12 @@ function model_setup {
     model_cache_dir="$ns_cache_path/$model_name"
     mkdir -p "$model_cache_dir" || die "$model_name: cannot create directory '$model_cache_dir'"
 
-    model_output_dir="$ns_validation_output/$model_sim/$model_name/$model_param"
+    local -a fmtkeys
+    fmtkeys=("T=$ns_timestamp" "S=$ns_sysname" "s=$model_sim" "m=$model_name" "p=$model_param")
+    fmtkeys+=("H=$(git-repo-hash)" "h=$(git-repo-hash --short)")
+
+    model_output_dir=$(pathsub --base="$ns_validation_output" "${fmtkeys[@]}" -- "${ns_validation_output_format:-%s/%m/%p}")
+
     mkdir -p "$model_output_dir" || die "$model_name: cannot create directory '$model_output_dir'"
 
     model_status_path="$model_output_dir/status"
@@ -52,12 +58,12 @@ function model_setup {
 function model_find_cacheable {
     file="$1"
     if [ -r "./$file" ]; then
-       	echo "$file"
-	return 0
+               echo "$file"
+        return 0
     else 
-	local cached="$model_cache_dir/$file"
-	echo "$cached"
-	return $([ -e "$cached" ])
+        local cached="$model_cache_dir/$file"
+        echo "$cached"
+        return $([ -e "$cached" ])
     fi
 }
 
@@ -71,9 +77,9 @@ function model_notify_pass_fail {
     local nc=$'\033[0m'
 
     if [ "$1" -eq 0 ]; then
-	echo "${green}[PASS]${nc} $model_sim $model_name/$model_param"
+        echo "${green}[PASS]${nc} $model_sim $model_name/$model_param"
     else
-	echo "${light_red}[FAIL]${nc} $model_sim $model_name/$model_param"
+        echo "${light_red}[FAIL]${nc} $model_sim $model_name/$model_param"
     fi
 }
 

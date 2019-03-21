@@ -1,5 +1,8 @@
 ### environment ###
 
+# record system name
+ns_sysname="daint-mc"
+
 # set up environment for building on the multicore part of daint
 
 [ "$PE_ENV" = "CRAY" ] && module swap PrgEnv-cray PrgEnv-gnu

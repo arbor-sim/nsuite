@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+usage() {
+    cat <<_end_
+Usage: git-repo-version [--short] [--] [path]
+    -h, --help     print usage and exit
+    -s, --short    emit abbreviated hash
+
+Print commit hash of git repo at <path>, defaulting to
+the current directory. If the repo is in an uncommited
+modified state, append '+' to the hash.
+_end_
+}
+
+unset eoo
+unset repohome
+
+gitformat="%H"
+while [[ $# > 0 && -z "$eoo" ]]; do
+    case $1 in
+        -h | --help )
+            usage
+            exit 0
+            ;;
+        -s | --short )
+            gitformat="%h"
+            shift
+            ;;
+        -- )
+            shift
+            break
+            ;;
+        * )
+            break
+    esac
+done
+
+if [[ $# > 1 ]]; then
+    cat >&2 <<_end_
+git-repo-hash: too many arguments
+Try 'git-repo-hash --help' for more information.
+_end_
+    exit 1
+fi
+
+[[ $# > 0 ]] && repohome=(-C "$1")
+
+if git_commit=$(git "${repohome[@]}" log -1 --pretty=format:$gitformat 2>/dev/null); then
+    git "${repohome[@]}" diff --quiet HEAD 2>/dev/null || git_commit+="+"
+    echo "${git_commit}"
+else
+    echo "git-repo-hash: failed to inspect git repo" >&2
+    exit 1
+fi
+

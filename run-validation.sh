@@ -6,12 +6,32 @@ Usage: run-validation.sh [OPTIONS] SIMULATOR [SIMULATOR...]
 
 Options:
     --prefix=PREFIX            Use PATH as base for working directories.
+    -o, --output=FORMAT        Override default path to validation outputs.
     -l, --list-models          List available model/parameter tests.
     -r, --refresh              Regenerate any cached reference data.
     -m, --model=MODEL/[PARAM]  Run given model/parameter test.
 
 SIMULATOR is one of: arbor, neuron
 If no model is explicitly provided, all available tests will be run.
+
+The output FORMAT is a pattern that is used to determine the output
+directory for any given simulator, model and parameter set. If the
+resulting path is not absolute, it will be taken relative to
+the path PREFIX/output/validation.
+
+Fields in FORMAT are substituted as follows:
+
+  %T    Timestamp of invocation of install-local.sh.
+  %H    Git commit hash of nsuite (with + on end if modified).
+  %h    Git commit short hash of nsuite (with + on end if modified).
+  %S    System name (if defined in system environment script) or host name.
+  %s    Simulator name.
+  %m    Model name.
+  %p    Parameter set name.
+  %%    Literal '%'.
+
+If no --output option is provided, the default FORMAT %s/%m/%p
+is used.
 _end_
     exit 1;
 }
@@ -41,30 +61,39 @@ for modeldir in "$ns_base_path/validation/"*; do
     fi
 done
 
-ns_refresh_cache=""
+unset ns_refresh_cache
+unset ns_validation_output_format
+
 while [ -n "$1" ]; do
     case $1 in
         -l | --list-models )
-            for m in "$all_models"; do echo $m; done
+            for m in $all_models; do echo $m; done
             exit 0
             ;;
         --prefix=* )
             ns_prefix="${1#--prefix=}"
             ;;
         --prefix )
-	    shift
+            shift
             ns_prefix=$1
             ;;
+        --output=* )
+            ns_validation_output_format="${1#--output=}"
+            ;;
+        -o | --output )
+            shift
+            ns_validation_output_format=$1
+            ;;
         --model=* )
-	    models="$models ${1#--model=}"
+            models="$models ${1#--model=}"
             ;;
         -m | --model )
             shift
             models="$models $1"
-	    ;;
-	-r | --refresh )
-	    ns_refresh_cache="-r"
-	    ;;
+            ;;
+        -r | --refresh )
+            ns_refresh_cache="-r"
+            ;;
         neuron )
             sims="$sims neuron"
             ;;
@@ -88,6 +117,7 @@ ns_prefix=$(full_path "$ns_prefix")
 
 source "$ns_base_path/scripts/environment.sh"
 default_environment
+export ns_validation_output_format
 
 # TODO: this has to go into the configuration environment setup scripts
 export ARB_NUM_THREADS=$[ $ns_threads_per_core * $ns_cores_per_socket ]
@@ -134,8 +164,7 @@ for sim in $sims; do
 
         (
           source "$sim_env";
-          export ns_base_path ns_prefix ns_validation_output ns_cache_path
-	  "$model_path/run" $ns_refresh_cache "$sim" "$param"
+          "$model_path/run" $ns_refresh_cache "$sim" "$param"
         )
     done
 done
