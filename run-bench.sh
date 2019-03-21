@@ -5,13 +5,33 @@ Usage: run-bench.sh [OPTIONS] SIMULATOR
 Run NSuite benchmarks for SIMULATOR.
 
 Options:
-    --prefix=PATH    Use PATH as base for working directories.
-    --model=MODEL    Run benchmark MODEL.
-    --config=CONFIG  Run benchmarks with configuration CONFIG.
-    SIMULATOR        One of: arbor, neuron, or coreneuron.
+    --prefix=PATH        Use PATH as base for working directories.
+    --model=MODEL        Run benchmark MODEL.
+    --config=CONFIG      Run benchmarks with configuration CONFIG.
+    -o, --output=FORMAT  Override default path to benchmark outputs.
+    SIMULATOR            One of: arbor, neuron, or coreneuron.
 
 --model and --config can be supplied multiple times. If omitted, the ring
 benchmark will be run with the small configuration.
+
+The output FORMAT is a pattern that is used to determine the output
+directory for any given simulator, model and parameter set. If the
+resulting path is not absolute, it will be taken relative to
+the path PREFIX/output/benchmark.
+
+Fields in FORMAT are substituted as follows:
+
+  %T    Timestamp of invocation of install-local.sh.
+  %H    Git commit hash of nsuite (with + on end if modified).
+  %h    Git commit short hash of nsuite (with + on end if modified).
+  %S    System name (if defined in system environment script) or host name.
+  %s    Simulator name.
+  %m    Model name.
+  %p    Config name.
+  %%    Literal '%'.
+
+If no --output option is provided, the default FORMAT %m/%p/%s
+is used.
 _end_
 
     exit 1;
@@ -28,6 +48,8 @@ ns_prefix=${NS_PREFIX:-$(pwd)}
 run_arb=false
 run_nrn=false
 run_corenrn=false
+
+unset ns_bench_output_format
 
 while [ "$1" != "" ]
 do
@@ -47,6 +69,13 @@ do
         --prefix )
             shift
             ns_prefix=$1
+            ;;
+        --output=* )
+            ns_bench_output_format="${1#--output=}"
+            ;;
+        -o | --output )
+            shift
+            ns_bench_output_format=$1
             ;;
         --model )
             shift
@@ -84,6 +113,14 @@ ns_prefix=$(full_path "$ns_prefix")
 
 source "$ns_base_path/scripts/environment.sh"
 default_environment
+typeset -x PATH="$ns_base_path/common/bin:$PATH"
+
+# Grab timestamp and sysname from build directory for export.
+
+ns_timestamp=$(< "$ns_build_path/timestamp")
+ns_sysname=$(< "$ns_build_path/sysname")
+export ns_timestamp
+export ns_sysname
 
 # Check simulator installation status.
 
@@ -118,6 +155,7 @@ echo
 msg "---- Benchmarks ----"
 echo
 
+
 mkdir -p "$ns_bench_input_path"
 for model in $models
 do
@@ -131,13 +169,9 @@ do
         msg $model-$config
         echo
 
-        # This will be some default string like "%m/%p/%s" that can be provided
-        # overriden by the user on the command line, or by setting a variable in
-        # a custom config file).
-        run_name="$model/$config"
-        model_input_path="$ns_bench_input_path/$run_name"
+        model_input_path="$ns_bench_input_path/$model/$config"
 
-        ./config.sh $config "$ns_base_path" "$ns_config_path" "$ns_bench_input_path" "$ns_bench_output_path" "$run_name"
+        "$ns_base_path/scripts/bench_config.sh" "$model" "$config" "$ns_base_path" "$ns_config_path" "$ns_bench_input_path" "$ns_bench_output" "${ns_bench_output_format:-%m/%p/%s}"
 
         if [ "$run_arb" == "true" ]; then
             msg "  arbor"
