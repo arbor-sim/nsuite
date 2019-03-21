@@ -45,7 +45,7 @@ do
             ns_prefix="${1#--prefix=}"
             ;;
         --prefix )
-        shift
+            shift
             ns_prefix=$1
             ;;
         --model )

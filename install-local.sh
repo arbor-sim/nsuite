@@ -60,12 +60,12 @@ do
             ns_environment=$1
             ;;
         --prefix=* )
-        ns_prefix=${1#--prefix=}
-        ;;
+            ns_prefix=${1#--prefix=}
+            ;;
         --prefix )
             shift
             ns_prefix=$1
-        ;;
+            ;;
         * )
             echo "unknown option '$1'"
             usage
@@ -134,6 +134,15 @@ msg "repo:            $ns_cnrn_git_repo"
 msg "sha:             $ns_cnrn_sha"
 
 mkdir -p "$ns_build_path"
+
+# Record system configuration name, timestamp.
+# (This data will also be recorded in constructed environments.)
+
+ns_timestamp=$(date -Isec)
+echo "$ns_timestamp" > "$ns_build_path/timestamp"
+echo "${ns_sysname:=$(hostname -s)}" > "$ns_build_path/sysname"
+
+# Build simulator targets.
 
 export CC="$ns_cc"
 export CXX="$ns_cxx"
