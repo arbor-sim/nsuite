@@ -146,7 +146,7 @@ meter.checkpoint('model-run')
 
 meter.print()
 
-prefix = env.opath+'/nrn_'+params.name+'_';
+prefix = env.opath+'/'+params.name+'_';
 
 report = metering.report_from_meter(meter)
 report.to_file(prefix+'meters.json')

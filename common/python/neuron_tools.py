@@ -24,11 +24,11 @@ def hoc_setup():
 class neuron_context:
     def __repr__(self):
         s = "-- neuron context ----------------------------\n" \
-            "{0:20s}{1:>20d}\n" \
-            "{2:20s}{3:>20d}\n" \
-            "{4:20s}{5:>20d}\n" \
+            "{0:12s}    no\n" \
+            "{1:12s}{2:>6d}\n" \
+            "{3:12s}{4:>6d}\n" \
             "----------------------------------------------\n"\
-            .format("threads", self.env.nthreads, "ranks", self.size, "rank", self.rank, "is_root", self.is_root)
+            .format("gpu:", "threads:", self.env.nthreads, "ranks:", self.size)
 
         return s
 

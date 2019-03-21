@@ -17,6 +17,9 @@ module load mpi4py/3.0.0-Python-3.6.6
 module load flex/2.6.4
 module load Bison/.3.1
 
+# for validation tests
+module load netCDF
+
 ### compilation options ###
 
 ns_cc=$(which mpicc)

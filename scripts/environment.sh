@@ -13,6 +13,7 @@ set_working_paths() {
     export ns_input_path="$ns_prefix/input"
     export ns_config_path="$ns_prefix/config"
     export ns_benchmark_output="$ns_prefix/output/benchmark"
+    export ns_bench_input_path="$ns_prefix/input/benchmarks"
     export ns_validation_output="$ns_prefix/output/validation"
 }
 

@@ -134,7 +134,7 @@ private:
     double min_delay_;
     ring_params params_;
 
-    float event_weight_ = 0.05;
+    float event_weight_ = 0.01;
 };
 
 struct cell_stats {
@@ -183,6 +183,8 @@ int main(int argc, char** argv) {
     try {
         bool root = true;
 
+        auto params = read_options(argc, argv);
+
         arb::proc_allocation resources;
         if (auto nt = arbenv::get_env_num_threads()) {
             resources.num_threads = nt;
@@ -212,8 +214,6 @@ int main(int argc, char** argv) {
             std::cout << "mpi:      " << (has_mpi(context)? "yes": "no") << "\n";
             std::cout << "ranks:    " << num_ranks(context) << "\n" << std::endl;
         }
-
-        auto params = read_options(argc, argv);
 
         arb::profile::meter_manager meters;
         meters.start(context);
@@ -269,7 +269,7 @@ int main(int argc, char** argv) {
         if (root) {
             std::cout << "\n" << ns << " spikes generated at rate of "
                       << params.duration/ns << " ms between spikes\n";
-            std::ofstream fid(params.odir + "/arb_" + params.name + "_spikes.gdf");
+            std::ofstream fid(params.odir + "/" + params.name + "_spikes.gdf");
             if (!fid.good()) {
                 std::cerr << "Warning: unable to open file spikes.gdf for spike output\n";
             }
@@ -286,7 +286,7 @@ int main(int argc, char** argv) {
 
         // Write the samples to a json file samples were stored on this rank.
         if (voltage.size()>0u) {
-            std::string fname = params.odir + "/arb_" + params.name + "_voltages.json";
+            std::string fname = params.odir + "/" + params.name + "_voltages.json";
             write_trace_json(fname, voltage);
         }
 
