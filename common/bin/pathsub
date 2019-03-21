@@ -22,25 +22,25 @@ unset eoo
 while [ $# -gt 0 -a -z "$eoo" ]; do
     case $1 in
     --)
-	eoo=1
-	;;
+        eoo=1
+        ;;
     --help | -h )
-	usage
-	exit 0
-	;;
+        usage
+        exit 0
+        ;;
     --base=* )
-	basedir=${1#--base=}
-	;;
+        basedir=${1#--base=}
+        ;;
     --base )
-	shift
-	basedir="$1"
-	;;
+        shift
+        basedir="$1"
+        ;;
     *=* )
-	assignments+=("$1")
-	;;
+        assignments+=("$1")
+        ;;
     * )
-	strings+=("$1")
-	;;
+        strings+=("$1")
+        ;;
     esac
     shift
 done
@@ -50,46 +50,46 @@ strings+=("${@}")
 function subformat() {
     awk -e \
        'BEGIN {
-	   lookup["%%"] = "%"
-	   maxkeylen = 2
-	}
-	run {
-	    out = ""
-	    while ($0 ~ /%/) {
-		match($0, /[^%]*/);
-		out = (out substr($0, 1, RLENGTH))
-		key = "%"
-		replace = "%"
-		for (i = maxkeylen; i>1; --i) {
-		    test = substr($0, RLENGTH+1, i)
-		    if (test in lookup) {
-			key = test
-			replace = lookup[test]
-			break
-		    }
-		}
-		out = (out replace)
-		$0 = substr($0, RLENGTH+1+length(key))
-	    }
-	    print (out $0)
-	}
-	/.=/ && ! run {
-	    match($0, /=/)
-	    k = ("%" substr($0, 1, RSTART-1))
-	    v = substr($0, RSTART+1)
-	    lookup[k] = v
-	    if (RSTART>maxkeylen) maxkeylen = RSTART
-	}
-	/^--$/ && ! run {
-	    run = 1
-	}' <(for a in "${@}"; do echo "$a"; done; echo --) -
+           lookup["%%"] = "%"
+           maxkeylen = 2
+        }
+        run {
+            out = ""
+            while ($0 ~ /%/) {
+                match($0, /[^%]*/);
+                out = (out substr($0, 1, RLENGTH))
+                key = "%"
+                replace = "%"
+                for (i = maxkeylen; i>1; --i) {
+                    test = substr($0, RLENGTH+1, i)
+                    if (test in lookup) {
+                        key = test
+                        replace = lookup[test]
+                        break
+                    }
+                }
+                out = (out replace)
+                $0 = substr($0, RLENGTH+1+length(key))
+            }
+            print (out $0)
+        }
+        /.=/ && ! run {
+            match($0, /=/)
+            k = ("%" substr($0, 1, RSTART-1))
+            v = substr($0, RSTART+1)
+            lookup[k] = v
+            if (RSTART>maxkeylen) maxkeylen = RSTART
+        }
+        /^--$/ && ! run {
+            run = 1
+        }' <(for a in "${@}"; do echo "$a"; done; echo --) -
 }
 
 function prepend_dir() {
     if [[ -z $1 || $2 =~ ^/.* ]]; then
-	echo "$2"
+        echo "$2"
     else
-	echo "${1%/}/$2"
+        echo "${1%/}/$2"
     fi
 }
 

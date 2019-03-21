@@ -45,26 +45,26 @@ ns_refresh_cache=""
 while [ -n "$1" ]; do
     case $1 in
         -l | --list-models )
-            for m in "$all_models"; do echo $m; done
+            for m in $all_models; do echo $m; done
             exit 0
             ;;
         --prefix=* )
             ns_prefix="${1#--prefix=}"
             ;;
         --prefix )
-	    shift
+            shift
             ns_prefix=$1
             ;;
         --model=* )
-	    models="$models ${1#--model=}"
+            models="$models ${1#--model=}"
             ;;
         -m | --model )
             shift
             models="$models $1"
-	    ;;
-	-r | --refresh )
-	    ns_refresh_cache="-r"
-	    ;;
+            ;;
+        -r | --refresh )
+            ns_refresh_cache="-r"
+            ;;
         neuron )
             sims="$sims neuron"
             ;;
@@ -134,8 +134,7 @@ for sim in $sims; do
 
         (
           source "$sim_env";
-          export ns_base_path ns_prefix ns_validation_output ns_cache_path
-	  "$model_path/run" $ns_refresh_cache "$sim" "$param"
+          "$model_path/run" $ns_refresh_cache "$sim" "$param"
         )
     done
 done

@@ -2,18 +2,18 @@
 # Variables defined here use the prefix ns_
 set_working_paths() {
     if [ -z "$ns_prefix" ]; then
-	echo "error: empty ns_prefix"
-	exit 1
+        echo "error: empty ns_prefix"
+        exit 1
     fi
 
     # Paths to working directories
-    ns_install_path="$ns_prefix/install"
-    ns_build_path="$ns_prefix/build"
-    ns_cache_path="$ns_prefix/cache"
-    ns_input_path="$ns_prefix/input"
-    ns_config_path="$ns_prefix/config"
-    ns_benchmark_output="$ns_prefix/output/benchmark"
-    ns_validation_output="$ns_prefix/output/validation"
+    export ns_install_path="$ns_prefix/install"
+    export ns_build_path="$ns_prefix/build"
+    export ns_cache_path="$ns_prefix/cache"
+    export ns_input_path="$ns_prefix/input"
+    export ns_config_path="$ns_prefix/config"
+    export ns_benchmark_output="$ns_prefix/output/benchmark"
+    export ns_validation_output="$ns_prefix/output/validation"
 }
 
 # Sets up the default enviroment.
@@ -143,13 +143,13 @@ save_environment() {
 
     source_env_script=
     if [ -n "$ns_environment" ]; then
-	source_env_script='source '$(full_path "$ns_environment")
+        source_env_script='source '$(full_path "$ns_environment")
     fi
 
     cat <<_end_ > "$ns_config_path/env_$sim.sh"
-ns_prefix="$ns_prefix"
-ns_timestamp="$ns_timestamp"
-ns_sysname="$ns_sysname"
+export ns_prefix="$ns_prefix"
+export ns_timestamp="$ns_timestamp"
+export ns_sysname="$ns_sysname"
 export PATH="$bin_path\${PATH}"
 export PYTHONPATH="$python_path\$PYTHONPATH"
 export PATH="$bin_path\$PATH"

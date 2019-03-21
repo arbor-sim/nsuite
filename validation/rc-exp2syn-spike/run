@@ -35,7 +35,7 @@ comparex "$outfile" --warn --ref "$reffile" --var spike -o "$deltafile"
 max_error=
 for param in $model_param_data; do
     if [[ "$param" =~ ^'max_error='(.*) ]]; then
-	max_error=${BASH_REMATCH[1]}
+        max_error=${BASH_REMATCH[1]}
     fi
 done
 if [ -z "$max_error" ]; then
