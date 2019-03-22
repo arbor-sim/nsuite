@@ -12,14 +12,14 @@ if [ ! -f "$arb_checked_flag" ]; then
 
     # clone the repository
     msg "ARBOR: cloning from $ns_arb_repo"
-    git clone "$ns_arb_repo" "$arb_repo_path" --recursive &>> "$out"
+    git clone "$ns_arb_repo" "$arb_repo_path" --recursive >> "$out" 2>&1
     [ $? != 0 ] && exit_on_error "see ${out}"
 
     # check out the branch
     if [ "$ns_arb_branch" != "master" ]; then
         msg "ARBOR: check out branch $ns_arb_branch"
         cd "$arb_repo_path"
-        git checkout "$ns_arb_branch" &>> "$out"
+        git checkout "$ns_arb_branch" >> "$out" 2>&1
         [ $? != 0 ] && exit_on_error "see ${out}"
     fi
     touch "${arb_checked_flag}"
@@ -38,17 +38,17 @@ cmake_args="$cmake_args -DARB_WITH_GPU=$ns_arb_with_gpu"
 cmake_args="$cmake_args -DARB_ARCH=$ns_arb_arch"
 cmake_args="$cmake_args -DARB_VECTORIZE=$ns_arb_vectorize"
 msg "ARBOR: cmake $cmake_args"
-cmake "$arb_repo_path" $cmake_args &>> "$out"
+cmake "$arb_repo_path" $cmake_args >> "$out" 2>&1
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 cd "$arb_build_path"
 
 msg "ARBOR: build"
-make -j $ns_makej &>> "$out"
+make -j $ns_makej examples >> "$out" 2>&1
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 msg "ARBOR: install"
-make install &>> "$out"
+make install >> "$out" 2>&1
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 src_path="$arb_build_path/bin"
@@ -75,15 +75,15 @@ do
     msg "ARBOR: cmake"
     # Set install path to the source path.
     # This will install the "run" executable in the source path.
-    cmake "$source_path" -DCMAKE_INSTALL_PREFIX:PATH="$ns_install_path" &>> "$out"
+    cmake "$source_path" -DCMAKE_INSTALL_PREFIX:PATH="$source_path" >> "$out" 2>&1
     [ $? != 0 ] && exit_on_error "see ${out}"
 
     msg "ARBOR: make"
-    make -j $ns_makej &>> "$out"
+    make -j $ns_makej >> "$out" 2>&1
     [ $? != 0 ] && exit_on_error "see ${out}"
 
     msg "ARBOR: install"
-    make install &>> "$out"
+    make install >> "$out" 2>&1
     [ $? != 0 ] && exit_on_error "see ${out}"
 done
 
