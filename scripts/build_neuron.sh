@@ -79,9 +79,7 @@ make -j $ns_makej >> "${out}" 2>&1
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 msg "NEURON: install"
-echo foo
 make install >> "$out" 2>&1
-echo bar
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 # install python stuff
