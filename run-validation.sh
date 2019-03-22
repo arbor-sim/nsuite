@@ -5,6 +5,7 @@ usage() {
 Usage: run-validation.sh [OPTIONS] SIMULATOR [SIMULATOR...]
 
 Options:
+    -h, --help                 Print this help message and exit.
     --prefix=PREFIX            Use PATH as base for working directories.
     -o, --output=FORMAT        Override default path to validation outputs.
     -l, --list-models          List available model/parameter tests.
@@ -30,10 +31,17 @@ Fields in FORMAT are substituted as follows:
   %p    Parameter set name.
   %%    Literal '%'.
 
-If no --output option is provided, the default FORMAT %s/%m/%p
-is used.
+If no --output option is provided, the default FORMAT %s/%m/%p is used.
 _end_
-    exit 1;
+    exit 0;
+}
+
+argerror() {
+    cat >&2 <<_end_
+run-validation.sh: $1
+Try 'run-validation.sh --help' for more information.
+_end_
+    exit 1
 }
 
 # Determine NSuite root and default ns_prefix.
@@ -66,6 +74,9 @@ unset ns_validation_output_format
 
 while [ -n "$1" ]; do
     case $1 in
+        -h | --help )
+            usage
+            ;;
         -l | --list-models )
             for m in $all_models; do echo $m; done
             exit 0
@@ -101,8 +112,7 @@ while [ -n "$1" ]; do
             sims="$sims arbor"
             ;;
         * )
-            echo "unknown option '$1'"
-            usage
+            argerror "unknown option '$1'"
     esac
     shift
 done

@@ -5,11 +5,12 @@ Usage: run-bench.sh [OPTIONS] SIMULATOR
 Run NSuite benchmarks for SIMULATOR.
 
 Options:
-    --prefix=PATH        Use PATH as base for working directories.
-    --model=MODEL        Run benchmark MODEL.
-    --config=CONFIG      Run benchmarks with configuration CONFIG.
-    -o, --output=FORMAT  Override default path to benchmark outputs.
-    SIMULATOR            One of: arbor, neuron, or coreneuron.
+    --help             Print this help mesage.
+    --prefix=PATH      Use PATH as base for working directories.
+    --model=MODEL      Run benchmark MODEL.
+    --config=CONFIG    Run benchmarks with configuration CONFIG.
+    --output=FORMAT    Override default path to benchmark outputs.
+    SIMULATOR          One of: arbor, neuron, or coreneuron.
 
 --model and --config can be supplied multiple times. If omitted, the ring
 benchmark will be run with the small configuration.
@@ -30,11 +31,18 @@ Fields in FORMAT are substituted as follows:
   %p    Config name.
   %%    Literal '%'.
 
-If no --output option is provided, the default FORMAT %m/%p/%s
-is used.
+If no --output option is provided, the default FORMAT %m/%p/%s is used.
 _end_
 
-    exit 1;
+    exit 0
+}
+
+argerror() {
+    cat >&2 <<_end_
+run-bench.sh: $1
+Try 'run-bench.sh --help' for more information.
+_end_
+    exit 1
 }
 
 # Determine NSuite root and default ns_prefix.
@@ -63,6 +71,9 @@ do
         coreneuron )
             run_corenrn=true
             ;;
+        --help )
+            usage
+            ;;
         --prefix=* )
             ns_prefix="${1#--prefix=}"
             ;;
@@ -73,7 +84,7 @@ do
         --output=* )
             ns_bench_output_format="${1#--output=}"
             ;;
-        -o | --output )
+        --output )
             shift
             ns_bench_output_format=$1
             ;;
@@ -96,8 +107,7 @@ do
             configs="$configs $1"
             ;;
         * )
-            echo "unknown option '$1'"
-            usage
+            argerror "unknown option '$1'"
     esac
     shift
 done
@@ -113,7 +123,7 @@ ns_prefix=$(full_path "$ns_prefix")
 
 source "$ns_base_path/scripts/environment.sh"
 default_environment
-typeset -x PATH="$ns_base_path/common/bin:$PATH"
+export PATH="$ns_base_path/common/bin:$PATH"
 
 # Grab timestamp and sysname from build directory for export.
 
