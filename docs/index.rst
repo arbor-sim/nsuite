@@ -61,7 +61,7 @@ Funding
 NSuite is developed as a joint collaboration between the Swiss National Supercomputing
 Center (CSCS), and Forschungszentrum Jülich, as part of the Human Brain Project (HBP).
 
-NSuite's development was fully funded by the European Union's Horizon 2020
+Development was fully funded by the European Union's Horizon 2020
 Framework Programme for Research and Innovation under the Specific Grant
 Agreement No. 785907 (Human Brain Project SGA2).
 
