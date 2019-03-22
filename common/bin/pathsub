@@ -48,7 +48,7 @@ done
 strings+=("${@}")
 
 function subformat {
-    awk -e \
+    awk \
        'BEGIN {
            lookup["%%"] = "%"
            maxkeylen = 2
