@@ -12,8 +12,8 @@ set_working_paths() {
     export ns_cache_path="$ns_prefix/cache"
     export ns_input_path="$ns_prefix/input"
     export ns_config_path="$ns_prefix/config"
-    export ns_benchmark_output="$ns_prefix/output/benchmark"
     export ns_bench_input_path="$ns_prefix/input/benchmarks"
+    export ns_bench_output="$ns_prefix/output/benchmark"
     export ns_validation_output="$ns_prefix/output/validation"
 }
 
