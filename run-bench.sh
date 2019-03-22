@@ -148,7 +148,7 @@ fi
 export ARB_NUM_THREADS=$[ $ns_threads_per_core * $ns_cores_per_socket ]
 
 msg "---- Platform ----"
-msg "platform:          $ns_system ($(uname -or))"
+msg "platform:          $ns_system"
 msg "cores per socket:  $ns_cores_per_socket"
 msg "threads per core:  $ns_threads_per_core"
 msg "threads:           $ARB_NUM_THREADS"
