@@ -138,7 +138,9 @@ mkdir -p "$ns_build_path"
 # Record system configuration name, timestamp.
 # (This data will also be recorded in constructed environments.)
 
-ns_timestamp=$(date -Isec)
+# Note: format (and sed processing) chosen to match RFC 3339 profile
+# for ISO 8601 date formatting, matching GNU date -Isec output.
+ns_timestamp=$(date +%Y-%m-%ST%H:%M:%S%z | sed 's/[0-9][0-9]$/:&/')
 echo "$ns_timestamp" > "$ns_build_path/timestamp"
 echo "${ns_sysname:=$(hostname -s)}" > "$ns_build_path/sysname"
 

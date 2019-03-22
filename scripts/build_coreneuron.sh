@@ -13,14 +13,14 @@ if [ ! -f "$cnrn_checked_flag" ]; then
     rm -rf "$cnrn_repo_path"
 
     msg "CoreNEURON: cloning from $ns_cnrn_git_repo to $cnrn_repo_path"
-    git clone --recursive "$ns_cnrn_git_repo" "$cnrn_repo_path" &>> "${out}"
+    git clone --recursive "$ns_cnrn_git_repo" "$cnrn_repo_path" >> "${out}" 2>&1
     [ $? != 0 ] && exit_on_error "see ${out}"
 
     # check out the branch
     if [ "$ns_cnrn_sha" != "" ]; then
         msg "CoreNEURON: check out commit $ns_cnrn_sha"
         cd "$cnrn_repo_path"
-        git checkout "$ns_cnrn_sha" &>> "$out"
+        git checkout "$ns_cnrn_sha" >> "$out" 2>&1
         [ $? != 0 ] && exit_on_error "see ${out}"
     fi
 
@@ -40,16 +40,17 @@ cmake_args=-DCMAKE_INSTALL_PREFIX:PATH="$ns_install_path"
 # turn off tests, because these cause linking problems with boost.
 cmake_args="$cmake_args -DUNIT_TESTS=off"
 cmake_args="$cmake_args -DFUNCTIONAL_TESTS=off"
+cmake_args="$cmake_args -DENABLE_MPI=$ns_with_mpi"
 msg "CoreNEURON: cmake $cmake_args"
-cmake "$cnrn_repo_path" $cmake_args &>> "$out"
+cmake "$cnrn_repo_path" $cmake_args >> "$out" 2>&1
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 msg "CoreNEURON: make"
-make -j $ns_makej &>> "$out"
+make -j $ns_makej >> "$out" 2>&1
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 msg "CoreNEURON: install"
-make install &>> "$out"
+make install >> "$out" 2>&1
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 cd $ns_base_path

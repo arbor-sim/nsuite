@@ -113,12 +113,18 @@ default_hardware() {
 }
 
 run_with_mpi() {
-    echo ARB_NUM_THREADS=$ns_threads_per_socket mpirun -n $ns_sockets --map-by socket:PE=$ns_threads_per_socket $*
-    ARB_NUM_THREADS=$ns_threads_per_socket mpirun -n $ns_sockets --map-by socket:PE=$ns_threads_per_socket $*
+    if [ "$ns_with_mpi" = "ON" ]
+    then
+        echo ARB_NUM_THREADS=$ns_threads_per_socket mpirun -n $ns_sockets --map-by socket:PE=$ns_threads_per_socket $*
+        ARB_NUM_THREADS=$ns_threads_per_socket mpirun -n $ns_sockets --map-by socket:PE=$ns_threads_per_socket $*
+    else
+        echo ARB_NUM_THREADS=$ns_threads_per_socket  $*
+        ARB_NUM_THREADS=$ns_threads_per_socket  $*
+    fi
 }
 
 find_installed_paths() {
-    find "$ns_install_path" -type d -name "$1" -printf '%p:'
+    find "$ns_install_path" -type d -name "$1" | awk -v ORS=: '{print}'
 }
 
 # Save the environment used to build a simulation engine

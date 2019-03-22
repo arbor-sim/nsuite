@@ -73,9 +73,7 @@ do
     cd "$build_path"
 
     msg "ARBOR: cmake"
-    # Set install path to the source path.
-    # This will install the "run" executable in the source path.
-    cmake "$source_path" -DCMAKE_INSTALL_PREFIX:PATH="$source_path" >> "$out" 2>&1
+    cmake "$source_path" -DCMAKE_INSTALL_PREFIX:PATH="$ns_install_path" >> "$out" 2>&1
     [ $? != 0 ] && exit_on_error "see ${out}"
 
     msg "ARBOR: make"
