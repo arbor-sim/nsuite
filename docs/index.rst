@@ -31,20 +31,22 @@ NSuite implements a simple workflow with two stages using bash scripts:
 Below is the simplest example of a workflow that compiles all simulation engines
 and runs benchmarks and validation tests:
 
-.. code-block:: bash
+.. container:: example-code
 
-    # clone the NSuite framework from GitHub
-    git clone https://github.com/arbor-sim/nsuite.git
-    cd nsuite/
+    .. code-block:: bash
 
-    # install Arbor, NEURON and CoreNeuron
-    ./install-local.sh arbor neuron coreneuron
+        # clone the NSuite framework from GitHub
+        git clone https://github.com/arbor-sim/nsuite.git
+        cd nsuite/
 
-    # run the ring and kway benchmarks in small configuration for Arbor, NEURON and CoreNeuron
-    ./run-bench.sh arbor neuron coreneuron --model="ring kway" --config=small
+        # install Arbor, NEURON and CoreNeuron
+        ./install-local.sh arbor neuron coreneuron
 
-    # run all validation tests for Arbor and NEURON
-    ./run-validation.sh arbor neuron
+        # run the ring and kway benchmarks in small configuration for Arbor, NEURON and CoreNeuron
+        ./run-bench.sh arbor neuron coreneuron --model="ring kway" --config=small
+
+        # run all validation tests for Arbor and NEURON
+        ./run-validation.sh arbor neuron
 
 HPC systems come in many different configurations, and often require a little bit
 of "creativity" to install and run software.
@@ -61,7 +63,7 @@ Funding
 NSuite is developed as a joint collaboration between the Swiss National Supercomputing
 Center (CSCS), and Forschungszentrum Jülich, as part of the Human Brain Project (HBP).
 
-NSuite's development was fully funded by the European Union's Horizon 2020
+Development was fully funded by the European Union's Horizon 2020
 Framework Programme for Research and Innovation under the Specific Grant
 Agreement No. 785907 (Human Brain Project SGA2).
 
@@ -70,6 +72,15 @@ Contents
 
 .. toctree::
 
-   engines
+.. toctree::
+   :caption: Workflow
+
+   install
+   running
+
+.. toctree::
+   :caption: Features
+
    benchmarks
    validation
+   engines

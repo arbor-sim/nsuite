@@ -11,8 +11,8 @@ if [ ! -f "$arb_checked_flag" ]; then
     rm -rf "$arb_repo_path"
 
     # clone the repository
-    msg "ARBOR: cloning from $ns_arb_repo"
-    git clone "$ns_arb_repo" "$arb_repo_path" --recursive >> "$out" 2>&1
+    msg "ARBOR: cloning from $ns_arb_git_repo"
+    git clone "$ns_arb_git_repo" "$arb_repo_path" --recursive &>> "$out"
     [ $? != 0 ] && exit_on_error "see ${out}"
 
     # check out the branch

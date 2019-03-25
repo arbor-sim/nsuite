@@ -61,7 +61,7 @@ default_environment() {
 
     # Arbor specific
 
-    ns_arb_repo=https://github.com/arbor-sim/arbor.git
+    ns_arb_git_repo=https://github.com/arbor-sim/arbor.git
     ns_arb_branch=v0.2
 
     ns_arb_arch=native
