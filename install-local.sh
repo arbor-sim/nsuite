@@ -117,7 +117,7 @@ msg "C++ compiler:    $ns_cxx"
 msg "python:          $ns_python"
 echo
 msg "---- ARBOR ----"
-msg "repo:            $ns_arb_repo"
+msg "repo:            $ns_arb_git_repo"
 msg "branch:          $ns_arb_branch"
 msg "arch:            $ns_arb_arch"
 msg "gpu:             $ns_arb_with_gpu"
