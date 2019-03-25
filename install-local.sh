@@ -60,12 +60,12 @@ do
             ns_environment=$1
             ;;
         --prefix=* )
-        ns_prefix=${1#--prefix=}
-        ;;
+            ns_prefix=${1#--prefix=}
+            ;;
         --prefix )
             shift
             ns_prefix=$1
-        ;;
+            ;;
         * )
             echo "unknown option '$1'"
             usage
@@ -135,6 +135,17 @@ msg "sha:             $ns_cnrn_sha"
 
 mkdir -p "$ns_build_path"
 
+# Record system configuration name, timestamp.
+# (This data will also be recorded in constructed environments.)
+
+# Note: format (and sed processing) chosen to match RFC 3339 profile
+# for ISO 8601 date formatting, matching GNU date -Isec output.
+ns_timestamp=$(date +%Y-%m-%ST%H:%M:%S%z | sed 's/[0-9][0-9]$/:&/')
+echo "$ns_timestamp" > "$ns_build_path/timestamp"
+echo "${ns_sysname:=$(hostname -s)}" > "$ns_build_path/sysname"
+
+# Build simulator targets.
+
 export CC="$ns_cc"
 export CXX="$ns_cxx"
 
@@ -145,7 +156,9 @@ cd "$ns_base_path"
 [ "$ns_build_coreneuron" = true ] && echo && source "$ns_base_path/scripts/build_coreneuron.sh"
 cd "$ns_base_path"
 
-# Always attempt to build validation models/generators, regardless of simulator.
+# Always attempt to build validation models/generators.
+echo
+msg "Building validation tests and generators"
 source "$ns_base_path/scripts/build_validation_models.sh"
 cd "$ns_base_path"
 

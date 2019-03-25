@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.9)
 project(arbor-ring LANGUAGES CXX)
 
+set (CMAKE_CXX_STANDARD 14)
+
 # When arbor PR is in, this will become find_package(arbor REQUIRED MPI)
 find_package(arbor REQUIRED)
 

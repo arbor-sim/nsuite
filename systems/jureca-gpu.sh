@@ -1,5 +1,8 @@
 ### environment ###
 
+# record system name
+ns_sysname="jureca-gpu"
+
 # set up environment for building on the gpu part of jureca
 
 module use /usr/local/software/jureca/OtherStages/
