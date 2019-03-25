@@ -44,10 +44,10 @@ Basic usage of ``install-local.sh`` is best illustrated with some examples:
         # download and install Arbor
         ./install-local.sh arbor
 
-        # download and install NEURON and CoreNeuron
+        # download and install NEURON and CoreNEURON
         ./install-local.sh neuron coreneuron
 
-        # download install all three of Arbor, NEURON and CoreNeuron
+        # download install all three of Arbor, NEURON and CoreNEURON
         ./install-local.sh all
 
         # download install NEURON in relative path install
@@ -179,7 +179,9 @@ Variable                  Default value                                 Explanat
 ========================  ===========================================   ======================================================
 ``ns_arb_git_repo``       ``https://github.com/arbor-sim/arbor.git``    URL or directory for the Git repository to check out Arbor source from.
 ``ns_arb_branch``         ``v0.2``                                      The branch/tag/SHA to check out. Master will be used if empty.
-``ns_arb_arch``           ``native``                                    The CPU architecture target for Arbor. Must be set when cross compiling. Default ``native`` targets the architecture used to configure NSuite.
+``ns_arb_arch``           ``native``                                    `The CPU architecture target <https://arbor.readthedocs.io/en/latest/install.html#architecture>`_
+                                                                        for Arbor. Must be set when cross compiling.
+                                                                        Default ``native`` targets the architecture used to configure NSuite.
 ``ns_arb_with_gpu``       ``OFF``                                       Whether to build Arbor with NVIDIA GPU support.
 ``ns_arb_vectorize``      ``ON``                                        Whether to use explicit vectorization for Arbor.
 ========================  ===========================================   ======================================================
@@ -189,7 +191,7 @@ NEURON can be dowloaded from a tar ball for a specific version, or cloned from a
 
 The official versions of NEURON's source code available to download are inconsistently packaged, so it
 is not possible to automatically determine how to download and install from a version string alone, e.g. "7.6.2".
-This is why three vartiables must be set if downloading an official release of NEUORN.
+This is why three variables must be set if downloading a NEURON tarball.
 
 ========================  ===========================================   ======================================================
 Variable                  Default value                                 Explanation
@@ -202,9 +204,9 @@ Variable                  Default value                                 Explanat
 ``ns_nrn_branch``         ``master``                                    Branch or commit SHA to use if sourcing from Git.
 ========================  ===========================================   ======================================================
 
-CoreNeuron has more support than NEURON for targeting different hardware, either via automatic vectorization, or using OpenACC for GPUs.
+CoreNEURON has more support than NEURON for targeting different hardware, either via automatic vectorization, or using OpenACC for GPUs.
 However, it is quite difficult to build, particularly as part of an automated pipeline: users have to directly provide architecture- and compiler-specific flags to CMake.
-As soon as we are able to build CoreNeuron this way ourselves, we will add more flags for targeting different architectures.
+As soon as we are able to build CoreNEURON this way ourselves, we will add more flags for targeting different architectures.
 
 ========================  ===============================================   ======================================================
 Variable                  Default value                                     Explanation
@@ -238,7 +240,7 @@ It configures all platform-specific details that can't be automatically detected
         module swap gcc/7.3.0   # load after cray-python
         module load CMake
 
-        # set for CMake to correctly configure Arbor and CoreNeuron
+        # set for CMake to correctly configure Arbor and CoreNEURON
         export CRAYPE_LINK_TYPE=dynamic
 
         # Python, MPI and build options for this system
