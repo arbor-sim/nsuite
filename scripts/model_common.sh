@@ -83,3 +83,27 @@ function model_notify_pass_fail {
     fi
 }
 
+# Attempt to run given simulator-specific script, redirecting
+# stdout and stderr to files in $model_output_dir.
+#
+# Report if error or if implementation is missing.
+
+function model_try_run {
+    local light_red=$'\033[1;31m'
+    local magenta=$'\033[1;35m'
+    local nc=$'\033[0m'
+
+    impl="$1"
+    shift
+
+    if [ ! -x "./$impl" ]; then
+        echo "${magenta}[UNIMPLEMENTED]${nc} $model_sim $model_name/$model_param"
+        exit 0
+    fi
+
+    "./$impl" "${@}" > "$model_output_dir/run.out" 2> "$model_output_dir/run.err" || {\
+        echo "${light_red}[ERROR]${nc} $model_sim $model_name/$model_param"
+        exit 0
+    }
+}
+

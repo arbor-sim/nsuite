@@ -3,6 +3,9 @@
 import math
 import sys
 import os
+import re
+import tempfile
+import contextlib
 
 from neuron import h
 import nsuite.stdarg as stdarg
@@ -15,33 +18,20 @@ Erev =      -65;    # reversal potential [mV]
 tau1 =      0.5;    # synapse double exponential time constants [ms]
 tau2 =      4.0;
 g0 =        0.1;    # synaptic conductance upon first spike arrival [µS]
-mindelay =  3.3;    # minimum delay on connections from cell 0 [ms]
+mindelay =  4.0;    # minimum delay on connections from cell 0 [ms]
 threshold = -10;    # spike threshold [mV]
 dt =     0.0025;    # sim dt
 ncell =     101;    # total number of cells
 
+coreneuron = 0;     # run with coreneuron? 1 => yes
+
 output, params = stdarg.parse_run_stdarg()
-param_vars = ['dt', 'g0', 'mindelay', 'threshold', 'ncell']
+param_vars = ['dt', 'g0', 'mindelay', 'threshold', 'ncell', 'coreneuron']
 for v in param_vars:
     if v in params: globals()[v] = params[v]
 
 tend = 8.
 sample_dt = 0.05
-
-# TODO: resolve routines below with exisiting neuron support code.
-
-def hoc_execute_quiet(arg):
-    with open(os.devnull, 'wb') as null:
-        fd = sys.stdout.fileno()
-        keep = os.dup(fd)
-        sys.stdout.flush()
-        os.dup2(null.fileno(), fd)
-        h(arg)
-        sys.stdout.flush()
-        os.dup2(keep, fd)
-
-def hoc_setup():
-    hoc_execute_quiet('load_file("stdrun.hoc")')
 
 # Make model
 
@@ -64,28 +54,47 @@ class soma_cell:
         self.syn.tau2 = tau2
         self.syn.e = 0
 
-hoc_setup()
+h('load_file("stdrun.hoc")')
 
 cell = [soma_cell() for i in range(ncell)]
 
 stim = h.NetStim()
 stim.number = 1
 stim.start = 0
-
 nc_stim = h.NetCon(stim, cell[0].syn, 0, 0, g0, sec=cell[0].soma)
+
 nc_c2c = []
+nc_record = []
 delta = 0
 delays = [0]
+
 for i in range(1, ncell):
     delta += (math.sqrt(5)-1)/2
     delta -= math.floor(delta)
     delay = mindelay+delta
     delays.append(delay)
-    nc_c2c.append(h.NetCon(cell[0].soma(0.5)._ref_v, cell[i].syn, threshold, delay, g0, sec=cell[0].soma))
 
-nc_record = []
-for i in range(ncell):
-    nc_record.append(h.NetCon(cell[i].soma(0.5)._ref_v, None, threshold, 0, 0, sec=cell[i].soma))
+# Connection and spike recording set up differs greatly between NEURON and CoreNEURON:
+
+if not coreneuron:
+    for i in range(ncell):
+        nc_record.append(h.NetCon(cell[i].soma(0.5)._ref_v, None, threshold, 0, 0, sec=cell[i].soma))
+
+    for i in range(1, ncell):
+        nc_c2c.append(h.NetCon(cell[0].soma(0.5)._ref_v, cell[i].syn, threshold, delays[i], g0, sec=cell[0].soma))
+
+else:
+    pc = h.ParallelContext()
+    for i in range(ncell):
+        pc.set_gid2node(i, 0)
+        pc.cell(i, h.NetCon(cell[i].soma(0.5)._ref_v, None, sec=cell[i].soma))
+        pc.threshold(i, threshold)
+
+    for i in range(1, ncell):
+        nc = pc.gid_connect(0, cell[i].syn)
+        nc.delay = delays[i]
+        nc.weight[0] = g0
+        nc_c2c.append(nc)
 
 h.v_init = Erev
 
@@ -104,26 +113,56 @@ def recorder(rec, idx):
             rec[idx] = h.t
     return f
 
-for i in range(ncell):
+for i in range(len(nc_record)):
     nc_record[i].record(recorder(spike, i))
 
 h.dt = dt
 h.steps_per_ms = 1/dt # or else NEURON might noisily fudge dt
 h.secondorder = 2
 h.tstop = tend
-h.run()
 
-# Collect and save data
+if not coreneuron:
+    h.finitialize()
+    h.run()
 
-v0 = list(cell0_v)
-ts = list(sample_t)
-out = xarray.Dataset(
-    {'v0': (['time'], v0),
-     'spike': (['gid'], spike),
-     'delay': (['gid'], delays)
-    }, coords={'time': ts, 'gid': list(range(0,ncell))})
+    # Collect and save data
 
-for v in param_vars:
-    out[v] = np.float64(globals()[v])
+    v0 = list(cell0_v)
+    ts = list(sample_t)
+    out = xarray.Dataset(
+        {'v0': (['time'], v0),
+         'spike': (['gid'], spike),
+         'delay': (['gid'], delays)
+        }, coords={'time': ts, 'gid': list(range(0,ncell))})
 
-out.to_netcdf(output)
+    for v in param_vars:
+        out[v] = np.float64(globals()[v])
+
+    out.to_netcdf(output)
+
+else:
+    h.cvode.cache_efficient(1)
+
+    pc.set_maxstep(mindelay)
+    h.finitialize()
+
+    cwd = os.getcwd()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
+        pc.nrncore_run("-e %g" % tend)
+        with open('out.dat') as f:
+            for line in f:
+                m = re.search(r'(\S+)\s*(\S+)', line)
+                spike[int(m.group(2))] = float(m.group(1))
+
+    os.chdir(cwd)
+
+    out = xarray.Dataset(
+        {'spike': (['gid'], spike),
+         'delay': (['gid'], delays)
+        }, coords={'gid': list(range(0,ncell))})
+
+    for v in param_vars:
+        out[v] = np.float64(globals()[v])
+
+    out.to_netcdf(output)

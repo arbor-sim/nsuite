@@ -9,9 +9,9 @@ cd "${BASH_SOURCE[0]%/*}"
 source "$ns_base_path/scripts/model_common.sh"
 model_setup rc-expsyn "$@"
 
-# Run sim-specific model with parameter data.
+# Run sim-specific implementation with parameter data.
 outfile="$model_output_dir/run.nc"
-./"run-$model_sim" "$outfile" $model_param_data
+model_try_run "run-$model_sim" "$outfile" $model_param_data
 
 # Generate reference data if required.
 reffile=$(model_find_cacheable "ref-${model_name}-${model_param}.nc")

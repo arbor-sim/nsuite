@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+./neuron-rc-exp2syn-spike.py "${@}" coreneuron=1
