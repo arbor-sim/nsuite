@@ -12,7 +12,6 @@ Options:
     -r, --refresh              Regenerate any cached reference data.
     -m, --model=MODEL/[PARAM]  Run given model/parameter test.
 
-SIMULATOR is one of: arbor, neuron
 If no model is explicitly provided, all available tests will be run.
 
 The output FORMAT is a pattern that is used to determine the output
@@ -105,14 +104,12 @@ while [ -n "$1" ]; do
         -r | --refresh )
             ns_refresh_cache="-r"
             ;;
-        neuron )
-            sims="$sims neuron"
-            ;;
-        arbor )
-            sims="$sims arbor"
+        -* | --* )
+            argerror "unknown option '$1'"
             ;;
         * )
-            argerror "unknown option '$1'"
+            sims="$sims $1"
+            ;;
     esac
     shift
 done

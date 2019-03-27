@@ -135,10 +135,13 @@ find_installed_paths() {
 # installation-time information, viz. ns_timestamp and
 # ns_sysname.
 # 
-# Takes one argument: name of the simulation engine, one of: {arb, nrn, corenrn}
+# Take name of simulation engine (one of: {arb, nrn, corenrn}) as
+# first argument; any additional arguments are appended to the
+# generated config script verbatim.
 save_environment() {
     set_working_paths
     sim="$1"
+    shift
 
     # Find and record python, bin, and lib paths.
     python_path=$(find_installed_paths site-packages)"$ns_base_path/common/python:"
@@ -165,4 +168,9 @@ source "$ns_base_path/scripts/environment.sh"
 default_environment
 $source_env_script
 _end_
+
+    for appendix in "${@}"; do
+        echo "$appendix" >> "$ns_config_path/env_$sim.sh"
+    done
 }
+

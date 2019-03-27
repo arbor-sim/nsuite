@@ -55,5 +55,7 @@ make install >> "$out" 2>&1
 
 cd $ns_base_path
 
+coreneuronlib=$(find "$ns_install_path" -name libcoreneuron.so -print -quit)
+
 msg "CoreNeuron: saving environment"
-save_environment coreneuron
+save_environment coreneuron "export CORENEURONLIB='$coreneuronlib'"
