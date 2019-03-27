@@ -147,7 +147,6 @@ fi
 # TODO: this has to go into the configuration environment setup scripts
 export ARB_NUM_THREADS=$[ $ns_threads_per_core * $ns_cores_per_socket ]
 
-msg "---- Platform ----"
 msg "platform:          $ns_system"
 msg "cores per socket:  $ns_cores_per_socket"
 msg "threads per core:  $ns_threads_per_core"
@@ -155,16 +154,6 @@ msg "threads:           $ARB_NUM_THREADS"
 msg "sockets:           $ns_sockets"
 msg "mpi:               $ns_with_mpi"
 echo
-
-msg "---- Application ----"
-msg "Arbor:      $run_arb"
-msg "NEURON:     $run_nrn"
-msg "CoreNeuron: $run_corenrn"
-echo
-
-msg "---- Benchmarks ----"
-echo
-
 
 mkdir -p "$ns_bench_input_path"
 for model in $models
@@ -176,23 +165,20 @@ do
     for config in $configs
     do
 
-        msg $model-$config
-        echo
-
         model_input_path="$ns_bench_input_path/$model/$config"
 
         "$ns_base_path/scripts/bench_config.sh" "$model" "$config" "$ns_base_path" "$ns_config_path" "$ns_bench_input_path" "$ns_bench_output" "${ns_bench_output_format:-%m/%p/%s}"
 
         if [ "$run_arb" == "true" ]; then
-            msg "  arbor"
+            msg benchmark: arbor $model-$config
             "$model_input_path/run_arb.sh"
         fi
         if [ "$run_nrn" == "true" ]; then
-            msg "  neuron"
+            msg benchmark: neuron $model-$config
             "$model_input_path/run_nrn.sh"
         fi
         if [ "$run_corenrn" == "true" ]; then
-            msg "  coreneuron"
+            msg benchmark: coreneuron $model-$config
             "$model_input_path/run_corenrn.sh"
         fi
     done

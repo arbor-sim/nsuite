@@ -104,8 +104,8 @@ do
     [[ "$parse_coreneuron" == "true" ]]  && table_line_cnr $f
     echo "$line" >> "$tmp"
 done
-printf %9s,%12s,%12s,%7s,%7s,%7s\n \
-       "cells" "wall time(s)" "memory (MB)" "ranks" "threads" "gpu" \
+printf "%9s,%12s,%12s,%7s,%7s,%7s\n" \
+       "cells" "walltime" "memory" "ranks" "threads" "gpu" \
        > "$results"
 
 # Sorting in ascending order of the number of cells (the first column in the output).
