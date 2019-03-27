@@ -146,6 +146,16 @@ else:
     pc.set_maxstep(mindelay)
     h.finitialize()
 
+    # CoreNEURON output is always in the form of a file
+    # 'out.dat' in the current working directory containing
+    # spike data. We temporarily move to a temporary directory
+    # to call `pc.nrncore_run` so as not to scribble over
+    # the current directory.
+    #
+    # The spike data is formatted with one record per line,
+    # two fields per record delimitted by tab: time (ms) and
+    # gid.
+
     cwd = os.getcwd()
     with tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
