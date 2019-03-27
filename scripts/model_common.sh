@@ -51,6 +51,6 @@ function model_find_cacheable {
     else 
         local cached="$model_cache_dir/$file"
         echo "$cached"
-        return $([ -n "$ns_cache_refresh" -o -e "$cached" ])
+        return $([ -z "$ns_cache_refresh" -a -e "$cached" ])
     fi
 }
