@@ -177,12 +177,12 @@ for sim in $sims; do
 
         model_path="$ns_base_path/validation/$basemodel"
         if [ ! -x "$model_path/run" ]; then
-            echo "Missing run file for model $basemodel, skipping."
+            info "Missing run file for model $basemodel, skipping."
             continue
         fi
 
         if [ ! -r "$model_path/$param.param" ]; then
-            echo "Missing parameter file $param.param for model $basemodel, skipping."
+            info "Missing parameter file $param.param for model $basemodel, skipping."
             continue
         fi
 
