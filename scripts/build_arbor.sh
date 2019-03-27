@@ -12,7 +12,7 @@ if [ ! -f "$arb_checked_flag" ]; then
 
     # clone the repository
     msg "ARBOR: cloning from $ns_arb_git_repo"
-    git clone "$ns_arb_git_repo" "$arb_repo_path" --recursive &>> "$out"
+    git clone "$ns_arb_git_repo" "$arb_repo_path" --recursive >> "$out" 2>&1
     [ $? != 0 ] && exit_on_error "see ${out}"
 
     # check out the branch
