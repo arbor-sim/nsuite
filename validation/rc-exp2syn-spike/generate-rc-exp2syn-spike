@@ -28,9 +28,10 @@ nsamp = 300
 ts = np.linspace(0., tend, num=nsamp)
 
 output, params = stdarg.parse_run_stdarg()
-param_vars = ['g0', 'mindelay', 'threshold']
+param_vars = ['g0', 'mindelay', 'threshold', 'ncell']
 for v in param_vars:
     if v in params: globals()[v] = params[v]
+ncell = int(ncell)
 
 # Voltage on one cell given by ODE:
 #
