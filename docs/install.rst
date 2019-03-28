@@ -146,6 +146,8 @@ Examples of scripts for two HPC systems,
 `Piz Daint <https://www.cscs.ch/computers/dismissed/piz-daint-piz-dora/>`_ and `JUWELS <http://www.fz-juelich.de/ias/jsc/EN/Expertise/Supercomputers/JUWELS/JUWELS_news.html>`_,
 can be found in the ``scripts`` sub-directory in NSuite.
 
+.. _vars_general:
+
 General Variables
 ````````````````````````````````
 
