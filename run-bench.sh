@@ -167,7 +167,7 @@ do
 
         model_input_path="$ns_bench_input_path/$model/$config"
 
-        "$ns_base_path/scripts/bench_config.sh" "$model" "$config" "$ns_base_path" "$ns_config_path" "$ns_bench_input_path" "$ns_bench_output" "${ns_bench_output_format:-%m/%p/%s}"
+        "$model_config_path/config.sh" "$model" "$config" "$ns_base_path" "$ns_config_path" "$ns_bench_input_path" "$ns_bench_output" "${ns_bench_output_format:-%m/%p/%s}"
 
         if [ "$run_arb" == "true" ]; then
             msg benchmark: arbor $model-$config

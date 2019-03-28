@@ -118,7 +118,7 @@ in ``scripts/environment.sh``, in the ``default_environment``
 Add engine to ``install-local.sh`` 
 """"""""""""""""""""""""""""""""""""""""""""""
 
-The ``install-local.sh`` script will have to be extended to support optional
+The ``install-local.sh`` script has to be extended to support optional
 installation of the new simulation engine. Follow the steps used by the existing
 simulation engines.
 
@@ -126,7 +126,6 @@ simulation engines.
     If the simulation engine requires separate compilation of individual
     benchmark and validation models, follow the example of how Arbor performs this
     step in ``scripts/build_arbor.sh``.
-
 
 Implement benchmarks and validation tests
 """"""""""""""""""""""""""""""""""""""""""""""

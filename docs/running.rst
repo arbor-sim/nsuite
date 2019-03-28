@@ -82,11 +82,11 @@ characteristics of simpler models.
 Likewise, models in *large* configuration take much longer to run, with considerably more parallel
 work for benchmarking performance of large models on powerful HPC nodes.
 
-For more information on how to provide custom configurations, see :ref:`benchmark-config`.
-
 .. Note::
     NEURON is used to generate input models for CoreNEURON. Before running a benchmark in
     CoreNEURON, the benchmark must first be run in NEURON.
+
+.. _bench-outputs:
 
 Benchmark output
 """""""""""""""""""""""""""
