@@ -68,7 +68,7 @@ for modeldir in "$ns_base_path/validation/"*; do
     fi
 done
 
-unset ns_refresh_cache
+unset ns_cache_refresh
 unset ns_validation_output_format
 
 while [ -n "$1" ]; do
@@ -102,7 +102,7 @@ while [ -n "$1" ]; do
             models="$models $1"
             ;;
         -r | --refresh )
-            ns_refresh_cache="-r"
+            ns_cache_refresh=1
             ;;
         -* | --* )
             argerror "unknown option '$1'"
@@ -124,31 +124,48 @@ ns_prefix=$(full_path "$ns_prefix")
 
 source "$ns_base_path/scripts/environment.sh"
 default_environment
-export ns_validation_output_format
+
+export ns_cache_refresh
+
+# Add common/bin scripts to our path (used for git-repo-hash, pathsub).
+export PATH="$ns_base_path/common/bin${PATH:+:}$PATH"
 
 # TODO: this has to go into the configuration environment setup scripts
 export ARB_NUM_THREADS=$[ $ns_threads_per_core * $ns_cores_per_socket ]
 
-msg "---- Platform ----"
-msg "platform:          $ns_system"
-msg "cores per socket:  $ns_cores_per_socket"
-msg "threads per core:  $ns_threads_per_core"
-msg "threads:           $ARB_NUM_THREADS"
-msg "sockets:           $ns_sockets"
-msg "mpi:               $ns_with_mpi"
+info "---- Platform ----"
+info "platform:          $ns_system"
+info "cores per socket:  $ns_cores_per_socket"
+info "threads per core:  $ns_threads_per_core"
+info "threads:           $ARB_NUM_THREADS"
+info "sockets:           $ns_sockets"
+info "mpi:               $ns_with_mpi"
 echo
 
-msg "---- Validation ----"
-echo
+info "---- Validation ----"
+
+# Colour highlight shortcuts:
+red=${tcol[hi_red]}
+green=${tcol[hi_green]}
+cyan=${tcol[hi_cyan]}
+nc=${tcol[reset]}
+
+# Grab git repo hash and install timestamp for substitution in output directories below.
+# TODO: Move this sort of thing into a config/common_env.sh script at install time?
+repo_hash=$(git-repo-hash ${ns_base_path})
+repo_hash_short=$(git-repo-hash --short ${ns_base_path})
+ns_timestamp=$(< "$ns_build_path/timestamp")
+ns_sysname=$(< "$ns_build_path/sysname")
 
 for sim in $sims; do
+    echo
     sim_env="$ns_prefix/config/env_$sim.sh"
     if [ ! -f "$sim_env" ]; then
-        echo "Simulator $sim has not been locally installed, skipping."
+        info "Simulator $sim has not been locally installed, skipping."
         continue
     fi
 
-    echo "Running validation for $sim:"
+    info "Running validation for $sim:"
 
     for model in $models; do
         param=""
@@ -160,18 +177,54 @@ for sim in $sims; do
 
         model_path="$ns_base_path/validation/$basemodel"
         if [ ! -x "$model_path/run" ]; then
-            echo "Missing run file for model $basemodel, skipping."
+            info "Missing run file for model $basemodel, skipping."
             continue
         fi
 
         if [ ! -r "$model_path/$param.param" ]; then
-            echo "Missing parameter file $param.param for model $basemodel, skipping."
+            info "Missing parameter file $param.param for model $basemodel, skipping."
             continue
         fi
 
+        outdir=$(pathsub --base="$ns_validation_output" \
+            T="$ns_timestamp" S="$ns_sysname" H="$repo_hash" h="$repo_hash_short" \
+            s="$sim" m="$basemodel" p="$param" \
+            -- \
+            "${ns_validation_output_format:-%s/%m/%p}")
+
+        mkdir -p "$outdir" || exit_on_err "run-validation.sh: cannot create directory '$outdir'"
+
+        model_status="$outdir/status"
+        test_id="$sim $basemodel/$param"
+
+        # Run script exit codes:
+        #     0 => success: test passed.
+        #    96 => failure: test run but validation failed.
+        #    97 => missing: no implementation for given simulator.
+        # other => error: execution error.
+
         (
           source "$sim_env";
-          "$model_path/run" $ns_refresh_cache "$sim" "$param"
-        )
+          "$model_path/run" "$outdir" "$sim" "$param"
+        ) > "$outdir/run.out" 2> "$outdir/run.err"
+
+        case $? in
+            0 )
+                echo "$green[PASS]$nc $test_id"
+                echo pass > "$model_status"
+                ;;
+           96 )
+                echo "$red[FAIL]$nc $test_id"
+                echo fail > "$model_status"
+                ;;
+           97 )
+                echo "$cyan[MISSING]$nc $test_id"
+                echo missing > "$model_status"
+                ;;
+            * )
+                echo "$red[ERROR]$nc $test_id"
+                echo error > "$model_status"
+                ;;
+        esac
     done
 done

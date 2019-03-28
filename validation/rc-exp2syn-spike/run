@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
+# Invocation: run outputdir simname paramsetname
 
 # Change to script directory and attempt to find nsuite base directory.
+
 unset CDPATH
 cd "${BASH_SOURCE[0]%/*}"
 [ -n "$ns_base_path" ] || ns_base_path="$(cd ../..; pwd)"
 
-# Set up model paths and model_XXX variables.
+# Set up model paths,  model_XXX variables, and functions
+# exit_model_fail, exit_model_missing.
+
+outdir=$1
+shift
+
 source "$ns_base_path/scripts/model_common.sh"
 model_setup rc-exp2syn-spike "$@"
 
@@ -18,21 +25,24 @@ model_setup rc-exp2syn-spike "$@"
 # For CoreNEURON, voltage traces will be omitted; the pass/fail
 # test only looks at spike time differences.
 
-# Run sim-specific implementation with parameter data.
-outfile="$model_output_dir/run.nc"
-model_try_run "run-$model_sim" "$outfile" $model_param_data
+impl="./run-$model_sim"
+[ -x "$impl" ] || exit_model_missing
+
+outfile="$outdir/run.nc"
+"$impl" "$outfile" $model_param_data || exit 1
 
 # Generate reference data if required.
-reffile=$(model_find_cacheable "ref-${model_name}-${model_param}.nc")
-if [ $? -ne 0 -o -n "$model_refresh" ]; then 
-    ./generate-rc-exp2syn-spike "$reffile" $model_param_data
-fi
+
+reffile=$(model_find_cacheable "ref-${model_name}-${model_param}.nc") || \
+    ./generate-rc-exp2syn-spike "$reffile" $model_param_data || exit 1
 
 # Run comparison.
-deltafile="$model_output_dir/delta.nc"
-comparex "$outfile" --warn --ref "$reffile" --var spike -o "$deltafile"
+
+deltafile="$outdir/delta.nc"
+comparex "$outfile" --warn --ref "$reffile" --var spike -o "$deltafile" || exit 1
 
 # Get threshold from parameter data 'max_error'
+
 max_error=
 for param in $model_param_data; do
     if [[ "$param" =~ ^'max_error='(.*) ]]; then
@@ -44,5 +54,4 @@ if [ -z "$max_error" ]; then
     exit 1
 fi
 
-thresholdx "$deltafile" -e "spike.abserr<$max_error" > "$model_status_path"
-model_notify_pass_fail $?
+thresholdx "$deltafile" -e "spike.abserr<$max_error" || exit_model_fail
