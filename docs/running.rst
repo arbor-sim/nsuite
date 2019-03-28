@@ -74,10 +74,10 @@ and how they should be configured.  Currently there are two benchmark models,
         ./run-bench.sh arbor --model=kway --config='medium large'
 
 Each benchmark model has three configurations to choose from: ``small``, ``medium`` and ``large``.
-The configurations can be used to test simulation engine performace at different scales.
+The configurations can be used to test simulation engine performance at different scales.
 For example, the *small* configuration has fewer cells with with simpler
 morphologies than the *medium* and *large* configurations.
-The *small* configuration requires little time to run, and is useful for modeling performance
+The *small* configuration requires little time to run, and is useful for modelling performance
 characteristics of simpler models.
 Likewise, models in *large* configuration take much longer to run, with considerably more parallel
 work for benchmarking performance of large models on powerful HPC nodes.
@@ -223,7 +223,7 @@ Option                             Explanation
                                    ``PREFIX/output/validation``.
 =================================  ======================================================
 
-By default, the outputs for a validationt test run are stored in
+By default, the outputs for a validation test run are stored in
 ``PREFIX/output/validation/SIMULATOR/MODEL/PARAM``, corresponding to an output format
 of ``%s/%m/%p``. Fields in the ``FORMAT`` string are substituted as follows:
 
