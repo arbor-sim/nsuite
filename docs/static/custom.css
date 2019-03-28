@@ -1,3 +1,11 @@
+.rst-content code {
+    border: none;
+    background: none;
+    padding: 0.2ex 0.2ex;
+    font-size: 80%;
+    font-family: Consolas,"DejaVu Sans Mono",monospace;
+}
+
 .example-code>div[class^='highlight']:before {
     font-weight: bold;
     display: block;

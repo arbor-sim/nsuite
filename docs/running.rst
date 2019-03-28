@@ -183,3 +183,96 @@ gpu                   -                     If a GPU was used. One of yes/no.
 
 Validation Tests
 ----------------------------
+
+Validation tests are composed of a model, corresponding to a physical system to
+be simulated, and a parameter set, which specifies parameters within that system.
+
+The `run-validation.sh` script runs all or a subset of the models for one or more
+installed simulators, saving test artefacts in a configurable output directory
+and a presenting pass/fail status for each test on standard output.
+
+Invocation
+""""""""""
+
+.. code-block:: bash
+
+   run-validation.sh [OPTIONS] SIMULATOR [SIMULATOR...]
+
+``SIMULATOR`` can be any of the simulators installed with `install-local.sh`.
+By default, `run-validation.sh` will use the current directory as the
+installation and output base directory. If no models are explicitly selected
+with the ``--model`` option (see below), all models and parameter sets will
+be run against each specified simulator.
+
+Options are as follows:
+
+=================================  ======================================================
+Option                             Explanation
+=================================  ======================================================
+``-h``, ``--help``                 Display help message and exit.
+``-l``, ``--list-models``          List all available model/parameter sets.
+``--prefix=PREFIX``                Base directory for local installation and output directories.
+                                   Validation tests may also create reference datasets in
+                                   ``PREFIX/cache``.
+``-m``, ``--model=MODEL[/PARAM]``  A model or model/parameter set to run. ``MODEL`` alone
+                                   is equivalent to ``MODEL/default``.
+``-r``, ``--refresh``              Regenerate any required cached reference data sets.
+``-o``, ``--output=FORMAT``        Substitute fields in ``FORMAT`` and use the resulting
+                                   absolute or relative path for the validation test output
+                                   directory. Relative paths are with respect to
+                                   ``PREFIX/output/validation``.
+=================================  ======================================================
+
+By default, the outputs for a validationt test run are stored in
+``PREFIX/output/validation/SIMULATOR/MODEL/PARAM``, corresponding to an output format
+of ``%s/%m/%p``. Fields in the ``FORMAT`` string are substituted as follows:
+
++--------+---------------------------------------------------------------------+
+| ``%T`` | Timestamp of invocation of ``install-local.sh`` (ISO 8601/RFC 3339) |
++--------+---------------------------------------------------------------------+
+| ``%H`` | NSuite git commit hash (with ``+`` suffix if modified)              |
++--------+---------------------------------------------------------------------+
+| ``%h`` | NSuite git commit short hash (with ``+`` suffix if modified)        |
++--------+---------------------------------------------------------------------+
+| ``%S`` | System name (if defined in system environment script) or host name. |
++--------+---------------------------------------------------------------------+
+| ``%s`` | Simulator name                                                      |
++--------+---------------------------------------------------------------------+
+| ``%p`` | Parameter set name                                                  |
++--------+---------------------------------------------------------------------+
+| ``%%`` | Literal '%'                                                         |
++--------+---------------------------------------------------------------------+
+
+Output
+""""""
+
+``run-validation.sh`` will print pass/fail information to stdout, but will also
+record information in the per-test output directories:
+
++-------------+-------------------------------------------+
+| File        | Content                                   |
++=============+===========================================+
+| ``run.out`` | Captured standard output from test script |
++-------------+-------------------------------------------+
+| ``run.err`` | Captured standard error from test script  |
++-------------+-------------------------------------------+
+| ``status``  | Pass/fail status (see below)              |
++-------------+-------------------------------------------+
+
+The status is one of:
+1.  ``pass`` — validation test succeeded.
+2.  ``fail`` — validation test failed.
+3.  ``missing`` — no implementation for the validation test found for requested simulator.
+4.  ``error`` — an error occurred during validation test execution.
+
+The output directory may contain other test artefacts. By convention only, these
+may include:
+
++--------------+---------------------------------------------------------+
+| File         | Content                                                 |
++==============+=========================================================+
+| ``run.nc``   | Numerical results from simulator run in NetCDF4 format. |
++--------------+---------------------------------------------------------+
+| ``delta.nc`` | Computed differences from reference data.               |
++--------------+---------------------------------------------------------+
+
