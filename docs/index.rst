@@ -14,7 +14,7 @@ There are three motivations for the development of NSuite:
    simulation engines on HPC systems.
 2. The need to verify the performance and correctness of individual simulation engines
    as they change over time.
-3. The need to thest that changes to an HPC system do not cause performance or
+3. The need to test that changes to an HPC system do not cause performance or
    correctness regressions in simulation engines.
 
 The framework currently supports the simulation engines Arbor, NEURON, and CoreNeuron,

@@ -22,9 +22,9 @@ script ``benchmarks/models/MODEL/config.sh`` that takes the following arguments:
    config.sh $model                \ # model name
              $config               \ # configuration name
              $ns_base_path         \ # the base path of nsuite
-             $ns_config_path       \ # the base path of nsuite
-             $ns_bench_input_path  \ # the base path of nsuite
-             $ns_bench_output      \ # base for the output path
+             $ns_config_path       \ # path to config directory
+             $ns_bench_input_path  \ # path to benchmark input base directory
+             $ns_bench_output      \ # path to benchmark output base directory
              $output_format          # format string for simulator+model+config
 
 The script will in turn generate a benchmark runner for each simulation engine:
@@ -34,7 +34,7 @@ The script will in turn generate a benchmark runner for each simulation engine:
 3. ``$ns_bench_input_path/$model/$config/run_corenrn.sh``
 
 These scripts should generate benchmark output in the per-simulator path
-``$ns_bench_input_path/$output_format`` where the ``$output_format`` defaults to ``$model/$config/$engine``.
+``$ns_bench_output/$output_format`` where the ``$output_format`` defaults to ``$model/$config/$engine``.
 
 .. Note::
     NSuite does not specify how the contents of ``benchmarks/engines/ENGINE``
@@ -43,12 +43,12 @@ These scripts should generate benchmark output in the per-simulator path
 Performance reporting
 """""""""""""""""""""
 
-Each benchmark run has to report metrics like simulation time, memory consumption, number of cells in model, and so on.
+Each benchmark run has to report metrics such as simulation time, memory consumption, the number of cells in model, and so on.
 These are output in the formats described in :ref:`bench-outputs`.
 
 Arbor has a standardised way of measuring and reporting metrics using what it calls *meters*.
-NSuite provides utility Python module in ``common/python/metering.py`` that provides the
-same functionality in Python, which can be used for NEUORN benchmarks in Python.
+NSuite provides a Python module in ``common/python/metering.py`` that offers the
+same functionality in Python, which can be used for the NEURON benchmarks.
 
-With this standard output, ``scrpts/csv_bench.sh`` script can be used to automatically generate the CSV output.
+With this standard output format, the ``scrpts/csv_bench.sh`` script can be used to automatically generate the CSV output.
 

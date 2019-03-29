@@ -4,9 +4,9 @@ Validation
 ==================
 
 A validation test runs a particular model, representing some physical system to
-simulate, against one or more sets of parameters, and compares the output to a
+simulate, against one or more sets of parameters and compares the output to a
 reference solution. If the output deviates from the reference by more than a
-given threshold, the respective test is marked as a FAIL for that simulator.
+given threshold, the respective test is marked as failed for that simulator.
 
 Simulator output for each model and parameter set is by convention stored in
 NetCDF format, where it can be analysed with generic tools.
@@ -34,6 +34,7 @@ Model run scripts
 """""""""""""""""
 
 A run script is invoked with the following arguments:
+
 1. The output directory.
 2. The simulator name.
 3. The parameter set name.
@@ -68,7 +69,7 @@ data for a particular model *MODEL* should be stored in a subdirectory
 of the cache directory also named *MODEL*.
 
 If a validation run script does use cached data, that data should
-be regenerated regardless if the environment variable ``ns_cache_refresh``
+be regenerated if the environment variable ``ns_cache_refresh``
 has a non-empty value.
 
 Building tests
