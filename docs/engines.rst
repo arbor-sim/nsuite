@@ -34,12 +34,12 @@ it must support the following features:
 * Output of gid and times for spikes.
 
 .. Note::
-    If a simulation engine doesn't suport a feature required to run a test,
+    If a simulation engine doesn't support a feature required to run a test,
     the test will be skipped. For example, the only simulation output
     provided by CoreNEURON is spike times, so validation tests that require
     other information such as voltage traces are skipped when testing CoreNEURON.
 
-NSuite does not prescribe models using universal model descriptions such as
+NSuite does not describe models using universal model descriptions such as
 `SONATA <https://github.com/AllenInstitute/sonata>`_ or `NeuroML <https://www.neuroml.org>`_.
 Instead, benchmark and validation models are described using simulation engine-specific descriptions.
 
@@ -54,7 +54,7 @@ NEURON models
 """"""""""""""""""""""""""""""""""""""""""
 
 Models to run in NEURON are described using NEURON's Python interface.
-The bencmarking and validation runners launch the models using with the Python 3
+The benchmarking and validation runners launch the models using with the Python 3
 interpreter specified by the ``ns_python`` variable (see :ref:`vars_general`).
 
 CoreNEURON models

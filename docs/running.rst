@@ -56,9 +56,9 @@ simulator             none                  Which simulation engines to benchmar
                                             Use ``--help`` for all format string options.
 ====================  =================     ======================================================
 
-The ``--model`` and ``-config`` flags specify which benchmarks to run,
+The ``--model`` and ``--config`` flags specify which benchmarks to run
 and how they should be configured.  Currently there are two benchmark models,
-*ring* and *kway*, detailed descriptions are in :ref:`benchmarks`.
+*ring* and *kway*; detailed descriptions are in :ref:`benchmarks`.
 
 .. container:: example-code
 
@@ -191,6 +191,13 @@ The `run-validation.sh` script runs all or a subset of the models for one or mor
 installed simulators, saving test artefacts in a configurable output directory
 and a presenting pass/fail status for each test on standard output.
 
+Requirements
+""""""""""""
+
+The existing validation scripts use functionality from the ``scipy`` and
+``xarray`` Python modules. These modules need to be available in the
+Python module search path.
+
 Invocation
 """"""""""
 
@@ -234,9 +241,11 @@ of ``%s/%m/%p``. Fields in the ``FORMAT`` string are substituted as follows:
 +--------+---------------------------------------------------------------------+
 | ``%h`` | NSuite git commit short hash (with ``+`` suffix if modified)        |
 +--------+---------------------------------------------------------------------+
-| ``%S`` | System name (if defined in system environment script) or host name. |
+| ``%S`` | System name (if defined in system environment script) or host name  |
 +--------+---------------------------------------------------------------------+
 | ``%s`` | Simulator name                                                      |
++--------+---------------------------------------------------------------------+
+| ``%m`` | Model name                                                          |
 +--------+---------------------------------------------------------------------+
 | ``%p`` | Parameter set name                                                  |
 +--------+---------------------------------------------------------------------+
@@ -260,6 +269,7 @@ record information in the per-test output directories:
 +-------------+-------------------------------------------+
 
 The status is one of:
+
 1.  ``pass`` — validation test succeeded.
 2.  ``fail`` — validation test failed.
 3.  ``missing`` — no implementation for the validation test found for requested simulator.
