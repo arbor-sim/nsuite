@@ -30,6 +30,9 @@ param_vars = ['dt', 'g0', 'mindelay', 'threshold', 'ncell', 'coreneuron']
 for v in param_vars:
     if v in params: globals()[v] = params[v]
 
+outdir = os.path.dirname(output)
+ncell = int(ncell)
+
 tend = 8.
 sample_dt = 0.05
 
@@ -147,25 +150,17 @@ else:
     h.finitialize()
 
     # CoreNEURON output is always in the form of a file
-    # 'out.dat' in the current working directory containing
-    # spike data. We temporarily move to a temporary directory
-    # to call `pc.nrncore_run` so as not to scribble over
-    # the current directory.
+    # 'out.dat' containing spike data.
     #
     # The spike data is formatted with one record per line,
     # two fields per record delimitted by tab: time (ms) and
     # gid.
 
-    cwd = os.getcwd()
-    with tempfile.TemporaryDirectory() as tmpdir:
-        os.chdir(tmpdir)
-        pc.nrncore_run("-e %g" % tend)
-        with open('out.dat') as f:
-            for line in f:
-                m = re.search(r'(\S+)\s*(\S+)', line)
-                spike[int(m.group(2))] = float(m.group(1))
-
-    os.chdir(cwd)
+    pc.nrncore_run("-e %g -o %s" % (tend, outdir))
+    with open(outdir+'/out.dat') as f:
+        for line in f:
+            m = re.search(r'(\S+)\s*(\S+)', line)
+            spike[int(m.group(2))] = float(m.group(1))
 
     out = xarray.Dataset(
         {'spike': (['gid'], spike),
