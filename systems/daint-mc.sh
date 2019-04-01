@@ -11,13 +11,15 @@ module load CMake
 
 module load cray-hdf5 cray-netcdf
 
-# PyExtensions is needed for cython, mpi4py and others.
-# It loads cray-python/3.6.5.1
-module load PyExtensions/3.6.5.1-CrayGNU-18.08
-ns_python=$(which python3)
+module load cray-python/3.6.5.1
+ns_python=python3
 
 # load after python tools because easybuild...
 module swap gcc/7.3.0
+
+# add mpi4py to virtualenv build
+export MPICC="$(which cc)"
+ns_pyvenv_modules+=" Cython>=0.28 mpi4py>=3.0"
 
 ### compilation options ###
 
@@ -39,6 +41,6 @@ ns_sockets=2
 ns_threads_per_socket=36
 
 run_with_mpi() {
-    echo ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -c $ns_threads_per_socket $*
-    ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -c $ns_threads_per_socket $*
+    echo ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -c $ns_threads_per_socket "${@}"
+    ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -c $ns_threads_per_socket "${@}" 
 }
