@@ -1,3 +1,5 @@
+import sys
+
 import config
 import random
 env = config.load_env()

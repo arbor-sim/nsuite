@@ -86,10 +86,10 @@ arb_run_fid.write('[[ ! $(type -P arbor-busyring) ]]  && echo "Arbor needs to be
 nrn_run_fid.write('[[ ! $(type -P nrniv) ]]           && echo "NEURON needs to be installed before running benchmark"     && exit\n')
 cnr_run_fid.write('[[ ! $(type -P coreneuron_exec) ]] && echo "CoreNeuron needs to be installed before running benchmark" && exit\n')
 
-# quit early if required simulation engine is not in path
-arb_run_fid.write('[[ ! $(type -P arbor-busyring) ]]  && echo "Arbor needs to be installed before running benchmark"      && exit\n')
-nrn_run_fid.write('[[ ! $(type -P nrniv) ]]           && echo "NEURON needs to be installed before running benchmark"     && exit\n')
-cnr_run_fid.write('[[ ! $(type -P coreneuron_exec) ]] && echo "CoreNeuron needs to be installed before running benchmark" && exit\n')
+# "flag" will be passed to coreneuron_exec
+cnr_run_fid.write('flag=\n')
+cnr_run_fid.write('[[ "$ns_cnrn_gpu" = "true" ]] && flag="$flag -gpu --cell-permute 2"\n')
+cnr_run_fid.write('[[ "$ns_with_mpi" = "ON" ]] && flag="$flag -mpi"\n')
 
 header='echo "  cells compartments    wall(s)  throughput  mem-tot(MB) mem-percell(MB)"\n'
 cnr_run_fid.write(header)
@@ -129,7 +129,7 @@ for ncells in cell_range:
     cnr_run_fid.write('corenrn_ofile="$odir/%s".out\n'%(run_name))
     cnrn_input_path=('%s/%s_core'%(idir, run_name))
     cnr_run_fid.write('if [ -d "%s" ]; then\n'%(cnrn_input_path))
-    cnr_run_fid.write('  run_with_mpi coreneuron_exec -mpi -d "%s" -e %s --outpath "$odir" &> "$corenrn_ofile"\n'%(cnrn_input_path, str(duration)))
+    cnr_run_fid.write('  run_with_mpi coreneuron_exec $flag -d "%s" -e %s --outpath "$odir" &> "$corenrn_ofile"\n'%(cnrn_input_path, str(duration)))
     cnr_run_fid.write('  coreneuron_table_line "$corenrn_ofile"\n')
     cnr_run_fid.write('  [ -f "$odir/out.dat" ] && mv "$odir/out.dat" "$odir/%s_spikes.dat"\n'%(run_name))
     cnr_run_fid.write('else\n')

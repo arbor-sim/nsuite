@@ -40,9 +40,11 @@ ns_makej=20
 ns_threads_per_core=2
 ns_cores_per_socket=12
 ns_sockets=1
-ns_threads_per_socket=24
+ns_threads_per_socket=12
 
 run_with_mpi() {
-    echo ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -N $ns_sockets -c $ns_threads_per_socket "${@}"
-    ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -N $ns_sockets -c $ns_threads_per_socket "${@}"
+    export ARB_NUM_THREADS=$ns_threads_per_socket
+    export OMP_NUM_THREADS=$ns_threads_per_socket
+    echo srun -Cgpu -n$ns_sockets -N1 -c $ns_threads_per_socket "${@}"
+    srun -Cgpu -n$ns_sockets -N1 -c $ns_threads_per_socket "${@}"
 }

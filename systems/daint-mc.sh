@@ -41,6 +41,8 @@ ns_sockets=2
 ns_threads_per_socket=36
 
 run_with_mpi() {
-    echo ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -c $ns_threads_per_socket "${@}"
-    ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -c $ns_threads_per_socket "${@}" 
+    export ARB_NUM_THREADS=$ns_threads_per_socket
+    export OMP_NUM_THREADS=$ns_threads_per_socket
+    echo srun -Cmc -n$ns_sockets -N1 -c$ns_threads_per_socket "${@}"
+    srun -Cmc -n$ns_sockets -N1 -c$ns_threads_per_socket "${@}"
 }

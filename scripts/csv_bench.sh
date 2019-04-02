@@ -80,13 +80,13 @@ table_line_cnr() {
     tts=$(awk '/Solver Time/ {print $4}' "$fid")
     ncell=$(awk '/Number of cells/ {print $4}' "$fid")
 
-    rankmem_start=$(awk '/After MPI_Init/ {print $12}' "$fid")
+    rankmem_start=$(awk '/Before nrn_setup/ {print $12}' "$fid")
     rankmem_end=$(awk '/After nrn_finitialize/ {print $12}' "$fid")
     rankmem=$(echo $rankmem_end-$rankmem_start | bc -l)
     # num_mpi and num_omp_thread are printed more than once (for redundancy?)
     # So use awk to discard all but the last occurence of each variable
-    nranks=$(awk -F= '/num_mpi/ {x=$2} END{print x}' "$fid")
-    nthreads=$(awk -F= '/num_omp_thread/ {x=$2} END{print x}' "$fid")
+    nranks=$(awk   -F= '/num_mpi/        {x=$2} END{print length(x)==0? 1: x;}' "$fid")
+    nthreads=$(awk -F= '/num_omp_thread/ {x=$2} END{print length(x)==0? 1: x;}' "$fid")
     totalmem=$(echo $rankmem*$nranks | bc -l)
     # we can't run CoreNeuron with GPU for now, so always no.
     hasgpu="no"
