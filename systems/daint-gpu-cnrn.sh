@@ -17,8 +17,8 @@ module load cray-hdf5 cray-netcdf
 
 # PyExtensions is needed for cython, mpi4py and others.
 # It loads cray-python/3.6.5.1 which points python at version 3.6.1.1
-module load PyExtensions/3.6.5.1-CrayGNU-18.08
-ns_python=$(which python3)
+module load cray-python/3.6.5.1
+ns_python=python3
 
 # load PrgEnv-pgi after loading python module, because PyExtensions reloads PrgEnv-gnu, because... well, why not?
 pe_env=$(echo $PE_ENV | tr '[:upper:]' '[:lower:]')
@@ -26,6 +26,10 @@ module swap PrgEnv-$pe_env PrgEnv-pgi
 
 # load after python tools because easybuild...
 module load gcc/6.2.0
+
+# add mpi4py to virtualenv build
+export MPICC="$(which cc)"
+ns_pyvenv_modules+=" Cython>=0.28 mpi4py>=3.0"
 
 ### compilation options ###
 
@@ -49,6 +53,8 @@ ns_sockets=1
 ns_threads_per_socket=12
 
 run_with_mpi() {
-    echo srun -n1 -N1 -c12 "${@}"
-    srun -n1 -N1 -c12 "${@}"
+    export ARB_NUM_THREADS=$ns_threads_per_socket
+    export OMP_NUM_THREADS=$ns_threads_per_socket
+    echo srun -Cgpu -n$ns_sockets -N1 -c$ns_threads_per_socket "${@}"
+    srun -Cgpu -n$ns_sockets -N1 -c$ns_threads_per_socket "${@}"
 }

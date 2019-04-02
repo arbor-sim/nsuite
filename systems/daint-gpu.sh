@@ -44,6 +44,7 @@ ns_threads_per_socket=12
 
 run_with_mpi() {
     export ARB_NUM_THREADS=$ns_threads_per_socket
-    echo srun -n1 -N1 -c $ns_threads_per_socket "${@}"
-    srun -n1 -N1 -c $ns_threads_per_socket "${@}"
+    export OMP_NUM_THREADS=$ns_threads_per_socket
+    echo srun -Cgpu -n$ns_sockets -N1 -c $ns_threads_per_socket "${@}"
+    srun -Cgpu -n$ns_sockets -N1 -c $ns_threads_per_socket "${@}"
 }
