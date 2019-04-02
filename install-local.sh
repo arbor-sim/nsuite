@@ -1,23 +1,32 @@
 usage() {
     cat <<'_end_'
-Usage: install-local.sh [--env=SCRIPT] [--prefix=PATH] TARGET [TARGET...]
+Usage: install-local.sh [--pyvenv=VENVOPT] [--env=SCRIPT] [--prefix=PATH] TARGET [TARGET...]
 
 Setup NSuite framework, build and install simulators, benchmarks,
 and validation tests.
 
 Options:
-    --env=SCRIPT       Source SCRIPT before building.
-    --prefix=PATH   Use PATH as base for install and other run-time
-                    working directories.
+    --pyvenv=VENVOPT  Customize use of Python virtual environment (see below)
+    --env=SCRIPT      Source SCRIPT before building.
+    --prefix=PATH     Use PATH as base for install and other run-time
+                      working directories.
 
 TARGET is one of:
-   arbor            Build Arbor.
-   neuron           Build NEURON.
-   coreneuron       Build CoreNEURON.
-   all              Build all simulators.
+    arbor             Build Arbor.
+    neuron            Build NEURON.
+    coreneuron        Build CoreNEURON.
+    all               Build all simulators.
 
 Building a TARGET will also build any associated tests and
 benchmarks as required.
+
+By default, a Python virtual environment is created in which required modules
+are installed if they are missing in the system environment.
+VENVOPT is one of:
+    disable           Do not use a Python virtualenv at all.
+    inherit           Use a virtualenv, using site packages.
+    enable            Use a virtualenv, ignoring site packages (default).
+
 _end_
 }
 
@@ -34,6 +43,7 @@ ns_build_nest=false
 ns_build_neuron=false
 ns_build_coreneuron=false
 ns_environment=
+ns_pyvenv=enable
 
 while [ "$1" != "" ]
 do
@@ -52,6 +62,13 @@ do
             ns_build_neuron=true
             ns_build_coreneuron=true
             ;;
+        --pyvenv=* )
+            ns_pyvenv=${1#--pyvenv=}
+	    ;;
+        --pyvenv )
+	    shift
+            ns_pyvenv=$1
+	    ;;
         --env=* )
             ns_environment=${1#--env=}
             ;;
@@ -73,6 +90,12 @@ do
     esac
     shift
 done
+
+if [ "$ns_pyvenv" != disable -a "$ns_pyvenv" != enable -a "$ns_pyvenv" != inherit ]; then
+    echo "unrecognized argument for --pyvenv: '$ns_pyvenv'"
+    usage
+    exit 1
+fi
 
 # Load utility functions and set up default environment.
 
@@ -143,6 +166,28 @@ mkdir -p "$ns_build_path"
 ns_timestamp=$(date +%Y-%m-%ST%H:%M:%S%z | sed 's/[0-9][0-9]$/:&/')
 echo "$ns_timestamp" > "$ns_build_path/timestamp"
 echo "${ns_sysname:=$(hostname -s)}" > "$ns_build_path/sysname"
+
+# Set up python virtual environment.
+
+if [ "$ns_pyvenv" != disable ]; then
+    echo
+    msg "Initializing python virtual environment"
+    ns_pyvenv_opt=
+    if [ "$ns_pyvenv" == inherit ]; then
+	ns_pyvenv_opt=--system-site-packages
+    fi
+
+    msg "Installing python modules: $ns_pyvenv_modules"
+    (
+	exec >> "$ns_build_path/log_pyvenv" 2>&1
+	if "$ns_python" -m venv $ns_pyvenv_opt "$ns_pyvenv_path"; then
+	    source "$ns_pyvenv_path/bin/activate"
+	    for pkg in $ns_pyvenv_modules; do
+	        pip install "$pkg"
+	    done
+	fi
+    )
+fi
 
 # Build simulator targets.
 

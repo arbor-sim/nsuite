@@ -8,7 +8,7 @@ export PATH="/users/bcumming/cmake/cmake-3.13.0-rc1/bin:$PATH"
 # PyExtensions is needed for cython, mpi4py and others.
 # It loads cray-python/3.6.5.1
 module load cray-python/3.6.5.1
-ns_python=$(which python3)
+ns_python=python3
 
 # load after python tools because easybuild...
 module swap gcc/7.3.0
@@ -33,6 +33,6 @@ ns_sockets=1
 ns_threads_per_socket=64
 
 run_with_mpi() {
-    echo ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -c $ns_threads_per_socket $*
-    ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -c $ns_threads_per_socket $*
+    echo ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -c $ns_threads_per_socket "${@}" 
+    ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -c $ns_threads_per_socket "${@}" 
 }
