@@ -62,7 +62,7 @@ default_environment() {
     [ $? = 0 ] && ns_python=$(which python3)
 
     # Python venv module list
-    ns_pyvenv_modules="scipy xarray"
+    ns_pyvenv_modules="scipy netcdf4 xarray"
 
     # Arbor specific
 
