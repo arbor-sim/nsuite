@@ -147,12 +147,10 @@ fi
 # TODO: this has to go into the configuration environment setup scripts
 export ARB_NUM_THREADS=$[ $ns_threads_per_core * $ns_cores_per_socket ]
 
-msg "platform:          $ns_system"
-msg "cores per socket:  $ns_cores_per_socket"
-msg "threads per core:  $ns_threads_per_core"
-msg "threads:           $ARB_NUM_THREADS"
-msg "sockets:           $ns_sockets"
-msg "mpi:               $ns_with_mpi"
+msg "NSuite benchmark runner"
+echo
+msg "models:   $models"
+msg "configs:  $configs"
 echo
 
 mkdir -p "$ns_bench_input_path"
