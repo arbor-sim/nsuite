@@ -180,7 +180,7 @@ if [ "$ns_pyvenv" != disable ]; then
     msg "Installing python modules: $ns_pyvenv_modules"
     (
 	exec >> "$ns_build_path/log_pyvenv" 2>&1
-	if python3 -m venv $ns_pyvenv_opt "$ns_pyvenv_path"; then
+	if "$ns_python" -m venv $ns_pyvenv_opt "$ns_pyvenv_path"; then
 	    source "$ns_pyvenv_path/bin/activate"
 	    for pkg in $ns_pyvenv_modules; do
 	        pip install "$pkg"

@@ -9,17 +9,18 @@ ns_sysname="daint-gpu"
 module load daint-gpu
 module load CMake
 
-module load cray-python/3.6.5.1
-ns_python=python3
+module load cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8
 module load cray-hdf5 cray-netcdf
 
-# PyExtensions is needed for cython, mpi4py and others.
-# It loads cray-python/3.6.5.1 which points python at version 3.6.1.1
-module load PyExtensions/3.6.5.1-CrayGNU-18.08
+module load cray-python/3.6.5.1
 ns_python=python3
 
-# load after python tools because easybuild...
+# load after python because easybuild...
 module swap gcc/6.2.0
+
+# add mpi4py to virtualenv build
+export MPICC="$(which cc)"
+ns_pyvenv_modules+=" Cython>=0.28 mpi4py>=3.0"
 
 ### compilation options ###
 

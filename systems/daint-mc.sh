@@ -14,7 +14,7 @@ module load cray-hdf5 cray-netcdf
 module load cray-python/3.6.5.1
 ns_python=python3
 
-# load after python tools because easybuild...
+# load after python because easybuild...
 module swap gcc/7.3.0
 
 # add mpi4py to virtualenv build
