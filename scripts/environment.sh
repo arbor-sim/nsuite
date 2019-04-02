@@ -15,6 +15,8 @@ set_working_paths() {
     export ns_bench_input_path="$ns_prefix/input/benchmarks"
     export ns_bench_output="$ns_prefix/output/benchmark"
     export ns_validation_output="$ns_prefix/output/validation"
+
+    export ns_pyvenv_path="$ns_build_path/pyvenv"
 }
 
 # Sets up the default enviroment.
@@ -58,6 +60,9 @@ default_environment() {
     ns_python=
     command -v python3 &> /dev/null
     [ $? = 0 ] && ns_python=$(which python3)
+
+    # Python venv module list
+    ns_pyvenv_modules="scipy xarray"
 
     # Arbor specific
 
@@ -163,6 +168,12 @@ save_environment() {
         source_env_script='source '$(full_path "$ns_environment")
     fi
 
+    pyvenv_activate=$ns_pyvenv_path/bin/activate
+    source_pyvenv_script=
+    if [ -r "$pyvenv_activate" ]; then
+	source_pyvenv_script="source '$pyvenv_activate'"
+    fi
+
     cat <<_end_ > "$ns_config_path/env_$sim.sh"
 export ns_prefix="$ns_prefix"
 export ns_timestamp="$ns_timestamp"
@@ -174,6 +185,7 @@ export LD_LIBRARY_PATH="${lib_path}:\$LD_LIBRARY_PATH"
 source "$ns_base_path/scripts/environment.sh"
 default_environment
 $source_env_script
+$source_pyvenv_script
 _end_
 
     for appendix in "${@}"; do

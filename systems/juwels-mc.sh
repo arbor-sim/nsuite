@@ -8,7 +8,7 @@ ns_sysname="juwels-mc"
 module load CMake/3.13.0
 
 module load Python/3.6.6
-ns_python=$(which python3)
+ns_python=python3
 
 module load GCC/8.2.0 ParaStationMPI/5.2.1-1
 
@@ -39,6 +39,6 @@ ns_threads_per_socket=48
 
 # activate budget via jutil env activate -p <cproject> -A <budget> before running the benchmark
 run_with_mpi() {
-    echo ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -c $ns_threads_per_socket $*
-    ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -c $ns_threads_per_socket $*
+    echo ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -c $ns_threads_per_socket "${@}" 
+    ARB_NUM_THREADS=$ns_threads_per_socket srun -n $ns_sockets -c $ns_threads_per_socket "${@}" 
 }
