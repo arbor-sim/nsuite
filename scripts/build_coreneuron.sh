@@ -37,12 +37,19 @@ mkdir -p "$cnrn_build_path"
 # configure the build with cmake
 cd "$cnrn_build_path"
 cmake_args=-DCMAKE_INSTALL_PREFIX:PATH="$ns_install_path"
-# turn off tests, because these cause linking problems with boost.
+# Turn off tests, because these cause linking problems with boost.
 cmake_args="$cmake_args -DUNIT_TESTS=off"
 cmake_args="$cmake_args -DFUNCTIONAL_TESTS=off"
 cmake_args="$cmake_args -DENABLE_MPI=$ns_with_mpi"
+if [ "$ns_cnrn_gpu" == "true" ]
+then
+    cmake_args="$cmake_args -DCOMPILE_LIBRARY_TYPE=STATIC -DCUDA_HOST_COMPILER=`which gcc` -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DENABLE_SELECTIVE_GPU_PROFILING=ON -DENABLE_OPENACC=ON -DCORENEURON_OPENMP=OFF"
+else
+    cmake_args="$cmake_args -DENABLE_OPENACC=OFF -DCORENEURON_OPENMP=ON"
+fi
+
 msg "CoreNEURON: cmake $cmake_args"
-cmake "$cnrn_repo_path" $cmake_args >> "$out" 2>&1
+cmake "$cnrn_repo_path" $cmake_args -DCMAKE_C_FLAGS="$ns_cnrn_compiler_flags" -DCMAKE_CXX_FLAGS="$ns_cnrn_compiler_flags" >> "$out" 2>&1
 [ $? != 0 ] && exit_on_error "see ${out}"
 
 msg "CoreNEURON: make"

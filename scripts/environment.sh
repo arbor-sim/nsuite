@@ -89,6 +89,13 @@ default_environment() {
     # CoreNeuron specific
     ns_cnrn_git_repo=https://github.com/BlueBrain/CoreNeuron.git
     ns_cnrn_sha=0.14
+
+    # CoreNeuron can optionally target GPUs using PGI OpenACC.
+    ns_cnrn_gpu=false           # turned off by default.
+    # CoreNeuron relies on passing compiler flags via CMAKE_CXX_FLAGS and CMAKE_C_FLAGS
+    # for architecture-specific optimization. If using OpenACC or trying to coax the
+    # Intel compiler to vectorize, set this variable.
+    ns_cnrn_compiler_flags=-O2
 }
 
 # Attempts to detect harware resouces available on node

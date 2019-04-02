@@ -1,11 +1,14 @@
 ### environment ###
 
+# Configuration for GPU support for CoreNEURON on Daint-GPU.
+# CoreNEURON uses the PGI compiler for OpenACC support, so we make a special
+# case for it, because we don't use PGI for any other simulators.
+
 # record system name
 ns_sysname="daint-gpu"
 
 # set up environment for building on the multicore part of daint
 
-[ "$PE_ENV" = "CRAY" ] && module swap PrgEnv-cray PrgEnv-gnu
 module load daint-gpu
 module load CMake
 
@@ -17,8 +20,12 @@ module load cray-hdf5 cray-netcdf
 module load PyExtensions/3.6.5.1-CrayGNU-18.08
 ns_python=$(which python3)
 
+# load PrgEnv-pgi after loading python module, because PyExtensions reloads PrgEnv-gnu, because... well, why not?
+pe_env=$(echo $PE_ENV | tr '[:upper:]' '[:lower:]')
+module swap PrgEnv-$pe_env PrgEnv-pgi
+
 # load after python tools because easybuild...
-module swap gcc/6.2.0
+module load gcc/6.2.0
 
 ### compilation options ###
 
@@ -26,22 +33,22 @@ ns_cc=$(which cc)
 ns_cxx=$(which CC)
 ns_with_mpi=ON
 
-ns_arb_with_gpu=ON
-ns_arb_arch=haswell
-
 export CRAYPE_LINK_TYPE=dynamic
 
 ns_makej=20
 
+### CoreNeuron options
+ns_cnrn_gpu=true
+ns_cnrn_compiler_flags="-O2 -ta=tesla:cuda9.2"
+
 ### benchmark execution options ###
 
-ns_threads_per_core=2
+ns_threads_per_core=1
 ns_cores_per_socket=12
 ns_sockets=1
 ns_threads_per_socket=12
 
 run_with_mpi() {
-    export ARB_NUM_THREADS=$ns_threads_per_socket
-    echo srun -n1 -N1 -c $ns_threads_per_socket "${@}"
-    srun -n1 -N1 -c $ns_threads_per_socket "${@}"
+    echo srun -n1 -N1 -c12 "${@}"
+    srun -n1 -N1 -c12 "${@}"
 }
