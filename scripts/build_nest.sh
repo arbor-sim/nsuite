@@ -42,7 +42,7 @@ then
     if [ "$with_mpi" = "true" ]; then
         nest_cmake_flags="$nest_cmake_flags -Dwith-mpi=ON";
     fi
-    cmake .. -DCMAKE_INSTALL_PREFIX:PATH="$install_path" -Dwith-mpi=ON &>> ${out}}
+    cmake .. -DCMAKE_BUILD_TYPE=release -DCMAKE_INSTALL_PREFIX:PATH="$install_path" -Dwith-mpi=ON &>> ${out}}
     [ $? != 0 ] && err "see ${out}" && return 1
 fi
 

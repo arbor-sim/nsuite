@@ -73,7 +73,7 @@ do
     cd "$build_path"
 
     msg "ARBOR: cmake"
-    cmake "$source_path" -DCMAKE_INSTALL_PREFIX:PATH="$ns_install_path" >> "$out" 2>&1
+    cmake "$source_path" -DCMAKE_BUILD_TYPE=release -DCMAKE_INSTALL_PREFIX:PATH="$ns_install_path" >> "$out" 2>&1
     [ $? != 0 ] && exit_on_error "see ${out}"
 
     msg "ARBOR: make"

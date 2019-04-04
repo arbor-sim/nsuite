@@ -3,7 +3,6 @@ project(arbor-ring LANGUAGES CXX)
 
 set (CMAKE_CXX_STANDARD 14)
 
-# When arbor PR is in, this will become find_package(arbor REQUIRED MPI)
 find_package(arbor REQUIRED)
 
 add_executable(ring ring.cpp)
