@@ -33,3 +33,21 @@ Acceptance critera
 The relative error in membrane voltage should be within 1% of
 the reference value at time _t_ = 10 ms.
 
+Implementation notes
+--------------------
+
+### Arbor
+
+Supported tags:
+* `binevents`
+
+  Bin event delivery times to simulation dt.
+
+
+### NEURON
+
+Supported tags:
+* `firstorder`
+
+  Use first order integrator instead of default second order.
+

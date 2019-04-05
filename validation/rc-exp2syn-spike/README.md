@@ -47,3 +47,24 @@ Acceptance critera
 The recorded spike times from each cell should differ from the
 reference times by at most 3·_dt_. (This is set explicitly as
 the `max_error` test parameter.)
+
+Implementation notes
+--------------------
+
+Arbor and NEURON implementions save the voltage trace from the
+first, source cell.
+
+### Arbor
+
+Supported tags:
+* `binevents`
+
+  Bin event delivery times to simulation dt.
+
+### NEURON and CoreNEURON
+
+Supported tags:
+* `firstorder`
+
+  Use first order integrator instead of default second order.
+

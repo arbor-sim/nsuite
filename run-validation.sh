@@ -2,7 +2,7 @@
 
 usage() {
     cat <<_end_
-Usage: run-validation.sh [OPTIONS] SIMULATOR [SIMULATOR...]
+Usage: run-validation.sh [OPTIONS] SIMULATOR[:TAG...] [SIMULATOR[:TAG...] ...]
 
 Options:
     -h, --help                 Print this help message and exit.
@@ -31,6 +31,11 @@ Fields in FORMAT are substituted as follows:
   %%    Literal '%'.
 
 If no --output option is provided, the default FORMAT %s/%m/%p is used.
+
+One or more TAGs can be suffixed to a simulator. These are passed to the
+corresponding test implementations and are meant to describe runtime simulator
+configuration options.
+
 _end_
     exit 0;
 }
@@ -157,7 +162,11 @@ repo_hash_short=$(git-repo-hash --short ${ns_base_path})
 ns_timestamp=$(< "$ns_build_path/timestamp")
 ns_sysname=$(< "$ns_build_path/sysname")
 
-for sim in $sims; do
+for sim_with_tags in $sims; do
+    unset tagsplit
+    IFS=':' read -r -a tagsplit <<<"$sim_with_tags"
+    sim=${tagsplit[0]}
+
     echo
     sim_env="$ns_prefix/config/env_$sim.sh"
     if [ ! -f "$sim_env" ]; then
@@ -188,24 +197,25 @@ for sim in $sims; do
 
         outdir=$(pathsub --base="$ns_validation_output" \
             T="$ns_timestamp" S="$ns_sysname" H="$repo_hash" h="$repo_hash_short" \
-            s="$sim" m="$basemodel" p="$param" \
+            s="$sim_with_tags" m="$basemodel" p="$param" \
             -- \
             "${ns_validation_output_format:-%s/%m/%p}")
 
         mkdir -p "$outdir" || exit_on_err "run-validation.sh: cannot create directory '$outdir'"
 
         model_status="$outdir/status"
-        test_id="$sim $basemodel/$param"
+        test_id="$sim_with_tags $basemodel/$param"
 
         # Run script exit codes:
         #     0 => success: test passed.
         #    96 => failure: test run but validation failed.
         #    97 => missing: no implementation for given simulator.
+        #    98 => unsupported tag: implementation does not recognize requested tag.
         # other => error: execution error.
 
         (
           source "$sim_env";
-          "$model_path/run" "$outdir" "$sim" "$param"
+          "$model_path/run" "$outdir" "$sim_with_tags" "$param"
         ) > "$outdir/run.out" 2> "$outdir/run.err"
 
         case $? in
@@ -220,6 +230,10 @@ for sim in $sims; do
            97 )
                 echo "$cyan[MISSING]$nc $test_id"
                 echo missing > "$model_status"
+                ;;
+           98 )
+                echo "$cyan[UNSUPPORTED]$nc $test_id"
+                echo "unsupported tag" > "$model_status"
                 ;;
             * )
                 echo "$red[ERROR]$nc $test_id"

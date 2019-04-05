@@ -12,9 +12,11 @@
 #include <arbor/simple_sampler.hpp>
 #include <arbor/simulation.hpp>
 
+#include "common_args.h"
+#include "netcdf_wrap.h"
+
 using namespace arb;
 
-using paramset = std::map<std::string, double>;
 paramset default_parameters = {
     {"dt", 0.01},
     {"g0", 0.1}
@@ -103,79 +105,40 @@ domain_decomposition trivial_dd(const recipe& r) {
     };
 }
 
-struct nc_error: std::runtime_error {
-    nc_error(const char* fn, int st):
-        std::runtime_error(std::string(fn)+": "+std::string(nc_strerror(st))),
-        call(fn),
-        status(st) {}
-
-    int status;
-    std::string call;
-};
-
-struct arg_data {
-    std::string output;
-    paramset params = default_parameters;
-};
-
-void common_parse_arguments(char** argv, arg_data& args);
-void write_netcdf_trace(const char* path, const trace_data<double>& trace, const char* varname, const paramset& ps = paramset{});
-
-int usage(char* argv0) {
-    char* basename = std::strrchr(argv0, '/');
-    basename = basename? basename+1: argv0;
-
-    std::cerr << "Usage: " << basename << " OUTFILE [ PARAM=VALUE ... ]\n";
-    return 1;
-}
-
 int main(int argc, char** argv) {
-    paramset params{default_parameters};
-    const char* output = argv[1];
-
-    if (!output) return usage(argv[0]);
-    try {
-        for (auto a = argv+2; *a; ++a) {
-            if (char* eq = std::strrchr(*a, '=')) {
-                params[std::string{*a, eq}] = std::stod(eq+1);
-            }
-            else return usage(argv[0]);
-        }
-    }
-    catch (...) {
-        return usage(argv[0]);
-    }
+    common_args A;
+    A.params = default_parameters;
+    parse_common_args(A, argc, argv, {"binevents"});
 
     auto ctx = make_context();
-    rc_expsyn_recipe rec(params);
+    rc_expsyn_recipe rec(A.params);
     simulation sim(rec, trivial_dd(rec), ctx);
 
     time_type t_end = 10., sample_dt = 0.05; // [ms]
-    time_type dt = params["dt"];
+    time_type dt = A.params["dt"];
 
     trace_data<double> vtrace;
     sim.add_sampler(all_probes, regular_schedule(sample_dt), make_simple_sampler(vtrace));
+
+    if (A.tags.count("binevents")) {
+        sim.set_binning_policy(arb::binning_kind::regular, dt);
+    }
     sim.run(t_end, dt);
 
-    write_netcdf_trace(output, vtrace, "voltage", params);
-}
+    // Write to netcdf:
 
-#define nc_check(fn, ...)\
-if (auto r = fn(__VA_ARGS__)) { throw nc_error(#fn, r); } else {}
-
-void write_netcdf_trace(const char* path, const trace_data<double>& trace, const char* varname, const paramset& ps) {
-    std::size_t len = trace.size();
+    std::size_t vlen = vtrace.size();
 
     int ncid;
-    nc_check(nc_create, path, 0, &ncid);
+    nc_check(nc_create, A.output.c_str(), 0, &ncid);
 
     int time_dimid, timeid, varid;
-    nc_check(nc_def_dim, ncid, "time", len, &time_dimid);
+    nc_check(nc_def_dim, ncid, "time", vlen, &time_dimid);
     nc_check(nc_def_var, ncid, "time", NC_DOUBLE, 1, &time_dimid, &timeid);
-    nc_check(nc_def_var, ncid, varname, NC_DOUBLE, 1, &time_dimid, &varid);
+    nc_check(nc_def_var, ncid, "voltage", NC_DOUBLE, 1, &time_dimid, &varid);
 
     std::vector<int> param_ids;
-    for (const auto& kv: ps) {
+    for (const auto& kv: A.params) {
         int id;
         nc_check(nc_def_var, ncid, kv.first.c_str(), NC_DOUBLE, 0, nullptr, &id);
         param_ids.push_back(id);
@@ -184,21 +147,20 @@ void write_netcdf_trace(const char* path, const trace_data<double>& trace, const
     nc_check(nc_enddef, ncid);
 
     std::vector<double> times, values;
-    times.reserve(len);
-    values.reserve(len);
-    for (auto e: trace) {
+    times.reserve(vlen);
+    values.reserve(vlen);
+    for (auto e: vtrace) {
         times.push_back(e.t);
         values.push_back(e.v);
     }
 
     unsigned pidx = 0;
-    for (const auto& kv: ps) {
+    for (const auto& kv: A.params) {
         int id;
         nc_check(nc_put_var_double, ncid, param_ids[pidx++], &kv.second);
     }
 
     nc_check(nc_put_var_double, ncid, timeid, times.data())
     nc_check(nc_put_var_double, ncid, varid, values.data())
-
     nc_check(nc_close, ncid);
 }

@@ -11,6 +11,7 @@ find_package(netcdf REQUIRED)
 
 add_executable(arbor-rc-expsyn arbor-rc-expsyn.cpp)
 target_link_libraries(arbor-rc-expsyn arbor::arbor netcdf::netcdf)
+target_include_directories(arbor-rc-expsyn PRIVATE ${CMAKE_SOURCE_DIR}/../include)
 
 install(TARGETS arbor-rc-expsyn DESTINATION bin)
 

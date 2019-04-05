@@ -12,9 +12,11 @@
 #include <arbor/simple_sampler.hpp>
 #include <arbor/simulation.hpp>
 
+#include "common_args.h"
+#include "netcdf_wrap.h"
+
 using namespace arb;
 
-using paramset = std::map<std::string, double>;
 paramset default_parameters = {
     {"dt", 0.01},
     {"g0", 0.1},
@@ -122,7 +124,6 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
     }
 };
 
-
 domain_decomposition trivial_dd(const recipe& r) {
     cell_size_type ncell = r.num_cells();
 
@@ -139,60 +140,22 @@ domain_decomposition trivial_dd(const recipe& r) {
     };
 }
 
-struct nc_error: std::runtime_error {
-    nc_error(const char* fn, int st):
-        std::runtime_error(std::string(fn)+": "+std::string(nc_strerror(st))),
-        call(fn),
-        status(st) {}
-
-    int status;
-    std::string call;
-};
-
-struct arg_data {
-    std::string output;
-    paramset params = default_parameters;
-};
-
-void common_parse_arguments(char** argv, arg_data& args);
-void write_netcdf_traces(const char* path, const arb::trace_data<double>& v0, const std::vector<double>& spikes, const std::vector<double>& delay, const paramset& scalars);
-
-int usage(char* argv0) {
-    char* basename = std::strrchr(argv0, '/');
-    basename = basename? basename+1: argv0;
-
-    std::cerr << "Usage: " << basename << " OUTFILE [ PARAM=VALUE ... ]\n";
-    return 1;
-}
-
 int main(int argc, char** argv) {
-    paramset params{default_parameters};
-    const char* output = argv[1];
-
-    if (!output) return usage(argv[0]);
-    try {
-        for (auto a = argv+2; *a; ++a) {
-            if (char* eq = std::strrchr(*a, '=')) {
-                params[std::string{*a, eq}] = std::stod(eq+1);
-            }
-            else return usage(argv[0]);
-        }
-    }
-    catch (...) {
-        return usage(argv[0]);
-    }
+    common_args A;
+    A.params = default_parameters;
+    parse_common_args(A, argc, argv, {"binevents"});
 
     auto ctx = make_context();
-    rc_exp2syn_spike_recipe rec(params);
+    rc_exp2syn_spike_recipe rec(A.params);
     simulation sim(rec, trivial_dd(rec), ctx);
 
     time_type t_end = 10., sample_dt = 0.05; // [ms]
-    time_type dt = params["dt"];
+    time_type dt = A.params["dt"];
 
     arb::trace_data<double> v0;
     sim.add_sampler(one_probe({0u, 0u}), regular_schedule(sample_dt), make_simple_sampler(v0));
 
-    std::vector<double> first_spike(params["ncell"], NAN);
+    std::vector<double> first_spike(A.params["ncell"], NAN);
     sim.set_global_spike_callback(
         [&](const std::vector<arb::spike>& spikes) {
             for (auto s: spikes) {
@@ -205,21 +168,18 @@ int main(int argc, char** argv) {
             }
         });
 
+    if (A.tags.count("binevents")) {
+        sim.set_binning_policy(arb::binning_kind::regular, dt);
+    }
     sim.run(t_end, dt);
 
-    auto scalars = params;
-    write_netcdf_traces(output, v0, first_spike, rec.delay,  scalars);
-}
+    // Write to netcdf:
 
-#define nc_check(fn, ...)\
-if (auto r = fn(__VA_ARGS__)) { throw nc_error(#fn, r); } else {}
-
-void write_netcdf_traces(const char* path, const arb::trace_data<double>& v0, const std::vector<double>& spikes, const std::vector<double>& delay, const paramset& scalars) {
     int ncid;
-    nc_check(nc_create, path, 0, &ncid);
+    nc_check(nc_create, A.output.c_str(), 0, &ncid);
 
     std::size_t tlen = v0.size();
-    std::size_t slen = spikes.size();
+    std::size_t slen = first_spike.size();
     int time_dimid, gid_dimid, time_id, v0_id, spike_id, delay_id;
 
     nc_check(nc_def_dim, ncid, "time",  tlen, &time_dimid);
@@ -230,7 +190,7 @@ void write_netcdf_traces(const char* path, const arb::trace_data<double>& v0, co
     nc_check(nc_def_var, ncid, "delay", NC_DOUBLE, 1, &gid_dimid, &delay_id);
 
     std::vector<int> scalar_ids;
-    for (const auto& kv: scalars) {
+    for (const auto& kv: A.params) {
         int id;
         nc_check(nc_def_var, ncid, kv.first.c_str(), NC_DOUBLE, 0, nullptr, &id);
         scalar_ids.push_back(id);
@@ -239,7 +199,7 @@ void write_netcdf_traces(const char* path, const arb::trace_data<double>& v0, co
     nc_check(nc_enddef, ncid);
 
     unsigned pidx = 0;
-    for (const auto& kv: scalars) {
+    for (const auto& kv: A.params) {
         int id;
         nc_check(nc_put_var_double, ncid, scalar_ids[pidx++], &kv.second);
     }
@@ -254,8 +214,8 @@ void write_netcdf_traces(const char* path, const arb::trace_data<double>& v0, co
 
     nc_check(nc_put_var_double, ncid, time_id, time.data())
     nc_check(nc_put_var_double, ncid, v0_id, voltage.data())
-    nc_check(nc_put_var_double, ncid, spike_id, spikes.data())
-    nc_check(nc_put_var_double, ncid, delay_id, delay.data())
+    nc_check(nc_put_var_double, ncid, spike_id, first_spike.data())
+    nc_check(nc_put_var_double, ncid, delay_id, rec.delay.data())
 
     nc_check(nc_close, ncid);
 }

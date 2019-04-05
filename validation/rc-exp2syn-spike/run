@@ -29,12 +29,12 @@ impl="./run-$model_sim"
 [ -x "$impl" ] || exit_model_missing
 
 outfile="$outdir/run.nc"
-"$impl" "$outfile" $model_param_data || exit 1
+"$impl" -o "$outfile" ${model_impl_stdargs[@]} || exit $?
 
 # Generate reference data if required.
 
 reffile=$(model_find_cacheable "ref-${model_name}-${model_param}.nc") || \
-    ./generate-rc-exp2syn-spike "$reffile" $model_param_data || exit 1
+    ./generate-rc-exp2syn-spike -o "$reffile" $model_param_data || exit 1
 
 # Run comparison.
 

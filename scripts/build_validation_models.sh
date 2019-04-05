@@ -47,7 +47,7 @@ function try_build_project {
     }
 
     msg "$name: building"
-    make install &> build.log || {
+    make VERBOSE=1 install &> build.log || {
         err "$name: build error: refer to log file '$build/build.log'"
         return 1
     }

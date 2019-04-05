@@ -11,6 +11,7 @@ find_package(netcdf REQUIRED)
 
 add_executable(arbor-rc-exp2syn-spike arbor-rc-exp2syn-spike.cpp)
 target_link_libraries(arbor-rc-exp2syn-spike arbor::arbor netcdf::netcdf)
+target_include_directories(arbor-rc-exp2syn-spike PRIVATE ${CMAKE_SOURCE_DIR}/../include)
 
 install(TARGETS arbor-rc-exp2syn-spike DESTINATION bin)
 

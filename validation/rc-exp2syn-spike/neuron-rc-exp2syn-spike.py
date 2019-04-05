@@ -25,7 +25,7 @@ ncell =     101;    # total number of cells
 
 coreneuron = 0;     # run with coreneuron? 1 => yes
 
-output, params = stdarg.parse_run_stdarg()
+output, tags, params = stdarg.parse_run_stdarg(tagset=['firstorder'])
 param_vars = ['dt', 'g0', 'mindelay', 'threshold', 'ncell', 'coreneuron']
 for v in param_vars:
     if v in params: globals()[v] = params[v]
@@ -121,7 +121,10 @@ for i in range(len(nc_record)):
 
 h.dt = dt
 h.steps_per_ms = 1/dt # or else NEURON might noisily fudge dt
-h.secondorder = 2
+if 'firstorder' in tags:
+    h.secondorder = 0
+else:
+    h.secondorder = 2
 h.tstop = tend
 
 if not coreneuron:
