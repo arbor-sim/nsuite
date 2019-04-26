@@ -37,6 +37,7 @@ mkdir -p "$cnrn_build_path"
 # configure the build with cmake
 cd "$cnrn_build_path"
 cmake_args=-DCMAKE_INSTALL_PREFIX:PATH="$ns_install_path"
+cmake_args="$cmake_args -DCMAKE_BUILD_TYPE=release"
 # Turn off tests, because these cause linking problems with boost.
 cmake_args="$cmake_args -DUNIT_TESTS=off"
 cmake_args="$cmake_args -DFUNCTIONAL_TESTS=off"
