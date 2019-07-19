@@ -1,5 +1,6 @@
 arb_repo_path=$ns_build_path/arbor
 arb_build_path=$arb_repo_path/build
+modcc_build_path=$arb_repo_path/build.modcc
 arb_checked_flag="${arb_repo_path}/checked_out"
 
 # clear log file from previous builds
@@ -30,6 +31,18 @@ fi
 # remove old build files
 mkdir -p "$arb_build_path"
 
+# build modcc
+if [ "$ns_arb_modcc" == "ON" ]; then
+    mkdir -p "$modcc_build_path"
+
+    # build external modcc
+    msg "ARBOR: build modcc"
+    cd "$modcc_build_path"
+    cmake .. -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ >> "$out" 2>&1
+    make -j $ns_makej modcc >> "$out" 2>&1
+    cd ..
+fi
+
 # configure the build with cmake
 cd "$arb_build_path"
 cmake_args=-DCMAKE_INSTALL_PREFIX:PATH="$ns_install_path"
@@ -37,6 +50,10 @@ cmake_args="$cmake_args -DARB_WITH_MPI=$ns_with_mpi"
 cmake_args="$cmake_args -DARB_WITH_GPU=$ns_arb_with_gpu"
 cmake_args="$cmake_args -DARB_ARCH=$ns_arb_arch"
 cmake_args="$cmake_args -DARB_VECTORIZE=$ns_arb_vectorize"
+if [ "$ns_arb_modcc" == "ON" ]; then
+    cmake_args="$cmake_args -DARB_MODCC=${modcc_build_path}/bin/modcc"
+fi
+
 msg "ARBOR: cmake $cmake_args"
 cmake "$arb_repo_path" $cmake_args >> "$out" 2>&1
 [ $? != 0 ] && exit_on_error "see ${out}"
@@ -73,7 +90,11 @@ do
     cd "$build_path"
 
     msg "ARBOR: cmake"
-    cmake "$source_path" -DCMAKE_BUILD_TYPE=release -DCMAKE_INSTALL_PREFIX:PATH="$ns_install_path" >> "$out" 2>&1
+    if [ "$ns_arb_modcc" == "ON" ]; then
+        cmake "$source_path" -DARB_MODCC=${modcc_build_path}/bin/modcc -DCMAKE_BUILD_TYPE=release -DCMAKE_INSTALL_PREFIX:PATH="$ns_install_path" >> "$out" 2>&1
+    else
+        cmake "$source_path" -DCMAKE_BUILD_TYPE=release -DCMAKE_INSTALL_PREFIX:PATH="$ns_install_path" >> "$out" 2>&1
+    fi
     [ $? != 0 ] && exit_on_error "see ${out}"
 
     msg "ARBOR: make"
