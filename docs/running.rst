@@ -203,13 +203,20 @@ Invocation
 
 .. code-block:: bash
 
-   run-validation.sh [OPTIONS] SIMULATOR [SIMULATOR...]
+   run-validation.sh [OPTIONS] SIMULATOR[:TAG ...] [SIMULATOR...]
 
 ``SIMULATOR`` can be any of the simulators installed with `install-local.sh`.
 By default, `run-validation.sh` will use the current directory as the
 installation and output base directory. If no models are explicitly selected
 with the ``--model`` option (see below), all models and parameter sets will
 be run against each specified simulator.
+
+``SIMULATOR`` can optionally have a sequence of _tags_ appended, which
+are keywords specific to simulator implementations of validation models
+that change the global behaviour of that simulator. For any given simulator,
+the set of supported tags may differ from model to model. See the ``README.md``
+file in each validation model directory for information regarding supported
+tags.
 
 Options are as follows:
 
@@ -243,7 +250,7 @@ of ``%s/%m/%p``. Fields in the ``FORMAT`` string are substituted as follows:
 +--------+---------------------------------------------------------------------+
 | ``%S`` | System name (if defined in system environment script) or host name  |
 +--------+---------------------------------------------------------------------+
-| ``%s`` | Simulator name                                                      |
+| ``%s`` | Simulator name (with tags, if any)                                  |
 +--------+---------------------------------------------------------------------+
 | ``%m`` | Model name                                                          |
 +--------+---------------------------------------------------------------------+

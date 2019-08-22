@@ -1,35 +1,55 @@
 #!/usr/bin/env python
 
-# Common argument parsing for python validation scripts
+# Common argument parsing for python validation scripts.
 
 from __future__ import print_function
 import re
 import sys
 from collections import namedtuple
 
-usage_stdarg = 'output [key=value ...]'
-
-def usage_error(errmsg=None, usagestr=usage_stdarg):
+def usage(errmsg=None, errcode=1):
     prog = re.search(r'[^/]*$', sys.argv[0]).group(0)
+    out = sys.stderr if errcode!=0 else sys.stdout
+
     if errmsg is not None:
-        print(prog+': '+errmsg, file=sys.stderr)
-    print('Usage: '+prog+' '+usagestr, file=sys.stderr)
-    sys.exit(1)
+        print(prog+': '+errmsg, file=out)
+    print('Usage: '+prog+' -o output [--tag TAG]... [key=value ...]', file=out)
+    print('       '+prog+' --list-tags', file=out)
+    print('       '+prog+' --help', file=out)
+    sys.exit(errcode)
 
-def parse_run_stdarg():
-    if len(sys.argv)<2:
-        usage_error('missing output file')
+def parse_run_stdarg(tagset=[]):
+    Stdarg = namedtuple('Stdarg', ['output', 'tags', 'params'])
 
-    Stdarg = namedtuple('Stdarg', ['output', 'params'])
-
+    output = None
     params = {}
-    for arg in sys.argv[2:]:
-        m = re.fullmatch(r'\s*((?!\d)[\w_]+)\s*=\s*(.*)', arg)
-        if m is None: usage()
-        try:
-            params[m.group(1)] = float(m.group(2))
-        except ValueError:
-            usage('value is not a number')
+    tags = []
 
-    return Stdarg(sys.argv[1], params)
+    args = sys.argv[1:]
+    while args:
+        o = args.pop(0)
+        if o == '--help':
+            usage(errcode=0)
+        if o == '--list-tags':
+            for tag in tagset:
+                print(tag)
+            sys.exit(0)
+        elif o == '-o':
+            if not args: usage('missing argument')
+            output = args.pop(0)
+        elif o == '--tag':
+            if not args: usage('missing argument')
+            tag = args.pop(0)
+            if tag not in tagset: usage('unrecognized tag: '+tag, errcode=98)
+            tags.append(tag)
+        else:
+            m = re.fullmatch(r'\s*((?!\d)[\w_]+)\s*=\s*(.*)', o)
+            if m is None: usage('unrecognized argument: '+o)
+            try:
+                params[m.group(1)] = float(m.group(2))
+            except ValueError:
+                usage('value is not a number')
+
+    if output is None: usage('require -o')
+    return Stdarg(output, tags, params)
 

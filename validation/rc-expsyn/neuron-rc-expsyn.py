@@ -18,7 +18,9 @@ dt = 0.0025
 sample_dt = 0.05
 tend = 10
 
-output, params = stdarg.parse_run_stdarg()
+# One recognized tag: 'firstorder'
+
+output, tags, params = stdarg.parse_run_stdarg(tagset=['firstorder'])
 for v in ['dt', 'g0']:
     if v in params: globals()[v] = params[v]
 
@@ -73,7 +75,10 @@ soma_t.record(h._ref_t, sample_dt)
 
 h.dt = dt
 h.steps_per_ms = 1/dt # or else NEURON might noisily fudge dt
-h.secondorder = 2
+if 'firstorder' in tags:
+    h.secondorder = 0
+else:
+    h.secondorder = 2
 h.tstop = tend
 h.run()
 

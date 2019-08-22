@@ -36,12 +36,20 @@ Model run scripts
 A run script is invoked with the following arguments:
 
 1. The output directory.
-2. The simulator name.
+2. The simulator name (with tags).
 3. The parameter set name.
 
 The script should run the implementation of the model for the simulator,
 if it exists, with the parameters described in the corresponding parameter
 set file.
+
+The simulator name may have one or more tag suffixes, of the form ``:tag`` —
+these correspond to global flags applied to a simulator to modify its
+behaviour. It is hoped that any supported tags for a simulator have the
+same meaning across different models; ``neuron:firstorder``, for example,
+should be interpreted uniformly as asking NEURON to run with its first
+order solver. This behaviour, however, is not enforced (see the
+implementation notes below).
 
 The exit code determines the status of the test:
 
@@ -53,6 +61,8 @@ The exit code determines the status of the test:
 | 96        | Test failure           |
 +-----------+------------------------+
 | 97        | Missing implementation |
++-----------+------------------------+
+| 98        | Unsupported tag        |
 +-----------+------------------------+
 | other     | Execution error        |
 +-----------+------------------------+
@@ -92,7 +102,7 @@ Common tools
 
 There is no requirement that validation tests use NetCDF as a format for
 simulator results and reference data, but there are two tools provided
-in ``common/bin``, *viz.* ``comparex`` and ``thresholdx`` that may simplify
+in ``common/bin``, *viz.* ``comparex`` and ``thresholdx``, that may simplify
 the creation of tests that do use NetCDF representations.
 
 The ``comparex`` program compares variables across two different NetCDF
@@ -106,4 +116,38 @@ the form *variable* ``op`` *value* to the data in a NetCDF file, where
 ``op`` is one of ``=``, ``<``, ``>``, ``<=``, ``>=``. It prints the
 predicate and a pass or fail message, and exits with a non-zero value
 if any of the predicates failed.
+
+Implementation notes
+--------------------
+
+The existing run scripts use a helper script ``scripts/model_common.sh``
+to assist in marshalling parameters and invoking particular model
+implementations; please refer to the comments in this script for
+details. For a simulator ``SIM``, the run scripts then look for an
+implementation-specific script called ``run-SIM``, which expects
+command line arguments of the form:
+
+``run-SIM -o OUTPUT [--tag TAG]... [KEY=VALUE ...]``
+
+The simulator-specific run script is responsible for returning the
+unsupported tag error code if it does not support a requested tag.
+
+A python helper module ``nsuite.stdarg`` is intended to make parsing
+these options more straightforward. Similarly, the C++ header
+``validation/src/include/common_args.h`` is used for the Arbor
+model implementations.
+
+As much as is feasible, it is recommended that model implementations
+for a given simulator support the same set of tags. Tags used
+in current implementations include:
+
+*  Arbor:
+
+   * ``binevents``: bin event delivery times to simulation dt. Default
+     behaviour is to use precise event times, without any binning.
+
+*  NEURON and CoreNEURON:
+
+   * ``firstorder``: use the first order, fixed time step integrator.
+     Default behaviour is to use the second order fixed time step integrator.
 
