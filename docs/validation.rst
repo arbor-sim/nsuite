@@ -43,6 +43,14 @@ The script should run the implementation of the model for the simulator,
 if it exists, with the parameters described in the corresponding parameter
 set file.
 
+The simulator name may have one or more tag suffixes, of the form ``:tag`` —
+these correspond to global flags applied to a simulator to modify its
+behaviour. It is hoped that any supported tags for a simulator have the
+same meaning across different models; ``neuron:firstorder``, for example,
+should be interpreted uniformly as asking NEURON to run with its first
+order solver. This behaviour, however, is not enforced (see the
+implementation notes below).
+
 The exit code determines the status of the test:
 
 +-----------+------------------------+
@@ -94,7 +102,7 @@ Common tools
 
 There is no requirement that validation tests use NetCDF as a format for
 simulator results and reference data, but there are two tools provided
-in ``common/bin``, *viz.* ``comparex`` and ``thresholdx`` that may simplify
+in ``common/bin``, *viz.* ``comparex`` and ``thresholdx``, that may simplify
 the creation of tests that do use NetCDF representations.
 
 The ``comparex`` program compares variables across two different NetCDF
@@ -114,7 +122,8 @@ Implementation notes
 
 The existing run scripts use a helper script ``scripts/model_common.sh``
 to assist in marshalling parameters and invoking particular model
-implementations. For a simulator ``SIM``, they in turn look for an
+implementations; please refer to the comments in this script for
+details. For a simulator ``SIM``, the run scripts then look for an
 implementation-specific script called ``run-SIM``, which expects
 command line arguments of the form:
 
@@ -134,10 +143,11 @@ in current implementations include:
 
 *  Arbor:
 
-   * ``binevents``: bin event delivery times to simulation dt.
+   * ``binevents``: bin event delivery times to simulation dt. Default
+     behaviour is to use precise event times, without any binning.
 
 *  NEURON and CoreNEURON:
 
-   * ``firstorder``: use first order integrator.
-
+   * ``firstorder``: use the first order, fixed time step integrator.
+     Default behaviour is to use the second order fixed time step integrator.
 
