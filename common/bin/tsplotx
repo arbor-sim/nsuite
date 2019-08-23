@@ -92,7 +92,7 @@ def take(n, s):
 
 class TimeSeries:
     def __init__(self, ts, ys, **kwargs):
-        self.t = np.array(ts)
+        self.t = np.array(ts, dtype=np.double)
         n = self.t.shape[0]
 
         self.y = np.full_like(self.t, np.nan)
@@ -247,15 +247,32 @@ class PlotData:
         return self.group_key_label
 
     def unique_labels(self, formatter=lambda x: x):
-        # attempt to create unique labels for plots in the group based on
-        # meta data
+        # attempt to create unique labels for plots in the group based on meta data
         labels = [s.label() for s in self.series]
         if len(labels)<2:
             return labels
 
         n = len(labels)
         keyset = reduce(lambda k, s: k.union(s.meta.keys()), self.series, set())
-        keyi = iter(keyset)
+
+        # pick keys based on a heuristic scoring:
+        # -- prefer keys with short but non-empty values in each series
+        # -- prefer keys which differ across more series.
+
+        key_score = {}
+        for k in keyset:
+            vs = {s.meta.get(k, None) for s in self.series}
+            if len(vs)==1:
+                continue
+
+            score = sum((1-1/vlen for v in vs if v is not None for vlen in [len(v)] if vlen>0))
+            score += len(vs)-1
+            key_score[k] = score
+
+        ranked_keylist = [k for k in key_score]
+        ranked_keylist.sort(key=lambda k: -key_score[k])
+
+        keyi = iter(ranked_keylist)
         try:
             while len(set(labels)) != n:
                 k = next(keyi)
