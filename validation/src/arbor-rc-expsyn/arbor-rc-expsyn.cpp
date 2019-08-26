@@ -50,12 +50,16 @@ struct rc_expsyn_recipe: public arb::recipe {
     cell_size_type num_probes(cell_gid_type) const override { return 1; }
     cell_kind get_cell_kind(cell_gid_type) const override { return cell_kind::cable; }
 
-    util::any get_global_properties(cell_kind kind) const override {
-        if (kind!=cell_kind::cable) return util::any{};
+    arb::util::any get_global_properties(cell_kind kind) const override {
+        arb::cable_cell_global_properties prop;
+        prop.default_parameters.init_membrane_potential = erev;
+        prop.ion_species.clear();
 
-        cable_cell_global_properties props;
-        props.init_membrane_potential_mV = erev;
-        return props;
+        // Relevant parameters will be set on the cell itself.
+        prop.default_parameters.axial_resistivity = 0;
+        prop.default_parameters.membrane_capacitance = 0;
+        prop.default_parameters.temperature_K = 0;
+        return prop;
     }
 
     probe_info get_probe(cell_member_type id) const override {
@@ -79,7 +83,7 @@ struct rc_expsyn_recipe: public arb::recipe {
         pas["e"] = erev;
 
         auto soma = c.add_soma(r*1e6);
-        soma->cm = cm*1e-9/area;       // [F/m^2]
+        soma->parameters.membrane_capacitance = cm*1e-9/area; // [F/m^2]
         soma->add_mechanism(pas);
 
         mechanism_desc expsyn("expsyn");

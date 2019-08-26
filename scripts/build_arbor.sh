@@ -22,6 +22,7 @@ if [ ! -f "$arb_checked_flag" ]; then
         git checkout "$ns_arb_branch" >> "$out" 2>&1
         [ $? != 0 ] && exit_on_error "see ${out}"
     fi
+
     touch "${arb_checked_flag}"
 else
     msg "ARBOR: repository has already downloaded"
