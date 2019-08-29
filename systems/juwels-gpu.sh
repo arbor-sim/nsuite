@@ -1,16 +1,20 @@
 ### environment ###
 
 # record system name
-ns_sysname="juwels-mc"
+ns_sysname="juwels-gpu"
 
 # set up environment for building on the multicore part of juwels
 module purge
-module use /gpfs/software/juwels/otherstages
+module use /gpfs/software/juwels/otherstages/
 module load Stages/2019a
 
 module load GCC
-module load ParaStationMPI
+module load MVAPICH2
 module load CMake
+
+module load CUDA
+export MV2_ENABLE_AFFINITY=0
+export MV2_USE_GPUDIRECT_GDRCOPY=0
 
 module load Python/3.6.8
 module load SciPy-Stack/2019a-Python-3.6.8
@@ -28,7 +32,9 @@ ns_cc=$(which mpicc)
 ns_cxx=$(which mpicxx)
 ns_with_mpi=ON
 
+ns_arb_with_gpu=ON
 ns_arb_arch=skylake-avx512
+
 ns_arb_branch=master
 
 ns_makej=20
@@ -36,8 +42,8 @@ ns_makej=20
 ### benchmark execution options ###
 ns_threads_per_core=2
 ns_cores_per_socket=20
-ns_sockets=2
-ns_threads_per_socket=40
+ns_sockets=1
+ns_threads_per_socket=20
 
 # activate budget via jutil env activate -p <cproject> -A <budget> before running the benchmark
 run_with_mpi() {
