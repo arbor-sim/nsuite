@@ -6,6 +6,7 @@ import os
 
 from neuron import h
 import nsuite.stdarg as stdarg
+import nsuite.stdattr as stdattr
 import xarray
 
 rm =     100;    # total membrane resistance [MΩ]
@@ -85,7 +86,10 @@ h.run()
 # Collect and save data
 
 out = xarray.Dataset({'voltage': (['time'], list(soma_v))}, coords={'time': list(soma_t)})
-out['g0'] = g0
-out['dt'] = dt
+out.voltage.attrs['units'] = 'mV'
+out.time.attrs['units'] = 'ms'
+
+nrnver = h.nrnversion()
+stdattr.set_stdattr(out, model='rc-expsyn', simulator='neuron', simulator_build=nrnver, tags=tags, params=params)
 out.to_netcdf(output)
 

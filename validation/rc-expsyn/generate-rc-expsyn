@@ -9,6 +9,7 @@ import re
 import sys
 
 import nsuite.stdarg as stdarg
+import nsuite.stdattr as stdattr
 
 rm =     100;    # total membrane resistance [MΩ]
 cm =    0.01;    # total membrane capacitance [nF]
@@ -51,6 +52,9 @@ ts = np.linspace(0., tend, num=nsamp)
 result = integrate.solve_ivp(dv_dt, (0., tend), [Erev], method='LSODA', t_eval=ts, jac=jacobian, atol=1e-10/nsamp, rtol=1e-10/nsamp)
 
 out = xarray.Dataset({'voltage': (['time'], result.y[0])}, coords={'time': ts})
-out['g0'] = g0
+out.voltage.attrs['units'] = 'mV'
+out.time.attrs['units'] = 'ms'
+
+stdattr.set_stdattr(out, model='rc-expsyn', simulator='reference', tags=tags, params=params)
 out.to_netcdf(output)
 

@@ -11,8 +11,10 @@
 #include <arbor/sampling.hpp>
 #include <arbor/simple_sampler.hpp>
 #include <arbor/simulation.hpp>
+#include <arbor/version.hpp>
 
 #include "common_args.h"
+#include "common_attr.h"
 #include "netcdf_wrap.h"
 
 using namespace arb;
@@ -189,20 +191,25 @@ int main(int argc, char** argv) {
     nc_check(nc_def_var, ncid, "spike", NC_DOUBLE, 1, &gid_dimid, &spike_id);
     nc_check(nc_def_var, ncid, "delay", NC_DOUBLE, 1, &gid_dimid, &delay_id);
 
-    std::vector<int> scalar_ids;
-    for (const auto& kv: A.params) {
-        int id;
-        nc_check(nc_def_var, ncid, kv.first.c_str(), NC_DOUBLE, 0, nullptr, &id);
-        scalar_ids.push_back(id);
-    }
+    auto nc_put_att_cstr = [](int ncid, int varid, const char* name, const char* value) {
+        nc_check(nc_put_att_text, ncid, varid, name, std::strlen(value), value);
+    };
+
+    nc_put_att_cstr(ncid, time_id, "units", "ms");
+    nc_put_att_cstr(ncid, spike_id, "units", "ms");
+    nc_put_att_cstr(ncid, delay_id, "units", "ms");
+    nc_put_att_cstr(ncid, v0_id, "units", "mV");
+
+    common_attr attrs;
+    attrs.model = "rc-exp2syn-spike";
+    attrs.simulator = "arbor";
+    attrs.simulator_build = arb::version;
+    attrs.simulator_build += ' ';
+    attrs.simulator_build += arb::source_id;
+
+    set_common_attr(ncid, attrs, A.tags, A.params);
 
     nc_check(nc_enddef, ncid);
-
-    unsigned pidx = 0;
-    for (const auto& kv: A.params) {
-        int id;
-        nc_check(nc_put_var_double, ncid, scalar_ids[pidx++], &kv.second);
-    }
 
     std::vector<double> time, voltage;
     time.reserve(tlen);

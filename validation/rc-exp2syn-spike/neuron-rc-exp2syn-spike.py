@@ -9,6 +9,7 @@ import contextlib
 
 from neuron import h
 import nsuite.stdarg as stdarg
+import nsuite.stdattr as stdattr
 import numpy as np
 import xarray
 
@@ -29,6 +30,10 @@ output, tags, params = stdarg.parse_run_stdarg(tagset=['firstorder'])
 param_vars = ['dt', 'g0', 'mindelay', 'threshold', 'ncell', 'coreneuron']
 for v in param_vars:
     if v in params: globals()[v] = params[v]
+
+# 'coreneuron' isn't actually one of the standard parameters for this model,
+# so remove it from params so we don't record it as such in the output.
+params.pop('coreneuron', None)
 
 outdir = os.path.dirname(output)
 ncell = int(ncell)
@@ -141,8 +146,15 @@ if not coreneuron:
          'delay': (['gid'], delays)
         }, coords={'time': ts, 'gid': list(range(0,ncell))})
 
+    out.v0.attrs['units'] = "mV"
+    out.spike.attrs['units'] = "ms"
+    out.delay.attrs['units'] = "ms"
+
     for v in param_vars:
         out[v] = np.float64(globals()[v])
+
+    nrnver = h.nrnversion()
+    stdattr.set_stdattr(out, model='rc-exp2syn-spike', simulator='neuron', simulator_build=nrnver, tags=tags, params=params)
 
     out.to_netcdf(output)
 
@@ -170,7 +182,13 @@ else:
          'delay': (['gid'], delays)
         }, coords={'gid': list(range(0,ncell))})
 
+    out.spike.attrs['units'] = "ms"
+    out.delay.attrs['units'] = "ms"
+
     for v in param_vars:
         out[v] = np.float64(globals()[v])
+
+    nrnver = h.nrnversion()
+    stdattr.set_stdattr(out, model='rc-exp2syn-spike', simulator='coreneuron', simulator_build=nrnver, tags=tags, params=params)
 
     out.to_netcdf(output)
