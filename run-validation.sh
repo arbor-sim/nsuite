@@ -138,7 +138,7 @@ export PATH="$ns_base_path/common/bin${PATH:+:}$PATH"
 # TODO: this has to go into the configuration environment setup scripts
 export ARB_NUM_THREADS=$[ $ns_threads_per_core * $ns_cores_per_socket ]
 
-info "---- Platform ----"
+infohi "---- Platform ----"
 info "platform:          $ns_system"
 info "cores per socket:  $ns_cores_per_socket"
 info "threads per core:  $ns_threads_per_core"
@@ -147,7 +147,7 @@ info "sockets:           $ns_sockets"
 info "mpi:               $ns_with_mpi"
 echo
 
-info "---- Validation ----"
+infohi "---- Validation ----"
 
 # Colour highlight shortcuts:
 red=${tcol[hi_red]}

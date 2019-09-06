@@ -38,37 +38,51 @@ init_tcol
 
 # Print a message to stderr.
 # Output to stderr to help determine where in build script an error occurred.
-msg() {
-    local white="${tcol[hi_white]}"
+msghi() {
+    local emph="${tcol[bold]}"
     local light_cyan="${tcol[hi_cyan]}"
     local nc="${tcol[reset]}"
 
-    >&2 printf "${light_cyan}== ${nc} ${white}$*${nc}\n"
+    >&2 printf "${light_cyan}== ${nc} ${emph}$*${nc}\n"
+}
+
+msg() {
+    local light_cyan="${tcol[hi_cyan]}"
+    local nc="${tcol[reset]}"
+
+    >&2 printf "${light_cyan}== ${nc} $*${nc}\n"
 }
 
 err() {
-    local white="${tcol[hi_white]}"
+    local emph="${tcol[bold]}"
     local light_red="${tcol[hi_red]}"
     local nc="${tcol[reset]}"
 
-    >&2 printf "${light_red}== ERROR${nc} ${white}$*${nc}\n"
+    >&2 printf "${light_red}== ERROR${nc} ${emph}$*${nc}\n"
 }
 
 dbg() {
-    local white="${tcol[hi_white]}"
+    local emph="${tcol[bold]}"
     local green="${tcol[hi_green]}"
     local nc="${tcol[reset]}"
 
-    >&2 printf "${green}==== ${nc} ${white}$*${nc}\n"
+    >&2 printf "${green}==== ${nc} ${emph}$*${nc}\n"
 }
 
 # Print a message to stdout following msg() formatting.
-info() {
-    local white="${tcol[hi_white]}"
+infohi() {
+    local emph="${tcol[bold]}"
     local light_cyan="${tcol[hi_cyan]}"
     local nc="${tcol[reset]}"
 
-    printf "${light_cyan}== ${nc} ${white}$*${nc}\n"
+    printf "${light_cyan}== ${nc} ${emph}$*${nc}\n"
+}
+
+info() {
+    local light_cyan="${tcol[hi_cyan]}"
+    local nc="${tcol[reset]}"
+
+    printf "${light_cyan}== ${nc} $*${nc}\n"
 }
 
 exit_on_error() {
