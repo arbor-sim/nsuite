@@ -147,7 +147,7 @@ fi
 # TODO: this has to go into the configuration environment setup scripts
 export ARB_NUM_THREADS=$[ $ns_threads_per_core * $ns_cores_per_socket ]
 
-msg "NSuite benchmark runner"
+msghi "NSuite benchmark runner"
 echo
 msg "models:   $models"
 msg "configs:  $configs"
@@ -168,15 +168,15 @@ do
         "$model_config_path/config.sh" "$model" "$config" "$ns_base_path" "$ns_config_path" "$ns_bench_input_path" "$ns_bench_output" "${ns_bench_output_format:-%m/%p/%s}"
 
         if [ "$run_arb" == "true" ]; then
-            msg benchmark: arbor $model-$config
+            msghi benchmark: arbor $model-$config
             "$model_input_path/run_arb.sh"
         fi
         if [ "$run_nrn" == "true" ]; then
-            msg benchmark: neuron $model-$config
+            msghi benchmark: neuron $model-$config
             "$model_input_path/run_nrn.sh"
         fi
         if [ "$run_corenrn" == "true" ]; then
-            msg benchmark: coreneuron $model-$config
+            msghi benchmark: coreneuron $model-$config
             "$model_input_path/run_corenrn.sh"
         fi
     done

@@ -119,12 +119,12 @@ if [ "$ns_environment" != "" ]; then
     echo
 fi
 
-msg "---- TARGETS ----"
+msghi "---- TARGETS ----"
 msg "build arbor:       $ns_build_arbor"
 msg "build neuron:      $ns_build_neuron"
 msg "build coreneuron:  $ns_build_coreneuron"
 echo
-msg "---- PATHS ----"
+msghi "---- PATHS ----"
 msg "nsuite root:     $ns_base_path"
 msg "work dir prefix: $ns_prefix"
 msg "install path:    $ns_install_path"
@@ -132,27 +132,27 @@ msg "build path:      $ns_build_path"
 msg "input path:      $ns_input_path"
 msg "output path:     $ns_output_path"
 echo
-msg "---- SYSTEM ----"
+msghi "---- SYSTEM ----"
 msg "system:          $ns_system"
 msg "using mpi:       $ns_with_mpi"
 msg "C compiler:      $ns_cc"
 msg "C++ compiler:    $ns_cxx"
 msg "python:          $ns_python"
 echo
-msg "---- ARBOR ----"
+msghi "---- ARBOR ----"
 msg "repo:            $ns_arb_git_repo"
 msg "branch:          $ns_arb_branch"
 msg "arch:            $ns_arb_arch"
 msg "gpu:             $ns_arb_with_gpu"
 msg "vectorize:       $ns_arb_vectorize"
 echo
-msg "---- NEURON ----"
+msghi "---- NEURON ----"
 msg "tarball:         $ns_nrn_tarball"
 msg "url:             $ns_nrn_url"
 msg "repo:            $ns_nrn_git_repo"
 msg "branch:          $ns_nrn_branch"
 echo
-msg "---- CoreNEURON ----"
+msghi "---- CoreNEURON ----"
 msg "repo:            $ns_cnrn_git_repo"
 msg "sha:             $ns_cnrn_sha"
 
@@ -171,7 +171,7 @@ echo "${ns_sysname:=$(hostname -s)}" > "$ns_build_path/sysname"
 
 if [ "$ns_pyvenv" != disable ]; then
     echo
-    msg "Initializing python virtual environment"
+    msghi "Initializing python virtual environment"
     ns_pyvenv_opt=
     if [ "$ns_pyvenv" == inherit ]; then
 	ns_pyvenv_opt=--system-site-packages
@@ -203,11 +203,11 @@ cd "$ns_base_path"
 
 # Always attempt to build validation models/generators.
 echo
-msg "Building validation tests and generators"
+msghi "Building validation tests and generators"
 source "$ns_base_path/scripts/build_validation_models.sh"
 cd "$ns_base_path"
 
 echo
-msg "Installation finished"
+msghi "Installation finished"
 echo
 
