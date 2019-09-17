@@ -49,8 +49,8 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
     // Computed values:
     std::vector<double> delay;               // delay[i] is connection delay from gid 0 to gid i
 
-    static segment_location soma_centre() {
-        return segment_location(0u, 0.5);
+    static mlocation soma_centre() {
+        return mlocation{0u, 0.5};
     }
 
     explicit rc_exp2syn_spike_recipe(const paramset& ps):
