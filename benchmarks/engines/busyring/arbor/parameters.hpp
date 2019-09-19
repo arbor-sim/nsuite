@@ -30,11 +30,13 @@ struct ring_params {
 
     std::string name = "default";
     unsigned num_cells = 10;
+    unsigned num_ranks = 1;
     unsigned ring_size = 10;
     double min_delay = 10;
     double duration = 100;
     double dt = 0.025;
     bool record_voltage = false;
+    bool dryrun = true;
     std::string odir = ".";
     cell_parameters cell;
 };
@@ -69,11 +71,13 @@ ring_params read_options(int argc, char** argv) {
 
     param_from_json(params.name, "name", json);
     param_from_json(params.num_cells, "num-cells", json);
+    param_from_json(params.num_ranks, "num-ranks", json);
     param_from_json(params.ring_size, "ring-size", json);
     param_from_json(params.duration, "duration", json);
     param_from_json(params.dt, "dt", json);
     param_from_json(params.min_delay, "min-delay", json);
     param_from_json(params.record_voltage, "record", json);
+    param_from_json(params.dryrun, "dryrun", json);
     param_from_json(params.cell.max_depth, "depth", json);
     param_from_json(params.cell.branch_probs, "branch-probs", json);
     param_from_json(params.cell.compartments, "compartments", json);
