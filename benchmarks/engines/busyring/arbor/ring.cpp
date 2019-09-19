@@ -318,7 +318,7 @@ int main(int argc, char** argv) {
         }
 
         auto profile = arb::profile::profiler_summary();
-        std::cout << profile << "\n";
+        if (root) std::cout << profile << "\n";
 
         auto report = arb::profile::make_meter_report(meters, context);
         if (root) std::cout << report;
