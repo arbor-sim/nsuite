@@ -229,6 +229,7 @@ int main(int argc, char** argv) {
 
 #ifdef ARB_PROFILE_ENABLED
         arb::profile::profiler_initialize(context);
+        std::cout << "Profiling enabled" << std::endl;
 #endif
 
         // Print a banner with information about hardware configuration
@@ -315,6 +316,9 @@ int main(int argc, char** argv) {
             std::string fname = params.odir + "/" + params.name + "_voltages.json";
             write_trace_json(fname, voltage);
         }
+
+        auto profile = arb::profile::profiler_summary();
+        std::cout << profile << "\n";
 
         auto report = arb::profile::make_meter_report(meters, context);
         if (root) std::cout << report;
