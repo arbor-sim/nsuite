@@ -73,6 +73,7 @@ default_environment() {
     ns_arb_with_gpu=OFF
     ns_arb_vectorize=ON
     ns_arb_xcompile_modcc=OFF
+    ns_arb_with_profiling=OFF
 
     # Neuron specific
 
