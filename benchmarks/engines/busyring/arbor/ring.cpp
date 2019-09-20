@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
 
 #ifdef ARB_PROFILE_ENABLED
         arb::profile::profiler_initialize(context);
-        std::cout << "Profiling enabled" << std::endl;
+        if (root) std::cout << "Profiling enabled" << std::endl;
 #endif
 
         // Print a banner with information about hardware configuration
