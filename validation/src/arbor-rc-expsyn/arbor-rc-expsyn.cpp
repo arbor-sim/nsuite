@@ -39,8 +39,8 @@ struct rc_expsyn_recipe: public arb::recipe {
     // Customizable parameters:
     double g0;                               // synaptic conductance at time 0 [µS]
 
-    static mlocation soma_centre() {
-        return mlocation{0u, 0.5};
+    static segment_location soma_centre() {
+        return segment_location(0u, 0.5);
     }
 
     explicit rc_expsyn_recipe(const paramset& ps): g0(ps.at("g0")) {}
