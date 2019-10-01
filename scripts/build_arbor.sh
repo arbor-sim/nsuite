@@ -52,6 +52,7 @@ cmake_args="$cmake_args -DARB_WITH_GPU=$ns_arb_with_gpu"
 cmake_args="$cmake_args -DARB_ARCH=$ns_arb_arch"
 cmake_args="$cmake_args -DARB_VECTORIZE=$ns_arb_vectorize"
 cmake_args="$cmake_args -DARB_WITH_PROFILING=$ns_arb_with_profiling"
+cmake_args="$cmake_args -DARB_PREFETCH_SIZE=$ns_arb_prefetch_size"
 if [ "$ns_arb_xcompile_modcc" == "ON" ]; then
     cmake_args="$cmake_args -DARB_MODCC=${modcc_build_path}/bin/modcc"
 fi

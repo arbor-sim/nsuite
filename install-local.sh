@@ -146,6 +146,7 @@ msg "arch:            $ns_arb_arch"
 msg "gpu:             $ns_arb_with_gpu"
 msg "vectorize:       $ns_arb_vectorize"
 msg "profiling:       $ns_arb_with_profiling"
+msg "prefetch size:   $ns_arb_prefetch_size"
 echo
 msghi "---- NEURON ----"
 msg "tarball:         $ns_nrn_tarball"

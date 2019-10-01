@@ -74,6 +74,7 @@ default_environment() {
     ns_arb_vectorize=ON
     ns_arb_xcompile_modcc=OFF
     ns_arb_with_profiling=OFF
+    ns_arb_prefetch_size=1024
 
     # Neuron specific
 
