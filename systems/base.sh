@@ -18,10 +18,10 @@ ns_cc=$(which mpicc)
 ns_cxx=$(which mpicxx)
 ns_with_mpi=ON
 
-ns_arb_arch=skylake-avx512
+ns_arb_arch=native #skylake-avx512
 ns_arb_branch=master
 
-ns_makej=20
+ns_makej=4
 
 ### benchmark execution options ###
 ns_threads_per_core=2
