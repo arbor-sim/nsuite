@@ -56,6 +56,7 @@ if [ "$ns_arb_xcompile_modcc" == "ON" ]; then
     cmake_args="$cmake_args -DARB_MODCC=${modcc_build_path}/bin/modcc"
 fi
 
+cmake_args="$cmake_args $ns_arb_cmake_args"
 msg "ARBOR: cmake $cmake_args"
 cmake "$arb_repo_path" $cmake_args >> "$out" 2>&1
 [ $? != 0 ] && exit_on_error "see ${out}"
