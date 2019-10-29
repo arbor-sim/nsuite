@@ -119,6 +119,13 @@ if [ "$ns_environment" != "" ]; then
     echo
 fi
 
+msghi "---- Configuration ----"
+msg "ns_makej:              $ns_makej"
+msg "ns_threads_per_core:   $ns_threads_per_core"
+msg "ns_cores_per_socket:   $ns_cores_per_socket"
+msg "ns_sockets:            $ns_sockets"
+msg "ns_threads_per_socket: $ns_threads_per_socket"
+echo
 msghi "---- TARGETS ----"
 msg "build arbor:       $ns_build_arbor"
 msg "build neuron:      $ns_build_neuron"
