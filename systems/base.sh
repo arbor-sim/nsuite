@@ -2,7 +2,7 @@
 
 .util/field-max() {
     local n=$1; shift
-    lscpu --parse=$n | grep -v '#' | sort -t, -r | head -1
+    lscpu --parse=$n | grep -v '#' | sort -n -r | head -1
 }
 
 .util/logical-cores-per-socket() {
