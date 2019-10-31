@@ -49,8 +49,8 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
     // Computed values:
     std::vector<double> delay;               // delay[i] is connection delay from gid 0 to gid i
 
-    static segment_location soma_centre() {
-        return segment_location(0u, 0.5);
+    static mlocation soma_centre() {
+        return {0u, 0.5};
     }
 
     explicit rc_exp2syn_spike_recipe(const paramset& ps):
@@ -103,23 +103,29 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
     }
 
     util::unique_any get_cell_description(cell_gid_type) const override {
-        cable_cell c;
+        sample_tree samples;
+        samples.append({{0, 0, 0, r*1e6}, 1});
 
         mechanism_desc pas("pas");
         pas["g"] = 1e-10/(rm*area);    // [S/cm^2]
         pas["e"] = erev;
 
-        auto soma = c.add_soma(r*1e6);
-        soma->parameters.membrane_capacitance = cm*1e-9/area; // [F/m^2]
-        soma->add_mechanism(pas);
-
         mechanism_desc expsyn("exp2syn");
         expsyn["tau1"] = tau1;
         expsyn["tau2"] = tau2;
         expsyn["e"] = 0;
-        c.add_synapse(soma_centre(), expsyn);
 
-        c.add_detector(soma_centre(), threshold);
+        label_dict labels;
+        labels.set("soma", reg::tagged(1));
+        labels.set("centre", soma_centre());
+
+        cable_cell c(morphology(samples), labels);
+        c.default_parameters.membrane_capacitance = cm*1e-9/area; // [F/m^2]
+
+        c.paint("soma", pas);
+        c.place("centre", expsyn);
+        c.place("centre", threshold_detector{threshold});
+
         return c;
     }
 
