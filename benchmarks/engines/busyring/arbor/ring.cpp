@@ -147,7 +147,6 @@ struct cell_stats {
     using size_type = unsigned;
     size_type ncells = 0;
     size_type nbranch = 0;
-    size_type ncomp = 0;
 
     cell_stats(arb::recipe& r) {
 #ifdef ARB_MPI_ENABLED
@@ -159,20 +158,16 @@ struct cell_stats {
         size_type b = rank*cells_per_rank;
         size_type e = (rank==nranks-1)? ncells: (rank+1)*cells_per_rank;
         size_type nbranch_tmp = 0;
-        size_type ncomp_tmp = 0;
         for (size_type i=b; i<e; ++i) {
             auto c = arb::util::any_cast<arb::cable_cell>(r.get_cell_description(i));
-            nbranch_tmp += c.num_branches();
-            ncomp_tmp += c.num_compartments();
+            nbranch_tmp += c.morphology().num_branches();
         }
         MPI_Allreduce(&nbranch_tmp, &nbranch, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
-        MPI_Allreduce(&ncomp_tmp, &ncomp, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
 #else
         ncells = r.num_cells();
         for (size_type i=0; i<ncells; ++i) {
             auto c = arb::util::any_cast<arb::cable_cell>(r.get_cell_description(i));
-            nbranch += c.num_branches();
-            ncomp += c.num_compartments();
+            nbranch += c.morphology().num_branches();
         }
 #endif
     }
@@ -181,7 +176,7 @@ struct cell_stats {
         return o << "cell stats: "
                  << s.ncells << " cells; "
                  << s.nbranch << " branches; "
-                 << s.ncomp << " compartments.";
+                 << 0 << " compartments; ";
     }
 };
 
@@ -390,7 +385,7 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
     d.set("soma",      tagged(1));
     d.set("dendrites", join(tagged(3), tagged(4)));
 
-    arb::cable_cell cell(arb::morphology(tree, true), d, true);
+    arb::cable_cell cell(arb::morphology(tree, true), d);
 
     cell.paint("soma", "hh");
     cell.paint("dendrites", "pas");
@@ -406,6 +401,9 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
     for (unsigned i=1u; i<params.synapses; ++i) {
         cell.place(arb::mlocation{1, 0.5}, "expsyn");
     }
+
+    // Make a CV between every sample in the sample tree.
+    cell.default_parameters.discretization = arb::cv_policy_every_sample();
 
     return cell;
 }
