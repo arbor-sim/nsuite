@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+./neuron-rallpack1.py "${@}"

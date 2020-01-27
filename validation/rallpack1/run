@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Invocation:
+#    run outputdir simname paramsetname
+#    run --list-tags simname
+
+# Change to script directory and attempt to find nsuite base directory.
+
+unset CDPATH
+cd "${BASH_SOURCE[0]%/*}"
+[ -n "$ns_base_path" ] || ns_base_path="$(cd ../..; pwd)"
+
+# Set up model paths, model_XXX variables, and functions
+# exit_model_fail, exit_model_missing.
+
+outdir=$1
+shift
+
+source "$ns_base_path/scripts/model_common.sh"
+model_setup rallpack1 "$@"
+
+# Run sim-specific implementation with tags and parameter data.
+
+impl="./run-$model_sim"
+[ -x "$impl" ] || exit_model_missing
+
+outfile="$outdir/run.nc"
+"$impl" -o "$outfile" ${model_impl_stdargs[@]} || exit $?
+
+# Generate reference data if required.
+
+reffile=$(model_find_cacheable "ref-${model_name}-${model_param}.nc") || \
+    ./generate-rallpack1 -o "$reffile" $model_param_data || exit 1
+
+# Run comparison.
+
+deltafile="$outdir/delta.nc"
+comparex "$outfile" --warn --ref "$reffile" --interpolate time -o "$deltafile" || exit 1
+
+thresholdx "$deltafile" -e "v0.relerr.lb<0.01" -e "v1.relerr.lb<0.01" || exit_model_fail
