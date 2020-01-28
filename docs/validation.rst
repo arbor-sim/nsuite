@@ -117,6 +117,38 @@ the form *variable* ``op`` *value* to the data in a NetCDF file, where
 predicate and a pass or fail message, and exits with a non-zero value
 if any of the predicates failed.
 
+NetCDF conventions
+------------------
+
+If NetCDF is used as the output representation for simulation results,
+it is strongly recommended that the follow convention be followed:
+
+* All *key* = *value* settings in a model paramset should be recorded
+  as scalar global attributes of type ``NC_DOUBLE``.
+
+* In addition, there should be global string attributes
+  ``simulator``, ``simulator_build``, and ``validation_model``:
+
+  - ``simulator`` should be set to the name of the simulator followed
+    by any tags, separated by ':' and in alphabetical order,
+    e.g. ``neuron:firstorder``.
+
+  - ``simulator_build`` should contain version information for
+    the simulator used to produce the output, ideally with sufficient
+    detail to be able to recreate the simulator binary.
+
+  - ``validation_model`` should contain the name of the model,
+    but not include the name of the parameter set, e.g.
+    ``rallpack1``, not ``rallpack1/default``.
+
+* Variables should have a ``units`` attribute describing the units
+  for the data in SI using standard abbreviations compatible with
+  UDUNITS and as much as feasible, other unit parsing libraries.
+
+* If other metadata is provided, it should broadly follow common
+  NetCDF conventions such as those described by the 
+  `CF conventions <http://cfconventions.org>`_.
+
 Implementation notes
 --------------------
 
