@@ -36,4 +36,4 @@ reffile=$(model_find_cacheable "ref-${model_name}-${model_param}.nc") || \
 deltafile="$outdir/delta.nc"
 comparex "$outfile" --warn --ref "$reffile" --interpolate time -o "$deltafile" || exit 1
 
-thresholdx "$deltafile" -e "v0.relerr.lb<0.01" -e "v1.relerr.lb<0.01" || exit_model_fail
+thresholdx "$deltafile" -e "v0.relerr.rms.lb<0.001" -e "v1.relerr.rms.lb<0.001" || exit_model_fail

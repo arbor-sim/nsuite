@@ -1,4 +1,4 @@
-Model rallpack-1
+Model rallpack1
 ================
 
 The model comprises the Rallpack 1 test from [@bhalla1992], viz.
@@ -29,20 +29,20 @@ Test parameters
 | Parameter | Interpretation |
 |-----------|----------------|
 | `dt`      | maximum simulation integration timestep [ms] |
-| `x`       | measurement point [µm] |
+| `x0`      | first measurement point (proportional distance) |
+| `x1`      | second measurement point (proportional distance) |
 | `n`       | number of compartments/control volumes |
 
 
 Acceptance critera
 ------------------
 
-The simulated membrane voltage at x is compared
-against the analytic solution from t = 0 to t = 0.25 ms.
+The simulated membrane voltages at x0 and x1 are compared against the analytic
+solution from t = 0 to t = 250 ms. The relative error is computed as
+the RMS error over time, divided by the maximum absolute value of
+the voltage at that point over the simulation time interval.
 
-The result is accepted if the maximum deviation is less
-than 0.1% of the maximum absolute value of the voltage
-over the time interval (which will be achieved at the
-maximum time of the interval).
+The result is accepted if both relative RMS errors are less than 0.1%.
 
 Implementation notes
 --------------------
