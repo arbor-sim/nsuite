@@ -38,6 +38,12 @@ variable X:
     X.abserr.lb         max(0, |delta|-interperr)
     X.relerr            abserr / max |reference|
     X.relerr.lb         abserr.lb / max |reference|
+
+    X.abserr.rms        sqrt(mean(delta^2))
+    X.abserr.rms.lb     sqrt(mean(maximum(delta-interperr, 0)^2))
+    X.relerr.rms        sqrt(mean(delta^2)) / max |reference|
+    X.relerr.rms.lb     sqrt(mean(maximum(delta-interperr, 0)^2)) / max |reference|
+
 """
 
     P.add_argument('input', metavar='FILE', help='input dataset')
@@ -166,18 +172,28 @@ for var in varlist:
             warn(opts.prog, 'no common points for variable \'{}\'', var)
         continue
 
-    abserr = np.asscalar(np.max(abs(delta)))
-    abserr_lb = max(0, np.asscalar(np.max(abs(delta)-interperr)))
+    delta_lb = np.maximum(abs(delta)-interperr, np.zeros_like(delta))
 
-    r_absmax = np.asscalar(np.max(abs(r.reindex_like(delta))))
+    abserr = np.max(abs(delta)).item()
+    abserr_lb = np.max(delta_lb).item()
+    abserr_rms = np.sqrt(np.mean(np.square(delta))).item()
+    abserr_rms_lb = np.sqrt(np.mean(np.square(delta_lb))).item()
+
+    r_absmax = np.max(abs(r.reindex_like(delta))).item()
     relerr = abserr/r_absmax if r_absmax>0 else 0
     relerr_lb = abserr_lb/r_absmax if r_absmax>0 else 0
+    relerr_rms = abserr_rms/r_absmax if r_absmax>0 else 0
+    relerr_rms_lb = abserr_rms_lb/r_absmax if r_absmax>0 else 0
 
     out[var+'.delta'] = delta
     out[var+'.interperr'] = interperr
     out[var+'.abserr'] = abserr
     out[var+'.abserr.lb'] = abserr_lb
+    out[var+'.abserr.rms'] = abserr_rms
+    out[var+'.abserr.rms.lb'] = abserr_rms_lb
     out[var+'.relerr'] = relerr
     out[var+'.relerr.lb'] = relerr_lb
+    out[var+'.relerr.rms'] = relerr_rms
+    out[var+'.relerr.rms.lb'] = relerr_rms_lb
 
 out.to_netcdf(opts.output)
