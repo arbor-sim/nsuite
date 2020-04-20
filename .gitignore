@@ -40,3 +40,7 @@ run_*.sh
 out.dat
 
 __pychache__
+
+# build system and editor artifacts
+/compile_commands.json
+/.clangd

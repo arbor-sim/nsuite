@@ -9,6 +9,8 @@ add_executable(ring ring.cpp)
 target_link_libraries(ring PRIVATE arbor::arbor arbor::arborenv)
 target_include_directories(ring PRIVATE ../../../../common/cpp/include)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS "YES")
+
 set_target_properties(ring PROPERTIES OUTPUT_NAME arbor-busyring)
 
 install(TARGETS ring DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

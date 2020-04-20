@@ -9,14 +9,14 @@ ns_sysname="daint-gpu"
 module load daint-gpu
 module load CMake
 
-module load cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8
+module load cudatoolkit/10.1.105_3.27-7.0.1.1_4.1__ga311ce7
 module load cray-hdf5 cray-netcdf
 
-module load cray-python/3.6.5.1
+module load cray-python/3.6.5.7
 ns_python=python3
 
 # load after python because easybuild...
-module swap gcc/6.2.0
+module swap gcc/8.3.0
 
 # add mpi4py to virtualenv build
 export MPICC="$(which cc)"

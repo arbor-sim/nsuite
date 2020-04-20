@@ -1,3 +1,6 @@
+#include <arbor/cable_cell_param.hpp>
+#include <arbor/common_types.hpp>
+#include <arbor/morph/region.hpp>
 #include <cstring>
 #include <iostream>
 #include <map>
@@ -7,6 +10,7 @@
 #include <netcdf.h>
 
 #include <arbor/cable_cell.hpp>
+#include <arbor/morph/sample_tree.hpp>
 #include <arbor/recipe.hpp>
 #include <arbor/sampling.hpp>
 #include <arbor/simple_sampler.hpp>
@@ -49,8 +53,8 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
     // Computed values:
     std::vector<double> delay;               // delay[i] is connection delay from gid 0 to gid i
 
-    static segment_location soma_centre() {
-        return segment_location(0u, 0.5);
+    static mlocation soma_centre() {
+        return mlocation{0u, 0.5};
     }
 
     explicit rc_exp2syn_spike_recipe(const paramset& ps):
@@ -103,23 +107,28 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
     }
 
     util::unique_any get_cell_description(cell_gid_type) const override {
-        cable_cell c;
+        sample_tree tree;
+        tree.append(msample{{0, 0, 0, r*1e6}, 1});
+
+        label_dict labels;
+        labels.set("soma", reg::tagged(1));
+
+        cable_cell c(tree, labels);
 
         mechanism_desc pas("pas");
         pas["g"] = 1e-10/(rm*area);    // [S/cm^2]
         pas["e"] = erev;
 
-        auto soma = c.add_soma(r*1e6);
-        soma->parameters.membrane_capacitance = cm*1e-9/area; // [F/m^2]
-        soma->add_mechanism(pas);
+        c.paint("soma", pas);
+        c.paint("soma", membrane_capacitance{cm*1e-9/area}); // [F/m^2]
 
         mechanism_desc expsyn("exp2syn");
         expsyn["tau1"] = tau1;
         expsyn["tau2"] = tau2;
         expsyn["e"] = 0;
-        c.add_synapse(soma_centre(), expsyn);
+        c.place(soma_centre(), expsyn);
 
-        c.add_detector(soma_centre(), threshold);
+        c.place(soma_centre(), arb::threshold_detector{threshold});
         return c;
     }
 
