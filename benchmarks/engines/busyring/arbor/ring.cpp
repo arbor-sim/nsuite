@@ -159,7 +159,7 @@ struct cell_stats {
             auto c = arb::util::any_cast<arb::cable_cell>(r.get_cell_description(i));
             nbranch += c.morphology().num_branches();
             // We discretise on samples, so the number of samples will approximate the
-            // number of samples
+            // number of CVs.
             ncomp += c.morphology().num_samples();
         }
         nbranch = ncell * (double(nbranch)/nsamp);
@@ -400,69 +400,5 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
     cell.default_parameters.discretization = arb::cv_policy_every_sample();
 
     return cell;
-    /*
-    arb::cable_cell cell;
-
-    cell.default_parameters.axial_resistivity = 100;
-
-    // Add soma.
-    auto soma = cell.add_soma(12.6157/2.0); // For area of 500 μm².
-    soma->add_mechanism("hh");
-
-    std::vector<std::vector<unsigned>> levels;
-    levels.push_back({0});
-
-    // Standard mersenne_twister_engine seeded with gid.
-    std::mt19937 gen(gid);
-    std::uniform_real_distribution<double> dis(0, 1);
-
-    double dend_radius = 0.5; // Diameter of 1 μm for each cable.
-
-    unsigned nsec = 1;
-    for (unsigned i=0; i<params.max_depth; ++i) {
-        // Branch prob at this level.
-        double bp = interp(params.branch_probs, i, params.max_depth);
-        // Length at this level.
-        double l = interp(params.lengths, i, params.max_depth);
-        // Number of compartments at this level.
-        unsigned nc = std::round(interp(params.compartments, i, params.max_depth));
-
-        std::vector<unsigned> sec_ids;
-        for (unsigned sec: levels[i]) {
-            for (unsigned j=0; j<2; ++j) {
-                if (dis(gen)<bp) {
-                    sec_ids.push_back(nsec++);
-                    auto dend = cell.add_cable(sec, arb::section_kind::dendrite, dend_radius, dend_radius, l);
-                    dend->set_compartments(nc);
-                    dend->add_mechanism("pas");
-                }
-            }
-        }
-        if (sec_ids.empty()) {
-            break;
-        }
-        levels.push_back(sec_ids);
-    }
-
-    // Add spike threshold detector at the soma.
-    cell.add_detector({0,0}, 10);
-
-    // Add a synapse to the soma for ring network.
-    // Attach at the soma to minimise delay between event delivery
-    // and subsequent spikes, which makes it easier to tune firing rate.
-    cell.add_synapse({0, 0.5}, "expsyn");
-
-    // Add additional synapses to random locations on the cell.
-    std::uniform_real_distribution<double> pos_dis(0, 1);
-    std::uniform_int_distribution<cell_lid_type> seg_dis(1, nsec-1);
-    for (unsigned i=1u; i<params.synapses; ++i) {
-        const auto seg = seg_dis(gen);
-        const auto pos = pos_dis(gen);
-
-        cell.add_synapse({seg, pos}, "expsyn");
-    }
-
-    return cell;
-    */
 }
 

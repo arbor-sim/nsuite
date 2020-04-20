@@ -174,7 +174,7 @@ if [ "$ns_pyvenv" != disable ]; then
     msghi "Initializing python virtual environment"
     ns_pyvenv_opt=
     if [ "$ns_pyvenv" == inherit ]; then
-    ns_pyvenv_opt=--system-site-packages
+        ns_pyvenv_opt=--system-site-packages
     fi
 
     msg "Installing python modules: $ns_pyvenv_modules"
