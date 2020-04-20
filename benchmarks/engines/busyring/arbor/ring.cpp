@@ -169,7 +169,7 @@ struct cell_stats {
     friend std::ostream& operator<<(std::ostream& o, const cell_stats& s) {
         return o << "cell stats: "
                  << s.ncell << " cells; "
-                 << s.nbranch << " branches; "
+                 << s.nbranch << " segments; "
                  << s.ncomp << " compartments.";
     }
 };
