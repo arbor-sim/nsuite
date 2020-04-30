@@ -103,6 +103,9 @@ default_environment() {
     # for architecture-specific optimization. If using OpenACC or trying to coax the
     # Intel compiler to vectorize, set this variable.
     ns_cnrn_compiler_flags=-O2
+
+    # Validation
+    ns_validate=enable
 }
 
 # Attempts to detect harware resouces available on node
