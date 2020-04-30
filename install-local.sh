@@ -126,7 +126,6 @@ msghi "---- TARGETS ----"
 msg "build arbor:       $ns_build_arbor"
 msg "build neuron:      $ns_build_neuron"
 msg "build coreneuron:  $ns_build_coreneuron"
-msg "build validation:  $ns_validate"
 echo
 msghi "---- PATHS ----"
 msg "nsuite root:     $ns_base_path"
