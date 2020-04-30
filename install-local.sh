@@ -203,7 +203,7 @@ cd "$ns_base_path"
 cd "$ns_base_path"
 
 # attempt to build validation models/generators.
-if [ "$ns_validate" != disable ]; then
+if [ "$ns_disable_validation" != "true" ]; then
     echo
     msghi "Building validation tests and generators"
     source "$ns_base_path/scripts/build_validation_models.sh"
