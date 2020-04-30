@@ -6,16 +6,16 @@ Setup NSuite framework, build and install simulators, benchmarks,
 and validation tests.
 
 Options:
-    --pyvenv=VENVOPT  Customize use of Python virtual environment (see below)
-    --env=SCRIPT      Source SCRIPT before building.
-    --prefix=PATH     Use PATH as base for install and other run-time
-                      working directories.
-
-TARGET is one of:
-    arbor             Build Arbor.
-    neuron            Build NEURON.
-    coreneuron        Build CoreNEURON.
-    all               Build all simulators.
+    --pyvenv=VENVOPT        Customize use of Python virtual environment (see below)
+    --env=SCRIPT            Source SCRIPT before building.
+    --prefix=PATH           Use PATH as base for install and other run-time
+                            working directories.
+    --disable-validation    Skip building of validation tests.
+TARGET is one of:           
+    arbor                   Build Arbor.
+    neuron                  Build NEURON.
+    coreneuron              Build CoreNEURON.
+    all                     Build all simulators.
 
 Building a TARGET will also build any associated tests and
 benchmarks as required.
@@ -23,9 +23,9 @@ benchmarks as required.
 By default, a Python virtual environment is created in which required modules
 are installed if they are missing in the system environment.
 VENVOPT is one of:
-    disable           Do not use a Python virtualenv at all.
-    inherit           Use a virtualenv, using site packages.
-    enable            Use a virtualenv, ignoring site packages (default).
+    disable                 Do not use a Python virtualenv at all.
+    inherit                 Use a virtualenv, using site packages.
+    enable                  Use a virtualenv, ignoring site packages (default).
 
 _end_
 }
@@ -83,6 +83,9 @@ do
             shift
             ns_prefix=$1
             ;;
+	--disable-validation )
+	    ns_disable_validation=true
+	    ;;
         * )
             echo "unknown option '$1'"
             usage
@@ -123,7 +126,6 @@ msghi "---- TARGETS ----"
 msg "build arbor:       $ns_build_arbor"
 msg "build neuron:      $ns_build_neuron"
 msg "build coreneuron:  $ns_build_coreneuron"
-msg "build validation:  $ns_validate"
 echo
 msghi "---- PATHS ----"
 msg "nsuite root:     $ns_base_path"
@@ -144,7 +146,7 @@ msghi "---- ARBOR ----"
 msg "repo:            $ns_arb_git_repo"
 msg "branch:          $ns_arb_branch"
 msg "arch:            $ns_arb_arch"
-msg "gpu:             $ns_arb_with_gpu ($ns_arb_gpu)"
+msg "gpu:             $ns_arb_with_gpu"
 msg "vectorize:       $ns_arb_vectorize"
 echo
 msghi "---- NEURON ----"

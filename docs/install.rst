@@ -64,17 +64,18 @@ The simulation engines to install are provided as arguments.
 Further options for installing the simulation engines in a user-specified path and customising
 the build environment can be provided:
 
-====================  =================     ======================================================
-Flag                  Default value         Explanation
-====================  =================     ======================================================
-simulator             none                  Which simulation engines to download and install.
-                                            Any number of the following: {``arbor``, ``neuron``, ``coreneuron``, ``all``}.
-``--prefix``          current path          Path for downloading, compiling, installing simulation engines.
-                                            Also used to store inputs and outputs from benchmarks and validation tests.
-                                            Can be either a relative or absolute path.
-``--env``             none                  Optional script for configuring the environment and build steps.
-                                            See :ref:`customenv`.
-====================  =================     ======================================================
+=========================  =================     ======================================================
+Flag                       Default value         Explanation
+=========================  =================     ======================================================
+simulator                  none                  Which simulation engines to download and install.
+                                                 Any number of the following: {``arbor``, ``neuron``, ``coreneuron``, ``all``}.
+``--prefix``               current path          Path for downloading, compiling, installing simulation engines.
+                                                 Also used to store inputs and outputs from benchmarks and validation tests.
+                                                 Can be either a relative or absolute path.
+``--env``                  none                  Optional script for configuring the environment and build steps.
+                                                 See :ref:`customenv`.
+``--disable-validation``   false                 Suppress building of validation.
+========================   =================     ======================================================
 
 .. _customenv:
 
@@ -184,7 +185,7 @@ Variable                  Default value                                 Explanat
 ``ns_arb_arch``           ``native``                                    `The CPU architecture target <https://arbor.readthedocs.io/en/latest/install.html#architecture>`_
                                                                         for Arbor. Must be set when cross compiling.
                                                                         Default ``native`` targets the architecture used to configure NSuite.
-``ns_arb_with_gpu``       ``OFF``                                       Whether to build Arbor with NVIDIA GPU support.
+``ns_arb_with_gpu``       ``OFF``                                       Whether to build Arbor with GPU support, valid choices are (OFF|cuda|cuda-clang|hip)
 ``ns_arb_vectorize``      ``ON``                                        Whether to use explicit vectorization for Arbor.
 ========================  ===========================================   ======================================================
 
