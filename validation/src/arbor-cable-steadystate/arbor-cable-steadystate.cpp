@@ -66,7 +66,7 @@ struct rc_cable_recipe: public arb::recipe {
     probe_info get_probe(cell_member_type id) const override {
         // n probes, centred over CVs.
         double pos = probe_x(id.index)/length;
-        return probe_info{id, 0, cell_probe_address{{0, pos}, cell_probe_address::membrane_voltage}};
+        return probe_info{id, 0, cell_probe_membrane_voltage{{0, pos}}};
     }
 
     util::unique_any get_cell_description(cell_gid_type) const override {
@@ -128,7 +128,6 @@ int main(int argc, char** argv) {
     double t_sample = 0;
     sim.add_sampler(all_probes, explicit_schedule({t_end-dt}),
         [&voltage,&t_sample](cell_member_type probe_id, probe_tag, std::size_t n, const sample_record* rec) {
-            std::cout << "probe_id: " << probe_id.gid << ", " << probe_id.index << std::endl;
             voltage.at(probe_id.index) = *rec[0].data.as<const double*>();
             t_sample = rec[0].time;
         });
