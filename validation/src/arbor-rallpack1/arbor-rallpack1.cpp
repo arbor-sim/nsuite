@@ -66,7 +66,7 @@ struct rc_rallpack1_recipe: public arb::recipe {
 
     probe_info get_probe(cell_member_type id) const override {
         double pos = id.index==0? x0: x1;
-        return probe_info{id, 0, cell_probe_address{{0, pos}, cell_probe_address::membrane_voltage}};
+        return probe_info{id, 0, cell_probe_membrane_voltage{{0, pos}}};
     }
 
     util::unique_any get_cell_description(cell_gid_type) const override {

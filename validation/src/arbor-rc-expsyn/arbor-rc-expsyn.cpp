@@ -63,7 +63,7 @@ struct rc_expsyn_recipe: public arb::recipe {
     }
 
     probe_info get_probe(cell_member_type id) const override {
-        return probe_info{id, 0, cell_probe_address{soma_centre(), cell_probe_address::membrane_voltage}};
+        return probe_info{id, 0, cell_probe_membrane_voltage{soma_centre()}};
     }
 
     std::vector<event_generator> event_generators(cell_gid_type) const override {
