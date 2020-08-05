@@ -79,7 +79,7 @@ cd $ns_base_path
 # find the Arbor library that was built and installed above.
 export CMAKE_PREFIX_PATH="$ns_install_path"
 
-benchmarks="allenring"
+benchmarks="busyring"
 
 for bench in $benchmarks
 do

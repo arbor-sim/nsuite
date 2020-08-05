@@ -39,20 +39,35 @@ void write_trace_json(std::string fname, const arb::trace_data<double>& trace);
 
 // Generate a cell.
 arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& params);
+arb::cable_cell allen_cell(arb::cell_gid_type gid, const cell_parameters& params);
 
 class ring_recipe: public arb::recipe {
 public:
     ring_recipe(ring_params params):
         num_cells_(params.num_cells),
         min_delay_(params.min_delay),
-        params_(params)
-    {}
+        params_(params),
+        cat(arb::global_allen_catalogue())
+    {
+        cat.import(arb::global_default_catalogue(), "");
+
+        gprop.default_parameters = arb::neuron_parameter_defaults;
+        gprop.catalogue = &cat;
+        gprop.default_parameters.reversal_potential_method["ca"] = "nernst/ca";
+        gprop.default_parameters.axial_resistivity = 100;
+        gprop.default_parameters.temperature_K = 34 + 273.15;
+        gprop.default_parameters.init_membrane_potential = -90;
+        gprop.default_parameters.discretization = arb::cv_policy_max_extent(50);
+    }
 
     cell_size_type num_cells() const override {
         return num_cells_;
     }
 
     arb::util::unique_any get_cell_description(cell_gid_type gid) const override {
+        if (params_.cell.allen_cell) {
+            return allen_cell(gid, params_.cell);
+        }
         return branch_cell(gid, params_.cell);
     }
 
@@ -71,9 +86,7 @@ public:
     }
 
     arb::util::any get_global_properties(cell_kind kind) const override {
-        arb::cable_cell_global_properties prop;
-        prop.default_parameters = arb::neuron_parameter_defaults;
-        return prop;
+        return gprop;
     }
 
     // Each cell has one incoming connection, from cell with gid-1,
@@ -116,7 +129,7 @@ public:
         if (gid%params_.ring_size == 0) {
             gens.push_back(
                 arb::explicit_generator(
-                    arb::pse_vector{{{gid, 0}, 1.0, event_weight_}}));
+                    arb::pse_vector{{{gid, 0}, 50, event_weight_}}));
         }
         return gens;
     }
@@ -131,8 +144,10 @@ private:
     cell_size_type num_cells_;
     double min_delay_;
     ring_params params_;
+    float event_weight_ = 0.05;
 
-    float event_weight_ = 0.01;
+    mutable arb::cable_cell_global_properties gprop;
+    mutable arb::mechanism_catalogue cat;
 };
 
 struct cell_stats {
@@ -320,6 +335,130 @@ double interp(const std::array<T,2>& r, unsigned i, unsigned n) {
     double r0 = r[0];
     double r1 = r[1];
     return r[0] + p*(r1-r0);
+}
+
+arb::cable_cell allen_cell (arb::cell_gid_type gid, const cell_parameters& params) {
+    using arb::reg::tagged;
+    using arb::reg::all;
+    using arb::ls::location;
+    using mech = arb::mechanism_desc;
+
+    arb::segment_tree tree;
+
+    double soma_radius = 12.6157/2.0;
+    int soma_tag = 1;
+    tree.append(arb::mnpos, {0, 0,-soma_radius, soma_radius}, {0, 0, soma_radius, soma_radius}, soma_tag); // For area of 500 μm².
+
+    std::vector<std::vector<unsigned>> levels;
+    levels.push_back({0});
+
+    // Standard mersenne_twister_engine seeded with gid.
+    std::mt19937 gen(gid);
+    std::uniform_real_distribution<double> dis(0, 1);
+
+    double dend_radius = 0.5; // Diameter of 1 μm for each cable.
+    int dend_tag = 3;
+
+    double dist_from_soma = soma_radius;
+    for (unsigned i=0; i<params.max_depth; ++i) {
+        // Branch prob at this level.
+        double bp = interp(params.branch_probs, i, params.max_depth);
+        // Length at this level.
+        double l = interp(params.lengths, i, params.max_depth);
+        // Number of compartments at this level.
+        unsigned nc = std::round(interp(params.compartments, i, params.max_depth));
+
+        std::vector<unsigned> sec_ids;
+        for (unsigned sec: levels[i]) {
+            for (unsigned j=0; j<2; ++j) {
+                if (dis(gen)<bp) {
+                    auto z = dist_from_soma;
+                    auto dz = l/nc;
+                    auto p = sec;
+                    for (unsigned k=1; k<nc; ++k) {
+                        p = tree.append(p, {0,0,z+(k+1)*dz, dend_radius}, dend_tag);
+                    }
+                    sec_ids.push_back(p);
+                }
+            }
+        }
+        if (sec_ids.empty()) {
+            break;
+        }
+        levels.push_back(sec_ids);
+
+        dist_from_soma += l;
+    }
+
+    arb::label_dict dict;
+
+    dict.set("soma", tagged(1));
+    dict.set("axon", tagged(2));
+    dict.set("dend", tagged(3));
+    dict.set("apic", tagged(4));
+    dict.set("center", location(0, 0.5));
+
+    arb::cable_cell cell(arb::morphology(tree), dict);
+
+    arb::cable_cell_ion_data k_params;
+    arb::cable_cell_ion_data na_params;
+    arb::cable_cell_parameter_set props;
+
+    k_params.init_reversal_potential  = -107.0;
+    na_params.init_reversal_potential = 53.0;
+
+    cell.paint(all(), arb::initial_ion_data{"k",  k_params});
+    cell.paint(all(), arb::initial_ion_data{"na", na_params});
+
+    cell.paint("soma", arb::axial_resistivity{133.577});
+    cell.paint("soma", arb::membrane_capacitance{4.21567e-2});
+
+    cell.paint("axon", arb::axial_resistivity{80.3832});
+    cell.paint("axon", arb::membrane_capacitance{9.0228e-2});
+
+    cell.paint("apic", arb::axial_resistivity{136.032});
+    cell.paint("apic", arb::membrane_capacitance{8.34542e-2});
+
+    cell.paint("dend", arb::axial_resistivity{68.355});
+    cell.paint("dend", arb::membrane_capacitance{2.11248e-2});
+
+    cell.paint("soma", mech("pas").set("g", 0.000119174).set("e", -76.4024));
+    cell.paint("axon", mech("pas").set("g", 0.001473460).set("e", -64.8595));
+    cell.paint("apic", mech("pas").set("g", 0.000411480).set("e", -81.3599));
+    cell.paint("dend", mech("pas").set("g", 9.57001e-05).set("e", -88.2554));
+
+    cell.paint("soma", mech("NaV").set("gbar", 0.0499779));
+    cell.paint("soma", mech("SK").set("gbar", 0.000733676));
+    cell.paint("soma", mech("Kv3_1").set("gbar", 0.186718));
+    cell.paint("soma", mech("Ca_HVA").set("gbar", 9.96973e-05));
+    cell.paint("soma", mech("Ca_LVA").set("gbar", 0.00344495));
+    cell.paint("soma", mech("CaDynamics").set("gamma", 0.0177038).set("decay", 42.2507));
+    cell.paint("soma", mech("Ih").set("gbar", 1.07608e-07));
+
+    cell.paint("axon", mech("NaV").set("gbar", 0.035766));
+    cell.paint("axon", mech("K_T").set("gbar", 7.51307e-05));
+    cell.paint("axon", mech("Kd").set("gbar", 0.00700751));
+    cell.paint("axon", mech("Kv2like").set("gbar", 0.0675078));
+    cell.paint("axon", mech("Kv3_1").set("gbar", 0.592911));
+    cell.paint("axon", mech("SK").set("gbar", 0.000701147));
+    cell.paint("axon", mech("Ca_HVA").set("gbar", 2.17253e-06));
+    cell.paint("axon", mech("Ca_LVA").set("gbar", 0.00698184));
+    cell.paint("axon", mech("CaDynamics").set("gamma", 0.0416279).set("decay", 226.076));
+
+    cell.paint("apic", mech("NaV").set("gbar", 0.000375636));
+    cell.paint("apic", mech("Kv3_1").set("gbar", 0.797015));
+    cell.paint("apic", mech("Im_v2").set("gbar", 0.00854163));
+    cell.paint("apic", mech("Ih").set("gbar", 7.40408e-07));
+
+    cell.paint("dend", mech("NaV").set("gbar", 0.0472215));
+    cell.paint("dend", mech("Kv3_1").set("gbar", 0.186859));
+    cell.paint("dend", mech("Im_v2").set("gbar", 0.00132163));
+    cell.paint("dend", mech("Ih").set("gbar", 9.18815e-06));
+
+    cell.place("center", mech("expsyn"));
+    cell.place("center", arb::threshold_detector{-20.0});
+
+    return cell;
 }
 
 arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& params) {
