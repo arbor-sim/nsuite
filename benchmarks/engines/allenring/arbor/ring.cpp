@@ -39,6 +39,7 @@ void write_trace_json(std::string fname, const arb::trace_data<double>& trace);
 
 // Generate a cell.
 arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& params);
+arb::cable_cell allen_cell(arb::cell_gid_type gid, const cell_parameters& params);
 
 class ring_recipe: public arb::recipe {
 public:
@@ -64,6 +65,9 @@ public:
     }
 
     arb::util::unique_any get_cell_description(cell_gid_type gid) const override {
+        if (params_.cell.allen_cell) {
+            return allen_cell(gid, params_.cell);
+        }
         return branch_cell(gid, params_.cell);
     }
 
@@ -333,7 +337,7 @@ double interp(const std::array<T,2>& r, unsigned i, unsigned n) {
     return r[0] + p*(r1-r0);
 }
 
-arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& params) {
+arb::cable_cell allen_cell (arb::cell_gid_type gid, const cell_parameters& params) {
     using arb::reg::tagged;
     using arb::reg::all;
     using arb::ls::location;
@@ -453,6 +457,84 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
 
     cell.place("center", mech("expsyn"));
     cell.place("center", arb::threshold_detector{-20.0});
+
+    return cell;
+}
+
+arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& params) {
+    arb::segment_tree tree;
+
+    // Add soma.
+    double soma_radius = 12.6157/2.0;
+    int soma_tag = 1;
+    tree.append(arb::mnpos, {0, 0,-soma_radius, soma_radius}, {0, 0, soma_radius, soma_radius}, soma_tag); // For area of 500 μm².
+
+    std::vector<std::vector<unsigned>> levels;
+    levels.push_back({0});
+
+    // Standard mersenne_twister_engine seeded with gid.
+    std::mt19937 gen(gid);
+    std::uniform_real_distribution<double> dis(0, 1);
+
+    double dend_radius = 0.5; // Diameter of 1 μm for each cable.
+    int dend_tag = 3;
+
+    double dist_from_soma = soma_radius;
+    for (unsigned i=0; i<params.max_depth; ++i) {
+        // Branch prob at this level.
+        double bp = interp(params.branch_probs, i, params.max_depth);
+        // Length at this level.
+        double l = interp(params.lengths, i, params.max_depth);
+        // Number of compartments at this level.
+        unsigned nc = std::round(interp(params.compartments, i, params.max_depth));
+
+        std::vector<unsigned> sec_ids;
+        for (unsigned sec: levels[i]) {
+            for (unsigned j=0; j<2; ++j) {
+                if (dis(gen)<bp) {
+                    auto z = dist_from_soma;
+                    auto dz = l/nc;
+                    auto p = sec;
+                    for (unsigned k=1; k<nc; ++k) {
+                        p = tree.append(p, {0,0,z+(k+1)*dz, dend_radius}, dend_tag);
+                    }
+                    sec_ids.push_back(p);
+                }
+            }
+        }
+        if (sec_ids.empty()) {
+            break;
+        }
+        levels.push_back(sec_ids);
+
+        dist_from_soma += l;
+    }
+
+    arb::label_dict d;
+
+    using arb::reg::tagged;
+    d.set("soma",      tagged(1));
+    d.set("dendrites", join(tagged(3), tagged(4)));
+
+    arb::cable_cell cell(arb::morphology(tree), d);
+
+    cell.paint("soma", "hh");
+    cell.paint("dendrites", "pas");
+    cell.default_parameters.axial_resistivity = 100; // [Ω·cm]
+
+    // Add spike threshold detector at the soma.
+    cell.place(arb::mlocation{0,0}, arb::threshold_detector{10});
+
+    // Add a synapse to the mid point of the first dendrite.
+    cell.place(arb::mlocation{1, 0.5}, "expsyn");
+
+    // Add additional synapses that will not be connected to anything.
+    for (unsigned i=1u; i<params.synapses; ++i) {
+        cell.place(arb::mlocation{1, 0.5}, "expsyn");
+    }
+
+    // Make a CV between every sample in the sample tree.
+    cell.default_parameters.discretization = arb::cv_policy_every_segment();
 
     return cell;
 }
