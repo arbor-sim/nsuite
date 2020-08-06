@@ -35,7 +35,7 @@ struct ring_params {
     unsigned num_cells = 10;
     unsigned ring_size = 10;
     double min_delay = 10;
-    double duration = 400;
+    double duration = 100;
     double dt = 0.025;
     bool record_voltage = false;
     std::string odir = ".";

@@ -50,14 +50,16 @@ public:
         cat(arb::global_allen_catalogue())
     {
         cat.import(arb::global_default_catalogue(), "");
-
         gprop.default_parameters = arb::neuron_parameter_defaults;
         gprop.catalogue = &cat;
-        gprop.default_parameters.reversal_potential_method["ca"] = "nernst/ca";
-        gprop.default_parameters.axial_resistivity = 100;
-        gprop.default_parameters.temperature_K = 34 + 273.15;
-        gprop.default_parameters.init_membrane_potential = -90;
-        gprop.default_parameters.discretization = arb::cv_policy_max_extent(50);
+
+        if (params.cell.allen_cell) {
+            gprop.default_parameters.reversal_potential_method["ca"] = "nernst/ca";
+            gprop.default_parameters.axial_resistivity = 100;
+            gprop.default_parameters.temperature_K = 34 + 273.15;
+            gprop.default_parameters.init_membrane_potential = -90;
+            event_weight_*=5;
+        }
     }
 
     cell_size_type num_cells() const override {
@@ -129,7 +131,7 @@ public:
         if (gid%params_.ring_size == 0) {
             gens.push_back(
                 arb::explicit_generator(
-                    arb::pse_vector{{{gid, 0}, 50, event_weight_}}));
+                    arb::pse_vector{{{gid, 0}, 1.0, event_weight_}}));
         }
         return gens;
     }
@@ -144,7 +146,7 @@ private:
     cell_size_type num_cells_;
     double min_delay_;
     ring_params params_;
-    float event_weight_ = 0.05;
+    float event_weight_ = 0.01;
 
     mutable arb::cable_cell_global_properties gprop;
     mutable arb::mechanism_catalogue cat;
@@ -455,8 +457,12 @@ arb::cable_cell allen_cell (arb::cell_gid_type gid, const cell_parameters& param
     cell.paint("dend", mech("Im_v2").set("gbar", 0.00132163));
     cell.paint("dend", mech("Ih").set("gbar", 9.18815e-06));
 
-    cell.place("center", mech("expsyn"));
+    for (unsigned i=0u; i<params.synapses; ++i) {
+        cell.place("center", mech("expsyn"));
+    }
     cell.place("center", arb::threshold_detector{-20.0});
+
+    cell.default_parameters.discretization = arb::cv_policy_every_segment();
 
     return cell;
 }
@@ -518,8 +524,8 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
 
     arb::cable_cell cell(arb::morphology(tree), d);
 
-    cell.paint("soma", "hh");
-    cell.paint("dendrites", "pas");
+    cell.paint("soma", "pas");
+    cell.paint("dendrites", "hh");
     cell.default_parameters.axial_resistivity = 100; // [Ω·cm]
 
     // Add spike threshold detector at the soma.
