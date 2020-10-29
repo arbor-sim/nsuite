@@ -144,7 +144,7 @@ msghi "---- ARBOR ----"
 msg "repo:            $ns_arb_git_repo"
 msg "branch:          $ns_arb_branch"
 msg "arch:            $ns_arb_arch"
-msg "gpu:             $ns_arb_with_gpu ($ns_arb_gpu)"
+msg "gpu:             $ns_arb_gpu"
 msg "vectorize:       $ns_arb_vectorize"
 echo
 msghi "---- NEURON ----"

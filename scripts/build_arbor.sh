@@ -48,7 +48,7 @@ fi
 cd "$arb_build_path"
 cmake_args=-DCMAKE_INSTALL_PREFIX:PATH="$ns_install_path"
 cmake_args="$cmake_args -DARB_WITH_MPI=$ns_with_mpi"
-cmake_args="$cmake_args -DARB_WITH_GPU=$ns_arb_with_gpu -DARB_GPU=$ns_arb_gpu"
+cmake_args="$cmake_args -DARB_GPU=$ns_arb_gpu"
 cmake_args="$cmake_args -DARB_ARCH=$ns_arb_arch"
 cmake_args="$cmake_args -DARB_VECTORIZE=$ns_arb_vectorize"
 if [ "$ns_arb_xcompile_modcc" == "ON" ]; then
