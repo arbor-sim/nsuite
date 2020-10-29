@@ -49,10 +49,10 @@ struct rc_cable_recipe: public arb::recipe {
 
     cell_size_type num_cells() const override { return 1; }
     cell_size_type num_targets(cell_gid_type) const override { return 0; }
-    cell_size_type num_probes(cell_gid_type) const override { return n; }
     cell_kind get_cell_kind(cell_gid_type) const override { return cell_kind::cable; }
+    cell_size_type num_probes(cell_gid_type) const { return n; }
 
-    util::any get_global_properties(cell_kind kind) const override {
+    std::any get_global_properties(cell_kind kind) const override {
         cable_cell_global_properties prop;
 
         prop.default_parameters.init_membrane_potential = 0;
@@ -63,16 +63,23 @@ struct rc_cable_recipe: public arb::recipe {
         return prop;
     }
 
-    probe_info get_probe(cell_member_type id) const override {
+    std::vector<arb::probe_info> get_probes(cell_gid_type gid) const override {
+        std::vector<arb::probe_info> probes; 
+
         // n probes, centred over CVs.
-        double pos = probe_x(id.index)/length;
-        return probe_info{id, 0, cell_probe_membrane_voltage{{0, pos}}};
+        for (unsigned i = 0; i < num_probes(gid); ++i) {
+          arb::mlocation loc{0, probe_x(i)/length};
+          probes.push_back(cable_probe_membrane_voltage{loc});
+        } 
+        return probes; 
     }
 
     util::unique_any get_cell_description(cell_gid_type) const override {
-        sample_tree samples({msample{{0., 0., 0., d0/2}, 0}, msample{{0., 0., length, d1/2}, 0}}, {mnpos, 0u});
+        segment_tree tree;
+        tree.append(arb::mnpos, {0., 0., 0., d0/2}, {0., 0., length, d1/2}, 0);
 
-        cable_cell c(samples);
+        cable_cell c(arb::morphology(tree), {});
+
         c.default_parameters.discretization = cv_policy_fixed_per_branch(n);
 
         mechanism_desc pas("pas");
@@ -91,6 +98,7 @@ struct rc_cable_recipe: public arb::recipe {
     double probe_x(unsigned i) const {
         return length*((2.0*i+1.0)/(2.0*n));
     }
+
 };
 
 domain_decomposition trivial_dd(const recipe& r) {
@@ -126,11 +134,12 @@ int main(int argc, char** argv) {
     for (unsigned i = 0; i<x.size(); ++i) x[i] = rec.probe_x(i);
 
     double t_sample = 0;
-    sim.add_sampler(all_probes, explicit_schedule({t_end-dt}),
-        [&voltage,&t_sample](cell_member_type probe_id, probe_tag, std::size_t n, const sample_record* rec) {
-            voltage.at(probe_id.index) = *rec[0].data.as<const double*>();
-            t_sample = rec[0].time;
-        });
+    auto sampler = [&voltage,&t_sample] (probe_metadata pm, std::size_t n, const sample_record* rec) {
+        voltage.at(pm.id.index) = *rec[0].data.as<const double*>();
+        t_sample = rec[0].time;
+    }; 
+
+    sim.add_sampler(all_probes, explicit_schedule({t_end-dt}), sampler, sampling_policy::exact);
 
     sim.run(t_end, dt);
 

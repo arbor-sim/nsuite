@@ -50,10 +50,10 @@ struct rc_rallpack1_recipe: public arb::recipe {
 
     cell_size_type num_cells() const override { return 1; }
     cell_size_type num_targets(cell_gid_type) const override { return 0; }
-    cell_size_type num_probes(cell_gid_type) const override { return 2; }
     cell_kind get_cell_kind(cell_gid_type) const override { return cell_kind::cable; }
+    cell_size_type num_probes(cell_gid_type) const { return 2; }
 
-    util::any get_global_properties(cell_kind kind) const override {
+    std::any get_global_properties(cell_kind kind) const override {
         cable_cell_global_properties prop;
 
         prop.default_parameters.init_membrane_potential = (double)erev;
@@ -64,15 +64,23 @@ struct rc_rallpack1_recipe: public arb::recipe {
         return prop;
     }
 
-    probe_info get_probe(cell_member_type id) const override {
-        double pos = id.index==0? x0: x1;
-        return probe_info{id, 0, cell_probe_membrane_voltage{{0, pos}}};
+    std::vector<arb::probe_info> get_probes(cell_gid_type gid) const override {
+        std::vector<arb::probe_info> probes; 
+
+        // n probes, centred over CVs.
+        for (unsigned i = 0; i < num_probes(gid); ++i) {
+          arb::mlocation loc{0, i==0? x0: x1};
+          probes.push_back(cable_probe_membrane_voltage{loc});
+        } 
+        return probes; 
     }
 
     util::unique_any get_cell_description(cell_gid_type) const override {
-        sample_tree samples({msample{{0., 0., 0., d/2}, 0}, msample{{0., 0., length, d/2}, 0}}, {mnpos, 0u});
+        segment_tree tree;
+        tree.append(arb::mnpos, {0., 0., 0., d/2}, {0., 0., length, d/2}, 0);
 
-        cable_cell c(samples);
+        cable_cell c(arb::morphology(tree), {});
+
         c.default_parameters.discretization = cv_policy_fixed_per_branch(n);
 
         mechanism_desc pas("pas");
@@ -114,9 +122,9 @@ int main(int argc, char** argv) {
     time_type t_end = A.params["tend"];
     time_type sample_dt = dt>0.01? dt: 0.01; // [ms]
 
-    trace_data<double> vtrace0, vtrace1;
-    sim.add_sampler(one_probe({0, 0}), regular_schedule(sample_dt), make_simple_sampler(vtrace0));
-    sim.add_sampler(one_probe({0, 1}), regular_schedule(sample_dt), make_simple_sampler(vtrace1));
+    trace_vector<double> vtrace0, vtrace1;
+    sim.add_sampler(one_probe({0, 0}), regular_schedule(sample_dt), make_simple_sampler(vtrace0), sampling_policy::exact);
+    sim.add_sampler(one_probe({0, 1}), regular_schedule(sample_dt), make_simple_sampler(vtrace1), sampling_policy::exact);
 
     sim.run(t_end, dt);
 
@@ -124,25 +132,25 @@ int main(int argc, char** argv) {
 
     std::vector<double> times, v0, v1;
 
-    if (vtrace0.size()!=vtrace1.size()) {
+    if (vtrace0.at(0).size()!=vtrace1.at(0).size()) {
         fputs("sample time mismatch", stderr);
         return 1;
     }
 
     for (std::size_t i = 0; i<vtrace0.size(); ++i) {
-        if (vtrace0[i].t!=vtrace1[i].t) {
+        if (vtrace0.at(0)[i].t!=vtrace1.at(0)[i].t) {
             fputs("sample time mismatch", stderr);
             return 1;
         }
 
-        if (i>0 && vtrace0[i].t==vtrace0[i-1].t) {
+        if (i>0 && vtrace0.at(0)[i].t==vtrace0.at(0)[i-1].t) {
             // Multiple sample in same integration timestep; discard.
             continue;
         }
 
-        times.push_back(vtrace0[i].t);
-        v0.push_back(vtrace0[i].v);
-        v1.push_back(vtrace1[i].v);
+        times.push_back(vtrace0[i].at(0).t);
+        v0.push_back(vtrace0[i].at(0).v);
+        v1.push_back(vtrace1[i].at(0).v);
     }
 
     // Write to netcdf:
