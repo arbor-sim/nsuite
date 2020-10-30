@@ -156,6 +156,7 @@ struct cell_stats {
     using size_type = unsigned;
     size_type ncells = 0;
     size_type nbranch = 0;
+    size_type ncomp = 0;
 
     cell_stats(arb::recipe& r) {
 #ifdef ARB_MPI_ENABLED
@@ -177,6 +178,9 @@ struct cell_stats {
         for (size_type i=0; i<ncells; ++i) {
             auto c = arb::util::any_cast<arb::cable_cell>(r.get_cell_description(i));
             nbranch += c.morphology().num_branches();
+            for (unsigned i = 0; i < c.morphology().num_branches(); ++i) {
+                ncomp += c.morphology().branch_segments(i).size();
+            }
         }
 #endif
     }
@@ -185,7 +189,7 @@ struct cell_stats {
         return o << "cell stats: "
                  << s.ncells << " cells; "
                  << s.nbranch << " branches; "
-                 << 0 << " compartments; ";
+                 << s.ncomp << " compartments; ";
     }
 };
 
