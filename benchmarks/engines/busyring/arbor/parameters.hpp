@@ -12,7 +12,7 @@ struct cell_parameters {
     cell_parameters() = default;
 
     // Use complex cell or generic cell
-    bool complex_cell = true;
+    bool complex_cell = false;
 
     //  Maximum number of levels in the cell (not including the soma)
     unsigned max_depth = 5;

@@ -412,20 +412,10 @@ arb::cable_cell complex_cell (arb::cell_gid_type gid, const cell_parameters& par
     cell.paint("\"soma\"", arb::axial_resistivity{133.577});
     cell.paint("\"soma\"", arb::membrane_capacitance{4.21567e-2});
 
-    cell.paint("\"axon\"", arb::axial_resistivity{80.3832});
-    cell.paint("\"axon\"", arb::membrane_capacitance{9.0228e-2});
-
-    cell.paint("\"apic\"", arb::axial_resistivity{136.032});
-    cell.paint("\"apic\"", arb::membrane_capacitance{8.34542e-2});
-
     cell.paint("\"dend\"", arb::axial_resistivity{68.355});
     cell.paint("\"dend\"", arb::membrane_capacitance{2.11248e-2});
 
     cell.paint("\"soma\"", mech("pas").set("g", 0.000119174).set("e", -76.4024));
-    cell.paint("\"axon\"", mech("pas").set("g", 0.001473460).set("e", -64.8595));
-    cell.paint("\"apic\"", mech("pas").set("g", 0.000411480).set("e", -81.3599));
-    cell.paint("\"dend\"", mech("pas").set("g", 9.57001e-05).set("e", -88.2554));
-
     cell.paint("\"soma\"", mech("NaV").set("gbar", 0.0499779));
     cell.paint("\"soma\"", mech("SK").set("gbar", 0.000733676));
     cell.paint("\"soma\"", mech("Kv3_1").set("gbar", 0.186718));
@@ -434,32 +424,18 @@ arb::cable_cell complex_cell (arb::cell_gid_type gid, const cell_parameters& par
     cell.paint("\"soma\"", mech("CaDynamics").set("gamma", 0.0177038).set("decay", 42.2507));
     cell.paint("\"soma\"", mech("Ih").set("gbar", 1.07608e-07));
 
-    cell.paint("\"axon\"", mech("NaV").set("gbar", 0.035766));
-    cell.paint("\"axon\"", mech("K_T").set("gbar", 7.51307e-05));
-    cell.paint("\"axon\"", mech("Kd").set("gbar", 0.00700751));
-    cell.paint("\"axon\"", mech("Kv2like").set("gbar", 0.0675078));
-    cell.paint("\"axon\"", mech("Kv3_1").set("gbar", 0.592911));
-    cell.paint("\"axon\"", mech("SK").set("gbar", 0.000701147));
-    cell.paint("\"axon\"", mech("Ca_HVA").set("gbar", 2.17253e-06));
-    cell.paint("\"axon\"", mech("Ca_LVA").set("gbar", 0.00698184));
-    cell.paint("\"axon\"", mech("CaDynamics").set("gamma", 0.0416279).set("decay", 226.076));
-
-    cell.paint("\"apic\"", mech("NaV").set("gbar", 0.000375636));
-    cell.paint("\"apic\"", mech("Kv3_1").set("gbar", 0.797015));
-    cell.paint("\"apic\"", mech("Im_v2").set("gbar", 0.00854163));
-    cell.paint("\"apic\"", mech("Ih").set("gbar", 7.40408e-07));
-
+    cell.paint("\"dend\"", mech("pas").set("g", 9.57001e-05).set("e", -88.2554));
     cell.paint("\"dend\"", mech("NaV").set("gbar", 0.0472215));
     cell.paint("\"dend\"", mech("Kv3_1").set("gbar", 0.186859));
     cell.paint("\"dend\"", mech("Im_v2").set("gbar", 0.00132163));
     cell.paint("\"dend\"", mech("Ih").set("gbar", 9.18815e-06));
 
     cell.place("\"center\"", mech("expsyn"));
-    cell.place("\"center\"", arb::threshold_detector{-20.0});
-
     if (params.synapses>1) {
        cell.place("\"synapses\"", "expsyn");
     }
+
+    cell.place("\"center\"", arb::threshold_detector{-20.0});
 
     cell.default_parameters.discretization = arb::cv_policy_every_segment();
 
