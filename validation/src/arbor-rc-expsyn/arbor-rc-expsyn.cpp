@@ -94,8 +94,8 @@ struct rc_expsyn_recipe: public arb::recipe {
         cable_cell c(morphology(tree), labels);
         c.default_parameters.membrane_capacitance = cm*1e-9/area; // [F/m^2]
 
-        c.paint("soma", pas);
-        c.place("centre", expsyn);
+        c.paint("\"soma\"", pas);
+        c.place("\"centre\"", expsyn);
 
         return c;
     }

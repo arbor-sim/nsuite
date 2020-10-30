@@ -110,10 +110,10 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
         pas["g"] = 1e-10/(rm*area);    // [S/cm^2]
         pas["e"] = erev;
 
-        mechanism_desc expsyn("exp2syn");
-        expsyn["tau1"] = tau1;
-        expsyn["tau2"] = tau2;
-        expsyn["e"] = 0;
+        mechanism_desc exp2syn("exp2syn");
+        exp2syn["tau1"] = tau1;
+        exp2syn["tau2"] = tau2;
+        exp2syn["e"] = 0;
 
         label_dict labels;
         labels.set("soma", reg::tagged(1));
@@ -122,9 +122,9 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
         cable_cell c(morphology(tree), labels);
         c.default_parameters.membrane_capacitance = cm*1e-9/area; // [F/m^2]
 
-        c.paint("soma", pas);
-        c.place("centre", expsyn);
-        c.place("centre", threshold_detector{threshold});
+        c.paint("\"soma\"", pas);
+        c.place("\"centre\"", exp2syn);
+        c.place("\"centre\"", threshold_detector{threshold});
 
         return c;
     }
