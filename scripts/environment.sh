@@ -67,10 +67,10 @@ default_environment() {
     # Arbor specific
 
     ns_arb_git_repo=https://github.com/arbor-sim/arbor.git
-    ns_arb_branch=v0.2.2
+    ns_arb_branch=v0.4
 
     ns_arb_arch=native
-    ns_arb_with_gpu=OFF
+    ns_arb_gpu=none
     ns_arb_vectorize=ON
     ns_arb_xcompile_modcc=OFF
 
@@ -102,6 +102,9 @@ default_environment() {
     # for architecture-specific optimization. If using OpenACC or trying to coax the
     # Intel compiler to vectorize, set this variable.
     ns_cnrn_compiler_flags=-O2
+
+    # Validation
+    ns_validate=enable
 }
 
 # Attempts to detect harware resouces available on node

@@ -1,6 +1,6 @@
 {
     "synapses": 10000,
-    "depth": 2,
+    "depth": 6,
     "min-cells": 5,
     "max-cells": 13
 }

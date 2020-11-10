@@ -28,7 +28,7 @@ ns_cc=$(which cc)
 ns_cxx=$(which CC)
 ns_with_mpi=ON
 
-ns_arb_with_gpu=ON
+ns_arb_gpu=cuda
 ns_arb_arch=haswell
 
 export CRAYPE_LINK_TYPE=dynamic

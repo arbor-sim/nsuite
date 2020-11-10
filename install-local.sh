@@ -123,6 +123,7 @@ msghi "---- TARGETS ----"
 msg "build arbor:       $ns_build_arbor"
 msg "build neuron:      $ns_build_neuron"
 msg "build coreneuron:  $ns_build_coreneuron"
+msg "build validation:  $ns_validate"
 echo
 msghi "---- PATHS ----"
 msg "nsuite root:     $ns_base_path"
@@ -143,7 +144,7 @@ msghi "---- ARBOR ----"
 msg "repo:            $ns_arb_git_repo"
 msg "branch:          $ns_arb_branch"
 msg "arch:            $ns_arb_arch"
-msg "gpu:             $ns_arb_with_gpu"
+msg "gpu:             $ns_arb_gpu"
 msg "vectorize:       $ns_arb_vectorize"
 echo
 msghi "---- NEURON ----"
@@ -201,11 +202,13 @@ cd "$ns_base_path"
 [ "$ns_build_coreneuron" = true ] && echo && source "$ns_base_path/scripts/build_coreneuron.sh"
 cd "$ns_base_path"
 
-# Always attempt to build validation models/generators.
-echo
-msghi "Building validation tests and generators"
-source "$ns_base_path/scripts/build_validation_models.sh"
-cd "$ns_base_path"
+# attempt to build validation models/generators.
+if [ "$ns_validate" != disable ]; then
+    echo
+    msghi "Building validation tests and generators"
+    source "$ns_base_path/scripts/build_validation_models.sh"
+    cd "$ns_base_path"
+fi
 
 echo
 msghi "Installation finished"
