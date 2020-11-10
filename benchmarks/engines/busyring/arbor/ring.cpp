@@ -148,8 +148,8 @@ private:
     ring_params params_;
     float event_weight_ = 0.01;
 
-    mutable arb::cable_cell_global_properties gprop;
-    mutable arb::mechanism_catalogue cat;
+    arb::cable_cell_global_properties gprop;
+    arb::mechanism_catalogue cat;
 };
 
 struct cell_stats {
