@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 usage() {
     cat <<'_end_'
 Usage: install-local.sh [--pyvenv=VENVOPT] [--env=SCRIPT] [--prefix=PATH] TARGET [TARGET...]
