@@ -171,6 +171,9 @@ struct cell_stats {
         for (size_type i=b; i<e; ++i) {
             auto c = arb::util::any_cast<arb::cable_cell>(r.get_cell_description(i));
             nbranch_tmp += c.morphology().num_branches();
+            for (unsigned i = 0; i < c.morphology().num_branches(); ++i) {
+                ncomp += c.morphology().branch_segments(i).size();
+            }
         }
         MPI_Allreduce(&nbranch_tmp, &nbranch, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
 #else
@@ -514,7 +517,7 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
     cell.place(arb::mlocation{0,0}, arb::threshold_detector{10});
 
     // Add a synapse to the mid point of the first dendrite.
-    cell.place(arb::mlocation{1, 0.5}, "expsyn");
+    cell.place(arb::mlocation{1, 0.}, "expsyn");
 
     // Add additional synapses that will not be connected to anything.
     if (params.synapses>1) {
