@@ -32,7 +32,7 @@ using arb::cell_size_type;
 using arb::cell_member_type;
 using arb::cell_kind;
 using arb::time_type;
-using arb::cell_probe_membrane_voltage;
+using arb::cable_probe_membrane_voltage;
 
 // Writes voltage trace as a json file.
 void write_trace_json(std::string fname, const arb::trace_data<double>& trace);
@@ -129,7 +129,7 @@ public:
     arb::probe_info get_probe(cell_member_type id) const override {
         // Measure at the soma.
         arb::mlocation loc{0, 0.0};
-        return arb::probe_info{id, 0, cell_probe_membrane_voltage{loc}};
+        return arb::probe_info{id, 0, cable_probe_membrane_voltage{loc}};
     }
 
 private:

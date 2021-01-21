@@ -32,7 +32,7 @@ ns_cc=$(which mpicc)
 ns_cxx=$(which mpicxx)
 ns_with_mpi=ON
 
-ns_arb_with_gpu=ON
+ns_arb_with_gpu=cuda
 ns_arb_arch=skylake-avx512
 
 ns_arb_branch=master
