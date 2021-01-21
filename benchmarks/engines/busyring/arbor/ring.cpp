@@ -171,6 +171,9 @@ struct cell_stats {
         for (size_type i=b; i<e; ++i) {
             auto c = arb::util::any_cast<arb::cable_cell>(r.get_cell_description(i));
             nbranch_tmp += c.morphology().num_branches();
+            for (unsigned i = 0; i < c.morphology().num_branches(); ++i) {
+                ncomp += c.morphology().branch_segments(i).size();
+            }
         }
         MPI_Allreduce(&nbranch_tmp, &nbranch, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
 #else
@@ -408,42 +411,42 @@ arb::cable_cell complex_cell (arb::cell_gid_type gid, const cell_parameters& par
        dict.set("synapses",  arb::ls::uniform(arb::reg::all(), 0, params.synapses-2, gid));
     }
 
-    arb::cable_cell cell(arb::morphology(tree), dict);
+    arb::decor decor;
 
-    cell.paint(all(), arb::init_reversal_potential{"k",  -107.0});
-    cell.paint(all(), arb::init_reversal_potential{"na", 53.0});
+    decor.paint(all(), arb::init_reversal_potential{"k",  -107.0});
+    decor.paint(all(), arb::init_reversal_potential{"na", 53.0});
 
-    cell.paint("\"soma\"", arb::axial_resistivity{133.577});
-    cell.paint("\"soma\"", arb::membrane_capacitance{4.21567e-2});
+    decor.paint("\"soma\"", arb::axial_resistivity{133.577});
+    decor.paint("\"soma\"", arb::membrane_capacitance{4.21567e-2});
 
-    cell.paint("\"dend\"", arb::axial_resistivity{68.355});
-    cell.paint("\"dend\"", arb::membrane_capacitance{2.11248e-2});
+    decor.paint("\"dend\"", arb::axial_resistivity{68.355});
+    decor.paint("\"dend\"", arb::membrane_capacitance{2.11248e-2});
 
-    cell.paint("\"soma\"", mech("pas").set("g", 0.000119174).set("e", -76.4024));
-    cell.paint("\"soma\"", mech("NaV").set("gbar", 0.0499779));
-    cell.paint("\"soma\"", mech("SK").set("gbar", 0.000733676));
-    cell.paint("\"soma\"", mech("Kv3_1").set("gbar", 0.186718));
-    cell.paint("\"soma\"", mech("Ca_HVA").set("gbar", 9.96973e-05));
-    cell.paint("\"soma\"", mech("Ca_LVA").set("gbar", 0.00344495));
-    cell.paint("\"soma\"", mech("CaDynamics").set("gamma", 0.0177038).set("decay", 42.2507));
-    cell.paint("\"soma\"", mech("Ih").set("gbar", 1.07608e-07));
+    decor.paint("\"soma\"", mech("pas").set("g", 0.000119174).set("e", -76.4024));
+    decor.paint("\"soma\"", mech("NaV").set("gbar", 0.0499779));
+    decor.paint("\"soma\"", mech("SK").set("gbar", 0.000733676));
+    decor.paint("\"soma\"", mech("Kv3_1").set("gbar", 0.186718));
+    decor.paint("\"soma\"", mech("Ca_HVA").set("gbar", 9.96973e-05));
+    decor.paint("\"soma\"", mech("Ca_LVA").set("gbar", 0.00344495));
+    decor.paint("\"soma\"", mech("CaDynamics").set("gamma", 0.0177038).set("decay", 42.2507));
+    decor.paint("\"soma\"", mech("Ih").set("gbar", 1.07608e-07));
 
-    cell.paint("\"dend\"", mech("pas").set("g", 9.57001e-05).set("e", -88.2554));
-    cell.paint("\"dend\"", mech("NaV").set("gbar", 0.0472215));
-    cell.paint("\"dend\"", mech("Kv3_1").set("gbar", 0.186859));
-    cell.paint("\"dend\"", mech("Im_v2").set("gbar", 0.00132163));
-    cell.paint("\"dend\"", mech("Ih").set("gbar", 9.18815e-06));
+    decor.paint("\"dend\"", mech("pas").set("g", 9.57001e-05).set("e", -88.2554));
+    decor.paint("\"dend\"", mech("NaV").set("gbar", 0.0472215));
+    decor.paint("\"dend\"", mech("Kv3_1").set("gbar", 0.186859));
+    decor.paint("\"dend\"", mech("Im_v2").set("gbar", 0.00132163));
+    decor.paint("\"dend\"", mech("Ih").set("gbar", 9.18815e-06));
 
-    cell.place("\"center\"", mech("expsyn"));
+    decor.place("\"center\"", mech("expsyn"));
     if (params.synapses>1) {
-       cell.place("\"synapses\"", "expsyn");
+       decor.place("\"synapses\"", "expsyn");
     }
 
-    cell.place("\"center\"", arb::threshold_detector{-20.0});
+    decor.place("\"center\"", arb::threshold_detector{-20.0});
 
-    cell.default_parameters.discretization = arb::cv_policy_every_segment();
+    decor.set_default(arb::cv_policy_every_segment());
 
-    return cell;
+    return {arb::morphology(tree), dict, decor};
 }
 
 arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& params) {
@@ -495,34 +498,34 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
         dist_from_soma += l;
     }
 
-    arb::label_dict d;
+    arb::label_dict labels;
 
     using arb::reg::tagged;
-    d.set("soma",      tagged(1));
-    d.set("dendrites", join(tagged(3), tagged(4)));
+    labels.set("soma",      tagged(1));
+    labels.set("dendrites", join(tagged(3), tagged(4)));
     if (params.synapses>1) {
-       d.set("synapses",  arb::ls::uniform(arb::reg::all(), 0, params.synapses-2, gid));
+       labels.set("synapses",  arb::ls::uniform(arb::reg::all(), 0, params.synapses-2, gid));
     }
 
-    arb::cable_cell cell(arb::morphology(tree), d);
+    arb::decor decor;
 
-    cell.paint("\"soma\"", "hh");
-    cell.paint("\"dendrites\"", "pas");
-    cell.default_parameters.axial_resistivity = 100; // [Ω·cm]
+    decor.paint("\"soma\"", "hh");
+    decor.paint("\"dendrites\"", "pas");
+    decor.set_default(arb::axial_resistivity{100}); // [Ω·cm]
 
     // Add spike threshold detector at the soma.
-    cell.place(arb::mlocation{0,0}, arb::threshold_detector{10});
+    decor.place(arb::mlocation{0,0}, arb::threshold_detector{10});
 
     // Add a synapse to the mid point of the first dendrite.
-    cell.place(arb::mlocation{1, 0.5}, "expsyn");
+    decor.place(arb::mlocation{1, 0}, "expsyn");
 
     // Add additional synapses that will not be connected to anything.
     if (params.synapses>1) {
-        cell.place("\"synapses\"", "expsyn");
+        decor.place("\"synapses\"", "expsyn");
     }
 
     // Make a CV between every sample in the sample tree.
-    cell.default_parameters.discretization = arb::cv_policy_every_segment();
+    decor.set_default(arb::cv_policy_every_segment());
 
-    return cell;
+    return {arb::morphology(tree), labels, decor};
 }
