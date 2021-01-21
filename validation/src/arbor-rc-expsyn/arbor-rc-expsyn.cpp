@@ -39,10 +39,6 @@ struct rc_expsyn_recipe: public arb::recipe {
     // Customizable parameters:
     double g0;                               // synaptic conductance at time 0 [µS]
 
-    static mlocation soma_centre() {
-        return mlocation{0u, 0.5};
-    }
-
     explicit rc_expsyn_recipe(const paramset& ps): g0(ps.at("g0")) {}
 
     cell_size_type num_cells() const override { return 1; }
@@ -63,7 +59,7 @@ struct rc_expsyn_recipe: public arb::recipe {
     }
 
     std::vector<arb::probe_info> get_probes(cell_gid_type gid) const override {
-        return {cable_probe_membrane_voltage{soma_centre()}};
+        return {cable_probe_membrane_voltage{ls::named("midpoint")}};
     }
 
     std::vector<event_generator> event_generators(cell_gid_type) const override {
@@ -89,15 +85,14 @@ struct rc_expsyn_recipe: public arb::recipe {
 
         label_dict labels;
         labels.set("soma", reg::tagged(1));
-        labels.set("centre", soma_centre());
+        labels.set("midpoint", mlocation{0, 0.5});
 
-        cable_cell c(morphology(tree), labels);
-        c.default_parameters.membrane_capacitance = cm*1e-9/area; // [F/m^2]
+        decor D;
+        D.set_default(membrane_capacitance{cm*1e-9/area}); // [F/m^2]
+        D.paint("\"soma\"", pas);
+        D.place("\"midpoint\"", expsyn);
 
-        c.paint("\"soma\"", pas);
-        c.place("\"centre\"", expsyn);
-
-        return c;
+        return cable_cell(tree, labels, D);
     }
 };
 

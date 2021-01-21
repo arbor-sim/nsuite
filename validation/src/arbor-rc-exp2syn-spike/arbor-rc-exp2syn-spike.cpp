@@ -49,10 +49,6 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
     // Computed values:
     std::vector<double> delay;               // delay[i] is connection delay from gid 0 to gid i
 
-    static mlocation soma_centre() {
-        return {0u, 0.5};
-    }
-
     explicit rc_exp2syn_spike_recipe(const paramset& ps):
         g0(ps.at("g0")), threshold(ps.at("threshold")),
         mindelay(ps.at("mindelay")), ncell((int)ps.at("ncell"))
@@ -88,7 +84,7 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
     }
 
     std::vector<arb::probe_info> get_probes(cell_gid_type gid) const override {
-        return {cable_probe_membrane_voltage{soma_centre()}};
+        return {cable_probe_membrane_voltage{ls::named("midpoint")}};
     }
 
     std::vector<event_generator> event_generators(cell_gid_type gid) const override {
@@ -117,16 +113,15 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
 
         label_dict labels;
         labels.set("soma", reg::tagged(1));
-        labels.set("centre", soma_centre());
+        labels.set("midpoint", mlocation{0, 0.5});
 
-        cable_cell c(morphology(tree), labels);
-        c.default_parameters.membrane_capacitance = cm*1e-9/area; // [F/m^2]
+        decor D;
+        D.set_default(membrane_capacitance{cm*1e-9/area}); // [F/m^2]
+        D.paint("\"soma\"", pas);
+        D.place("\"midpoint\"", exp2syn);
+        D.place("\"midpoint\"", threshold_detector{threshold});
 
-        c.paint("\"soma\"", pas);
-        c.place("\"centre\"", exp2syn);
-        c.place("\"centre\"", threshold_detector{threshold});
-
-        return c;
+        return cable_cell(tree, labels, D);
     }
 
     std::vector<arb::cell_connection> connections_on(cell_gid_type gid) const override {

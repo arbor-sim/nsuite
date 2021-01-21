@@ -78,17 +78,16 @@ struct rc_cable_recipe: public arb::recipe {
         segment_tree tree;
         tree.append(arb::mnpos, {0., 0., 0., d0/2}, {0., 0., length, d1/2}, 0);
 
-        cable_cell c(arb::morphology(tree), {});
-
-        c.default_parameters.discretization = cv_policy_fixed_per_branch(n);
-
         mechanism_desc pas("pas");
         pas["g"] = 1e-4/rm; // [S/cm^2]
         pas["e"] = 0; // erev=0
 
-        c.paint(reg::all(), pas);
-        c.place(mlocation{0, 1.}, i_clamp{0, INFINITY, iinj});
-        return c;
+        decor D;
+        D.paint(reg::all(), pas);
+        D.place(mlocation{0, 1.}, i_clamp{0, INFINITY, iinj});
+        D.set_default(cv_policy_fixed_per_branch(n));
+
+        return cable_cell(tree, {}, D);
     }
 
     // time constant in [ms]
