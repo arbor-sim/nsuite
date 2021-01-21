@@ -70,7 +70,7 @@ default_environment() {
     ns_arb_branch=master
 
     ns_arb_arch=native
-    ns_arb_with_gpu=OFF
+    ns_arb_with_gpu=none
     ns_arb_vectorize=ON
     ns_arb_xcompile_modcc=OFF
 

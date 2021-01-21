@@ -185,7 +185,7 @@ Variable                  Default value                                 Explanat
 ``ns_arb_arch``           ``native``                                    `The CPU architecture target <https://arbor.readthedocs.io/en/latest/install.html#architecture>`_
                                                                         for Arbor. Must be set when cross compiling.
                                                                         Default ``native`` targets the architecture used to configure NSuite.
-``ns_arb_with_gpu``       ``OFF``                                       Whether to build Arbor with GPU support, valid choices are (OFF|cuda|cuda-clang|hip)
+``ns_arb_with_gpu``       ``none``                                       Whether to build Arbor with GPU support, valid choices are (none|cuda|cuda-clang|hip)
 ``ns_arb_vectorize``      ``ON``                                        Whether to use explicit vectorization for Arbor.
 ========================  ===========================================   ======================================================
 
