@@ -71,7 +71,7 @@ struct rc_rallpack1_recipe: public arb::recipe {
         for (unsigned i = 0; i < num_probes(gid); ++i) {
           arb::mlocation loc{0, i==0? x0: x1};
           probes.push_back(cable_probe_membrane_voltage{loc});
-        } 
+        }
         return probes; 
     }
 
@@ -79,17 +79,16 @@ struct rc_rallpack1_recipe: public arb::recipe {
         segment_tree tree;
         tree.append(arb::mnpos, {0., 0., 0., d/2}, {0., 0., length, d/2}, 0);
 
-        cable_cell c(arb::morphology(tree), {});
-
-        c.default_parameters.discretization = cv_policy_fixed_per_branch(n);
-
         mechanism_desc pas("pas");
         pas["g"] = 1e-4/rm; // [S/cm^2]
         pas["e"] = (double)erev;
 
-        c.paint(reg::all(), pas);
-        c.place(mlocation{0, 0}, i_clamp{0, INFINITY, iinj});
-        return c;
+        decor D;
+        D.paint(reg::all(), pas);
+        D.place(mlocation{0, 0}, i_clamp{0, INFINITY, iinj});
+        D.set_default(cv_policy_fixed_per_branch(n));
+
+        return cable_cell(tree, {}, D);
     }
 };
 

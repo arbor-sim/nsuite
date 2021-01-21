@@ -67,7 +67,7 @@ default_environment() {
     # Arbor specific
 
     ns_arb_git_repo=https://github.com/arbor-sim/arbor.git
-    ns_arb_branch=v0.4
+    ns_arb_branch=v0.5
 
     ns_arb_arch=native
     ns_arb_gpu=none
@@ -175,7 +175,7 @@ save_environment() {
     pyvenv_activate=$ns_pyvenv_path/bin/activate
     source_pyvenv_script=
     if [ -r "$pyvenv_activate" ]; then
-	source_pyvenv_script="source '$pyvenv_activate'"
+        source_pyvenv_script="source '$pyvenv_activate'"
     fi
 
     cat <<_end_ > "$ns_config_path/env_$sim.sh"

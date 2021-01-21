@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 usage() {
     cat <<'_end_'
 Usage: install-local.sh [--pyvenv=VENVOPT] [--env=SCRIPT] [--prefix=PATH] TARGET [TARGET...]
@@ -64,11 +66,11 @@ do
             ;;
         --pyvenv=* )
             ns_pyvenv=${1#--pyvenv=}
-	    ;;
+            ;;
         --pyvenv )
-	    shift
+            shift
             ns_pyvenv=$1
-	    ;;
+            ;;
         --env=* )
             ns_environment=${1#--env=}
             ;;
@@ -175,18 +177,18 @@ if [ "$ns_pyvenv" != disable ]; then
     msghi "Initializing python virtual environment"
     ns_pyvenv_opt=
     if [ "$ns_pyvenv" == inherit ]; then
-	ns_pyvenv_opt=--system-site-packages
+        ns_pyvenv_opt=--system-site-packages
     fi
 
     msg "Installing python modules: $ns_pyvenv_modules"
     (
-	exec >> "$ns_build_path/log_pyvenv" 2>&1
-	if "$ns_python" -m venv $ns_pyvenv_opt "$ns_pyvenv_path"; then
-	    source "$ns_pyvenv_path/bin/activate"
-	    for pkg in $ns_pyvenv_modules; do
-	        pip install "$pkg"
-	    done
-	fi
+        exec >> "$ns_build_path/log_pyvenv" 2>&1
+        if "$ns_python" -m venv $ns_pyvenv_opt "$ns_pyvenv_path"; then
+            source "$ns_pyvenv_path/bin/activate"
+            for pkg in $ns_pyvenv_modules; do
+                pip install "$pkg"
+            done
+        fi
     )
 fi
 
