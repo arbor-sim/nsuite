@@ -10,6 +10,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>

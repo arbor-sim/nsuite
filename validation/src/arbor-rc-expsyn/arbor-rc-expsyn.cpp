@@ -39,18 +39,14 @@ struct rc_expsyn_recipe: public arb::recipe {
     // Customizable parameters:
     double g0;                               // synaptic conductance at time 0 [µS]
 
-    static mlocation soma_centre() {
-        return mlocation{0u, 0.5};
-    }
-
     explicit rc_expsyn_recipe(const paramset& ps): g0(ps.at("g0")) {}
 
     cell_size_type num_cells() const override { return 1; }
     cell_size_type num_targets(cell_gid_type) const override { return 1; }
-    cell_size_type num_probes(cell_gid_type) const override { return 1; }
     cell_kind get_cell_kind(cell_gid_type) const override { return cell_kind::cable; }
+    cell_size_type num_probes(cell_gid_type) const { return 1; }
 
-    arb::util::any get_global_properties(cell_kind kind) const override {
+    std::any get_global_properties(cell_kind kind) const override {
         arb::cable_cell_global_properties prop;
         prop.default_parameters.init_membrane_potential = erev;
         prop.ion_species.clear();
@@ -62,8 +58,8 @@ struct rc_expsyn_recipe: public arb::recipe {
         return prop;
     }
 
-    probe_info get_probe(cell_member_type id) const override {
-        return probe_info{id, 0, cell_probe_address{soma_centre(), cell_probe_address::membrane_voltage}};
+    std::vector<arb::probe_info> get_probes(cell_gid_type gid) const override {
+        return {cable_probe_membrane_voltage{ls::named("midpoint")}};
     }
 
     std::vector<event_generator> event_generators(cell_gid_type) const override {
@@ -76,8 +72,8 @@ struct rc_expsyn_recipe: public arb::recipe {
     }
 
     util::unique_any get_cell_description(cell_gid_type) const override {
-        sample_tree samples;
-        samples.append({{0, 0, 0, r*1e6}, 1});
+        segment_tree tree;
+        tree.append(arb::mnpos, {0., 0., 0., r*1e6}, {0., 0., 2*r*1e6,  r*1e6}, 1);
 
         mechanism_desc pas("pas");
         pas["g"] = 1e-10/(rm*area);    // [S/cm^2]
@@ -89,15 +85,14 @@ struct rc_expsyn_recipe: public arb::recipe {
 
         label_dict labels;
         labels.set("soma", reg::tagged(1));
-        labels.set("centre", soma_centre());
+        labels.set("midpoint", mlocation{0, 0.5});
 
-        cable_cell c(morphology(samples), labels);
-        c.default_parameters.membrane_capacitance = cm*1e-9/area; // [F/m^2]
+        decor D;
+        D.set_default(membrane_capacitance{cm*1e-9/area}); // [F/m^2]
+        D.paint("\"soma\"", pas);
+        D.place("\"midpoint\"", expsyn);
 
-        c.paint("soma", pas);
-        c.place("centre", expsyn);
-
-        return c;
+        return cable_cell(tree, labels, D);
     }
 };
 
@@ -129,8 +124,8 @@ int main(int argc, char** argv) {
     time_type t_end = 10., sample_dt = 0.05; // [ms]
     time_type dt = A.params["dt"];
 
-    trace_data<double> vtrace;
-    sim.add_sampler(all_probes, regular_schedule(sample_dt), make_simple_sampler(vtrace));
+    trace_vector<double> vtrace;
+    sim.add_sampler(all_probes, regular_schedule(sample_dt), make_simple_sampler(vtrace), sampling_policy::exact);
 
     if (A.tags.count("binevents")) {
         sim.set_binning_policy(arb::binning_kind::regular, dt);
@@ -139,7 +134,7 @@ int main(int argc, char** argv) {
 
     // Write to netcdf:
 
-    std::size_t vlen = vtrace.size();
+    std::size_t vlen = vtrace.at(0).size();
 
     int ncid;
     nc_check(nc_create, A.output.c_str(), 0, &ncid);
@@ -170,7 +165,7 @@ int main(int argc, char** argv) {
     std::vector<double> times, values;
     times.reserve(vlen);
     values.reserve(vlen);
-    for (auto e: vtrace) {
+    for (auto e: vtrace.at(0)) {
         times.push_back(e.t);
         values.push_back(e.v);
     }

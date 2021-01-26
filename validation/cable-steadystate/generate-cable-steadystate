@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+from itertools import count
+import math
+import scipy.integrate as integrate
+import scipy.special as special
+import numpy as np
+import xarray
+import re
+import sys
+
+import nsuite.stdarg as stdarg
+import nsuite.stdattr as stdattr
+
+ra =     1.0   # axial resistivity [Ω m]
+rm =     4.0   # membrane resistivity [Ω m²]
+cm =    0.01   # memrane specific capacitance [F/m²]
+Erev =     0   # reversal potential [mV]
+
+length = 1000  # cable length [µm]
+iinj =    0.1  # current injection [nA]
+
+# Parameters
+d0 =      1.0  # cable diameter (left) [µm]
+d1 =      1.5  # cable diameter (right) [µm]
+dt =      0    # (ignored)
+n =       0    # used only to determine number of samples
+
+output, tags, params = stdarg.parse_run_stdarg()
+for v in ['d0', 'd1', 'dt', 'n']:
+    if v in params: globals()[v] = params[v]
+
+n = int(max(1000, 3*n))
+
+def k1(x): return special.kn(1, x)
+def k2(x): return special.kn(2, x)
+def i1(x): return special.iv(1, x)
+def i2(x): return special.iv(2, x)
+
+def u(x, a, b):
+    if a==0:
+        return math.cosh(x)/math.sinh(b)
+    else:
+        ra = math.sqrt(a)
+        rb = math.sqrt(b)
+        rx = math.sqrt(x)
+
+        return b/rx*(k2(2*ra)*i1(2*rx)+i2(2*ra)*k1(2*rx))/(k2(2*ra)*i2(2*rb)-i2(2*ra)*k2(2*rb))
+
+def membrane_voltage():
+    if (d0==d1):
+        r1 = d1/2
+        lam = math.sqrt(rm*r1/(2*ra))*1e3 # [µm]
+        a = 0
+        b = length/lam
+        E = -iinj*ra/(math.pi*r1*r1)
+
+    else:
+        r0 = d0/2
+        r1 = d1/2
+        dr = r1-r0
+        sintheta = math.sqrt(1-1/(1+(dr/length)**2))
+        A = r0/dr * length
+        B = r1/dr * length
+        lam = rm/(2*ra)*sintheta*1e6 # [µm]
+        a = A/lam
+        b = B/lam
+        E = -iinj*ra/(math.pi*r1*r1)
+
+    xs = np.linspace(a, b, n)
+    vs = np.zeros(xs.size)
+    for i in range(xs.size):
+        vs[i] = Erev - lam*E*u(xs[i], a, b)
+
+    xs = (xs - a)*lam # rescale to physical coordinates
+    return xs, vs
+
+
+xs, vs = membrane_voltage()
+
+out = xarray.Dataset({'v': (['x'], vs)}, coords={'x': xs})
+out.x.attrs['units'] = 'µm'
+out.v.attrs['units'] = 'mV'
+
+stdattr.set_stdattr(out, model='cable-steadystate', simulator='reference', params=params)
+out.to_netcdf(output)
+

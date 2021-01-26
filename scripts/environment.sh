@@ -67,10 +67,10 @@ default_environment() {
     # Arbor specific
 
     ns_arb_git_repo=https://github.com/arbor-sim/arbor.git
-    ns_arb_branch=master
+    ns_arb_branch=v0.5
 
     ns_arb_arch=native
-    ns_arb_with_gpu=OFF
+    ns_arb_gpu=none
     ns_arb_vectorize=ON
     ns_arb_xcompile_modcc=OFF
     ns_arb_with_profiling=OFF
@@ -103,6 +103,9 @@ default_environment() {
     # for architecture-specific optimization. If using OpenACC or trying to coax the
     # Intel compiler to vectorize, set this variable.
     ns_cnrn_compiler_flags=-O2
+
+    # Validation
+    ns_validate=enable
 }
 
 # Attempts to detect harware resouces available on node
@@ -173,7 +176,7 @@ save_environment() {
     pyvenv_activate=$ns_pyvenv_path/bin/activate
     source_pyvenv_script=
     if [ -r "$pyvenv_activate" ]; then
-	source_pyvenv_script="source '$pyvenv_activate'"
+        source_pyvenv_script="source '$pyvenv_activate'"
     fi
 
     cat <<_end_ > "$ns_config_path/env_$sim.sh"

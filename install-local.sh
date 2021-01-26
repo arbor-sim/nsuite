@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 usage() {
     cat <<'_end_'
 Usage: install-local.sh [--pyvenv=VENVOPT] [--env=SCRIPT] [--prefix=PATH] TARGET [TARGET...]
@@ -64,11 +66,11 @@ do
             ;;
         --pyvenv=* )
             ns_pyvenv=${1#--pyvenv=}
-	    ;;
+            ;;
         --pyvenv )
-	    shift
+            shift
             ns_pyvenv=$1
-	    ;;
+            ;;
         --env=* )
             ns_environment=${1#--env=}
             ;;
@@ -130,6 +132,7 @@ msghi "---- TARGETS ----"
 msg "build arbor:       $ns_build_arbor"
 msg "build neuron:      $ns_build_neuron"
 msg "build coreneuron:  $ns_build_coreneuron"
+msg "build validation:  $ns_validate"
 echo
 msghi "---- PATHS ----"
 msg "nsuite root:     $ns_base_path"
@@ -150,7 +153,7 @@ msghi "---- ARBOR ----"
 msg "repo:            $ns_arb_git_repo"
 msg "branch:          $ns_arb_branch"
 msg "arch:            $ns_arb_arch"
-msg "gpu:             $ns_arb_with_gpu"
+msg "gpu:             $ns_arb_gpu"
 msg "vectorize:       $ns_arb_vectorize"
 msg "profiling:       $ns_arb_with_profiling"
 msg "cmake:           $ns_arb_cmake_args"
@@ -183,18 +186,18 @@ if [ "$ns_pyvenv" != disable ]; then
     msghi "Initializing python virtual environment"
     ns_pyvenv_opt=
     if [ "$ns_pyvenv" == inherit ]; then
-	ns_pyvenv_opt=--system-site-packages
+        ns_pyvenv_opt=--system-site-packages
     fi
 
     msg "Installing python modules: $ns_pyvenv_modules"
     (
-	exec >> "$ns_build_path/log_pyvenv" 2>&1
-	if "$ns_python" -m venv $ns_pyvenv_opt "$ns_pyvenv_path"; then
-	    source "$ns_pyvenv_path/bin/activate"
-	    for pkg in $ns_pyvenv_modules; do
-	        pip install "$pkg"
-	    done
-	fi
+        exec >> "$ns_build_path/log_pyvenv" 2>&1
+        if "$ns_python" -m venv $ns_pyvenv_opt "$ns_pyvenv_path"; then
+            source "$ns_pyvenv_path/bin/activate"
+            for pkg in $ns_pyvenv_modules; do
+                pip install "$pkg"
+            done
+        fi
     )
 fi
 
@@ -210,11 +213,13 @@ cd "$ns_base_path"
 [ "$ns_build_coreneuron" = true ] && echo && source "$ns_base_path/scripts/build_coreneuron.sh"
 cd "$ns_base_path"
 
-# Always attempt to build validation models/generators.
-echo
-msghi "Building validation tests and generators"
-source "$ns_base_path/scripts/build_validation_models.sh"
-cd "$ns_base_path"
+# attempt to build validation models/generators.
+if [ "$ns_validate" != disable ]; then
+    echo
+    msghi "Building validation tests and generators"
+    source "$ns_base_path/scripts/build_validation_models.sh"
+    cd "$ns_base_path"
+fi
 
 echo
 msghi "Installation finished"

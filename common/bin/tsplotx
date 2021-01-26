@@ -302,7 +302,7 @@ def gather_ts_plots(tss, groupby):
 
     for ts in tss:
         key = tuple([ts.meta.get(g) for g in groupby])
-        if key is () or None in key or key not in group_lookup:
+        if key == () or None in key or key not in group_lookup:
             pretty_key=', '.join([unicode(k)+u'='+unicode(v) for k,v in zip(groupby, key) if v is not None])
             pd = PlotData(pretty_key)
             pd.series = [ts]
