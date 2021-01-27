@@ -33,13 +33,14 @@ using arb::cell_size_type;
 using arb::cell_member_type;
 using arb::cell_kind;
 using arb::time_type;
-using arb::cell_probe_address;
+using arb::cable_probe_membrane_voltage;
 
 // Writes voltage trace as a json file.
 void write_trace_json(std::string fname, const arb::trace_data<double>& trace);
 
 // Generate a cell.
 arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& params);
+arb::cable_cell complex_cell(arb::cell_gid_type gid, const cell_parameters& params);
 
 class ring_tile: public arb::tile {
 public:
@@ -47,8 +48,21 @@ public:
         num_cells_per_tile_(params.num_cells / params.num_ranks),
         num_tiles_(params.num_ranks),
         min_delay_(params.min_delay),
-        params_(params)
-    {}
+        params_(params),
+        cat(arb::global_allen_catalogue())
+    {
+        cat.import(arb::global_default_catalogue(), "");
+        gprop.default_parameters = arb::neuron_parameter_defaults;
+        gprop.catalogue = &cat;
+
+        if (params.cell.complex_cell) {
+            gprop.default_parameters.reversal_potential_method["ca"] = "nernst/ca";
+            gprop.default_parameters.axial_resistivity = 100;
+            gprop.default_parameters.temperature_K = 34 + 273.15;
+            gprop.default_parameters.init_membrane_potential = -90;
+            event_weight_*=5;
+        }
+    }
 
     cell_size_type num_tiles() const override {
         return num_tiles_;
@@ -58,6 +72,9 @@ public:
     }
 
     arb::util::unique_any get_cell_description(cell_gid_type gid) const override {
+        if (params_.cell.complex_cell) {
+            return complex_cell(gid, params_.cell);
+        }
         return branch_cell(gid, params_.cell);
     }
 
@@ -75,10 +92,8 @@ public:
         return params_.cell.synapses;
     }
 
-    arb::util::any get_global_properties(cell_kind kind) const override {
-        arb::cable_cell_global_properties prop;
-        prop.default_parameters = arb::neuron_parameter_defaults;
-        return prop;
+    std::any get_global_properties(cell_kind kind) const override {
+        return gprop;
     }
 
     // Each cell has one incoming connection, from cell with gid-1,
@@ -127,18 +142,10 @@ public:
         return gens;
     }
 
-    // There is one probe (for measuring voltage at the soma) on the cell.
-    cell_size_type num_probes(cell_gid_type gid)  const override {
-        return 1;
-    }
-
-    arb::probe_info get_probe(cell_member_type id) const override {
-        // Get the appropriate kind for measuring voltage.
-        cell_probe_address::probe_kind kind = cell_probe_address::membrane_voltage;
+    std::vector<arb::probe_info> get_probes(cell_gid_type gid) const override {
         // Measure at the soma.
         arb::mlocation loc{0, 0.0};
-
-        return arb::probe_info{id, kind, cell_probe_address{loc, kind}};
+        return {cable_probe_membrane_voltage{loc}};
     }
 
 private:
@@ -146,8 +153,10 @@ private:
     cell_size_type num_tiles_;
     double min_delay_;
     ring_params params_;
-
     float event_weight_ = 0.01;
+
+    arb::cable_cell_global_properties gprop;
+    arb::mechanism_catalogue cat;
 };
 
 struct cell_stats {
@@ -165,12 +174,13 @@ struct cell_stats {
         size_type cells_per_rank = ncells/nranks;
         size_type b = rank*cells_per_rank;
         size_type e = (rank==nranks-1)? ncells: (rank+1)*cells_per_rank;
-        size_type nbranch_tmp = 0;
-        size_type ncomp_tmp = 0;
+        size_type nbranch_tmp = 0, ncomp_tmp = 0;
         for (size_type i=b; i<e; ++i) {
             auto c = arb::util::any_cast<arb::cable_cell>(r.get_cell_description(i));
-            nbranch_tmp += c.num_branches();
-            ncomp_tmp += c.num_compartments();
+            nbranch_tmp += c.morphology().num_branches();
+            for (unsigned i = 0; i < c.morphology().num_branches(); ++i) {
+                ncomp_tmp += c.morphology().branch_segments(i).size();
+            }
         }
         MPI_Allreduce(&nbranch_tmp, &nbranch, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
         MPI_Allreduce(&ncomp_tmp, &ncomp, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
@@ -178,8 +188,10 @@ struct cell_stats {
         ncells = r.num_cells();
         for (size_type i=0; i<ncells; ++i) {
             auto c = arb::util::any_cast<arb::cable_cell>(r.get_cell_description(i));
-            nbranch += c.num_branches();
-            ncomp += c.num_compartments();
+            nbranch += c.morphology().num_branches();
+            for (unsigned i = 0; i < c.morphology().num_branches(); ++i) {
+                ncomp += c.morphology().branch_segments(i).size();
+            }
         }
 #endif
     }
@@ -261,7 +273,7 @@ int main(int argc, char** argv) {
         // Set up the probe that will measure voltage in the cell.
 
         // This is where the voltage samples will be stored as (time, value) pairs
-        arb::trace_data<double> voltage;
+        arb::trace_vector<double> voltage;
         if (params.record_voltage) {
             // The id of the only probe on the cell:
             // the cell_member type points to (cell 0, probe 0)
@@ -314,7 +326,7 @@ int main(int argc, char** argv) {
         // Write the samples to a json file samples were stored on this rank.
         if (voltage.size()>0u) {
             std::string fname = params.odir + "/" + params.name + "_voltages.json";
-            write_trace_json(fname, voltage);
+            write_trace_json(fname, voltage.at(0));
         }
 
         auto profile = arb::profile::profiler_summary();
@@ -359,12 +371,18 @@ double interp(const std::array<T,2>& r, unsigned i, unsigned n) {
     return r[0] + p*(r1-r0);
 }
 
-arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& params) {
-    arb::sample_tree tree;
+arb::cable_cell complex_cell (arb::cell_gid_type gid, const cell_parameters& params) {
+    using arb::reg::tagged;
+    using arb::reg::all;
+    using arb::ls::location;
+    using arb::ls::uniform;
+    using mech = arb::mechanism_desc;
 
-    // Add soma.
+    arb::segment_tree tree;
+
     double soma_radius = 12.6157/2.0;
-    tree.append(arb::mnpos, {{0,0,0,soma_radius}, 1}); // For area of 500 μm².
+    int soma_tag = 1;
+    tree.append(arb::mnpos, {0, 0,-soma_radius, soma_radius}, {0, 0, soma_radius, soma_radius}, soma_tag); // For area of 500 μm².
 
     std::vector<std::vector<unsigned>> levels;
     levels.push_back({0});
@@ -374,6 +392,7 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
     std::uniform_real_distribution<double> dis(0, 1);
 
     double dend_radius = 0.5; // Diameter of 1 μm for each cable.
+    int dend_tag = 3;
 
     double dist_from_soma = soma_radius;
     for (unsigned i=0; i<params.max_depth; ++i) {
@@ -389,14 +408,12 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
             for (unsigned j=0; j<2; ++j) {
                 if (dis(gen)<bp) {
                     auto z = dist_from_soma;
-                    auto p = tree.append(sec, {{0,0,z,dend_radius}, 3});
-                    if (nc>1) {
-                        auto dz = l/nc;
-                        for (unsigned k=1; k<nc; ++k) {
-                            p = tree.append(p, {{0,0,z+k*dz, dend_radius}, 3});
-                        }
+                    auto dz = l/nc;
+                    auto p = sec;
+                    for (unsigned k=1; k<nc; ++k) {
+                        p = tree.append(p, {0,0,z+(k+1)*dz, dend_radius}, dend_tag);
                     }
-                    sec_ids.push_back(tree.append(p, {{0,0,z+l,dend_radius}, 3}));
+                    sec_ids.push_back(p);
                 }
             }
         }
@@ -408,28 +425,132 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
         dist_from_soma += l;
     }
 
-    arb::label_dict d;
+    arb::label_dict dict;
 
-    using arb::reg::tagged;
-    d.set("soma",      tagged(1));
-    d.set("dendrites", join(tagged(3), tagged(4)));
-
-    arb::cable_cell cell(arb::morphology(tree, true), d, true);
-
-    cell.paint("soma", "hh");
-    cell.paint("dendrites", "pas");
-    cell.default_parameters.axial_resistivity = 100; // [Ω·cm]
-
-    // Add spike threshold detector at the soma.
-    cell.place(arb::mlocation{0,0}, arb::threshold_detector{10});
-
-    // Add a synapse to the mid point of the first dendrite.
-    cell.place(arb::mlocation{1, 0.5}, "expsyn");
-
-    // Add additional synapses that will not be connected to anything.
-    for (unsigned i=1u; i<params.synapses; ++i) {
-        cell.place(arb::mlocation{1, 0.5}, "expsyn");
+    dict.set("soma", tagged(1));
+    dict.set("axon", tagged(2));
+    dict.set("dend", tagged(3));
+    dict.set("apic", tagged(4));
+    dict.set("center", location(0, 0.5));
+    if (params.synapses>1) {
+       dict.set("synapses",  arb::ls::uniform(arb::reg::all(), 0, params.synapses-2, gid));
     }
 
-    return cell;
+    arb::decor decor;
+
+    decor.paint(all(), arb::init_reversal_potential{"k",  -107.0});
+    decor.paint(all(), arb::init_reversal_potential{"na", 53.0});
+
+    decor.paint("\"soma\"", arb::axial_resistivity{133.577});
+    decor.paint("\"soma\"", arb::membrane_capacitance{4.21567e-2});
+
+    decor.paint("\"dend\"", arb::axial_resistivity{68.355});
+    decor.paint("\"dend\"", arb::membrane_capacitance{2.11248e-2});
+
+    decor.paint("\"soma\"", mech("pas").set("g", 0.000119174).set("e", -76.4024));
+    decor.paint("\"soma\"", mech("NaV").set("gbar", 0.0499779));
+    decor.paint("\"soma\"", mech("SK").set("gbar", 0.000733676));
+    decor.paint("\"soma\"", mech("Kv3_1").set("gbar", 0.186718));
+    decor.paint("\"soma\"", mech("Ca_HVA").set("gbar", 9.96973e-05));
+    decor.paint("\"soma\"", mech("Ca_LVA").set("gbar", 0.00344495));
+    decor.paint("\"soma\"", mech("CaDynamics").set("gamma", 0.0177038).set("decay", 42.2507));
+    decor.paint("\"soma\"", mech("Ih").set("gbar", 1.07608e-07));
+
+    decor.paint("\"dend\"", mech("pas").set("g", 9.57001e-05).set("e", -88.2554));
+    decor.paint("\"dend\"", mech("NaV").set("gbar", 0.0472215));
+    decor.paint("\"dend\"", mech("Kv3_1").set("gbar", 0.186859));
+    decor.paint("\"dend\"", mech("Im_v2").set("gbar", 0.00132163));
+    decor.paint("\"dend\"", mech("Ih").set("gbar", 9.18815e-06));
+
+    decor.place("\"center\"", mech("expsyn"));
+    if (params.synapses>1) {
+       decor.place("\"synapses\"", "expsyn");
+    }
+
+    decor.place("\"center\"", arb::threshold_detector{-20.0});
+
+    decor.set_default(arb::cv_policy_every_segment());
+
+    return {arb::morphology(tree), dict, decor};
+}
+
+arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& params) {
+    arb::segment_tree tree;
+
+    // Add soma.
+    double soma_radius = 12.6157/2.0;
+    int soma_tag = 1;
+    tree.append(arb::mnpos, {0, 0,-soma_radius, soma_radius}, {0, 0, soma_radius, soma_radius}, soma_tag); // For area of 500 μm².
+
+    std::vector<std::vector<unsigned>> levels;
+    levels.push_back({0});
+
+    // Standard mersenne_twister_engine seeded with gid.
+    std::mt19937 gen(gid);
+    std::uniform_real_distribution<double> dis(0, 1);
+
+    double dend_radius = 0.5; // Diameter of 1 μm for each cable.
+    int dend_tag = 3;
+
+    double dist_from_soma = soma_radius;
+    for (unsigned i=0; i<params.max_depth; ++i) {
+        // Branch prob at this level.
+        double bp = interp(params.branch_probs, i, params.max_depth);
+        // Length at this level.
+        double l = interp(params.lengths, i, params.max_depth);
+        // Number of compartments at this level.
+        unsigned nc = std::round(interp(params.compartments, i, params.max_depth));
+
+        std::vector<unsigned> sec_ids;
+        for (unsigned sec: levels[i]) {
+            for (unsigned j=0; j<2; ++j) {
+                if (dis(gen)<bp) {
+                    auto z = dist_from_soma;
+                    auto dz = l/nc;
+                    auto p = sec;
+                    for (unsigned k=1; k<nc; ++k) {
+                        p = tree.append(p, {0,0,z+(k+1)*dz, dend_radius}, dend_tag);
+                    }
+                    sec_ids.push_back(p);
+                }
+            }
+        }
+        if (sec_ids.empty()) {
+            break;
+        }
+        levels.push_back(sec_ids);
+
+        dist_from_soma += l;
+    }
+
+    arb::label_dict labels;
+
+    using arb::reg::tagged;
+    labels.set("soma",      tagged(1));
+    labels.set("dendrites", join(tagged(3), tagged(4)));
+    if (params.synapses>1) {
+       labels.set("synapses",  arb::ls::uniform(arb::reg::all(), 0, params.synapses-2, gid));
+    }
+
+    arb::decor decor;
+
+    decor.paint("\"soma\"", "hh");
+    decor.paint("\"dendrites\"", "pas");
+    decor.set_default(arb::axial_resistivity{100}); // [Ω·cm]
+
+    // Add spike threshold detector at the soma.
+    decor.place(arb::mlocation{0,0}, arb::threshold_detector{10});
+
+    // Add a synapse to proximal end of first dendrite.
+    decor.place(arb::mlocation{1, 0}, "expsyn");
+
+    // Add additional synapses that will not be connected to anything.
+    if (params.synapses>1) {
+        decor.place("\"synapses\"", "expsyn");
+    }
+
+    // Make a CV between every sample in the sample tree.
+    decor.set_default(arb::cv_policy_every_segment());
+
+    return {arb::morphology(tree), labels, decor};
 }

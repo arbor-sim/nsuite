@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 usage() {
     cat <<_end_
 Usage: run-bench.sh [OPTIONS] SIMULATOR

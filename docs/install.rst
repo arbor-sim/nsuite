@@ -180,11 +180,11 @@ There are Arbor-specific options for checking out Arbor from a Git repository, a
 Variable                  Default value                                 Explanation
 ========================  ===========================================   ======================================================
 ``ns_arb_git_repo``       ``https://github.com/arbor-sim/arbor.git``    URL or directory for the Git repository to check out Arbor source from.
-``ns_arb_branch``         ``v0.2``                                      The branch/tag/SHA to check out. Master will be used if empty.
+``ns_arb_branch``         ``v0.5``                                      The branch/tag/SHA to check out. Master will be used if empty.
 ``ns_arb_arch``           ``native``                                    `The CPU architecture target <https://arbor.readthedocs.io/en/latest/install.html#architecture>`_
                                                                         for Arbor. Must be set when cross compiling.
                                                                         Default ``native`` targets the architecture used to configure NSuite.
-``ns_arb_with_gpu``       ``OFF``                                       Whether to build Arbor with NVIDIA GPU support.
+``ns_arb_gpu``            ``none``                                      Build Arbor with/without GPU support. Available options are none, cuda, clang, hip-clang
 ``ns_arb_vectorize``      ``ON``                                        Whether to use explicit vectorization for Arbor.
 ========================  ===========================================   ======================================================
 
