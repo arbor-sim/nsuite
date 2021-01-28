@@ -31,13 +31,13 @@ ns_with_mpi=ON
 ns_arb_arch=skylake-avx512
 ns_arb_branch=master
 
-ns_makej=20
+ns_makej=24
 
 ### benchmark execution options ###
 ns_threads_per_core=2
-ns_cores_per_socket=20
+ns_cores_per_socket=24
 ns_sockets=2
-ns_threads_per_socket=40
+ns_threads_per_socket=48
 
 # activate budget via jutil env activate -p <cproject> -A <budget> before running the benchmark
 run_with_mpi() {

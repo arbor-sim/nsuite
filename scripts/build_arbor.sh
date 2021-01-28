@@ -52,10 +52,12 @@ cmake_args="$cmake_args -DARB_USE_BUNDLED_LIBS=ON"
 cmake_args="$cmake_args -DARB_GPU=$ns_arb_gpu"
 cmake_args="$cmake_args -DARB_ARCH=$ns_arb_arch"
 cmake_args="$cmake_args -DARB_VECTORIZE=$ns_arb_vectorize"
+cmake_args="$cmake_args -DARB_WITH_PROFILING=$ns_arb_with_profiling"
 if [ "$ns_arb_xcompile_modcc" == "ON" ]; then
     cmake_args="$cmake_args -DARB_MODCC=${modcc_build_path}/bin/modcc"
 fi
 
+cmake_args="$cmake_args $ns_arb_cmake_args"
 msg "ARBOR: cmake $cmake_args"
 cmake "$arb_repo_path" $cmake_args >> "$out" 2>&1
 [ $? != 0 ] && exit_on_error "see ${out}"

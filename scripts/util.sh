@@ -1,3 +1,5 @@
+export LANG=C
+
 init_tcol() {
     # Set global associative array 'tcol' with entries for the eight
     # commonly supported colours plus entries for other highlight modes.
