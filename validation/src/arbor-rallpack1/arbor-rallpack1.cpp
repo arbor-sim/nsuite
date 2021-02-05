@@ -72,7 +72,7 @@ struct rc_rallpack1_recipe: public arb::recipe {
           arb::mlocation loc{0, i==0? x0: x1};
           probes.push_back(cable_probe_membrane_voltage{loc});
         }
-        return probes; 
+        return probes;
     }
 
     util::unique_any get_cell_description(cell_gid_type) const override {
@@ -130,26 +130,29 @@ int main(int argc, char** argv) {
     // Split sample times from voltages; assert times align for both traces.
 
     std::vector<double> times, v0, v1;
+    const auto& vtrace0_0 = vtrace0.at(0);
+    const auto& vtrace1_0 = vtrace1.at(0);
 
-    if (vtrace0.at(0).size()!=vtrace1.at(0).size()) {
+    std::size_t nsample = vtrace0_0.size();
+    if (nsample!=vtrace1_0.size()) {
         fputs("sample time mismatch", stderr);
         return 1;
     }
 
-    for (std::size_t i = 0; i<vtrace0.size(); ++i) {
-        if (vtrace0.at(0)[i].t!=vtrace1.at(0)[i].t) {
+    for (std::size_t i = 0; i<nsample; ++i) {
+        if (vtrace0_0[i].t!=vtrace1_0[i].t) {
             fputs("sample time mismatch", stderr);
             return 1;
         }
 
-        if (i>0 && vtrace0.at(0)[i].t==vtrace0.at(0)[i-1].t) {
+        if (i>0 && vtrace0_0[i].t==vtrace0_0[i-1].t) {
             // Multiple sample in same integration timestep; discard.
             continue;
         }
 
-        times.push_back(vtrace0[i].at(0).t);
-        v0.push_back(vtrace0[i].at(0).v);
-        v1.push_back(vtrace1[i].at(0).v);
+        times.push_back(vtrace0_0[i].t);
+        v0.push_back(vtrace0_0[i].v);
+        v1.push_back(vtrace1_0[i].v);
     }
 
     // Write to netcdf:
