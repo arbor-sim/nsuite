@@ -50,5 +50,5 @@ Arbor has a standardised way of measuring and reporting metrics using what it ca
 NSuite provides a Python module in ``common/python/metering.py`` that offers the
 same functionality in Python, which can be used for the NEURON benchmarks.
 
-With this standard output format, the ``scrpts/csv_bench.sh`` script can be used to automatically generate the CSV output.
+With this standard output format, the ``scripts/csv_bench.sh`` script can be used to automatically generate the CSV output.
 

@@ -18,7 +18,7 @@ Validation models are set up in the NSuite source tree according to a specific
 layout.
 
 Data and scripts required to run a particular validation model *MODEL* will all
-be found under in the ``validation/MODEL`` directory. At minimum, there must be
+be found under the ``validation/MODEL`` directory. At minimum, there must be
 an executable run script called ``run`` (see below) and a default parameter
 set ``default.param``. Any additional parameter sets must have a ``.param``
 suffix.
