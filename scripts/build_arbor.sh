@@ -7,7 +7,7 @@ arb_checked_flag="${arb_repo_path}/checked_out"
 out="$ns_build_path/log_arbor"
 rm -f "$out"
 
-# aquire the code if it has not already been downloaded
+# acquire the code if it has not already been downloaded
 if [ ! -f "$arb_checked_flag" ]; then
     rm -rf "$arb_repo_path"
 

@@ -19,7 +19,7 @@ set_working_paths() {
     export ns_pyvenv_path="$ns_build_path/pyvenv"
 }
 
-# Sets up the default enviroment.
+# Sets up the default environment.
 # Variables defined here use the prefix ns_
 default_environment() {
     set_working_paths
@@ -28,7 +28,7 @@ default_environment() {
     case "$OSTYPE" in
       linux*)   ns_system=linux ;;
       darwin*)  ns_system=apple ;;
-      *)        err "unsuported OS: $OSTYPE"; exit 1 ;;
+      *)        err "unsupported OS: $OSTYPE"; exit 1 ;;
     esac
 
     # Choose compiler based on OS
@@ -108,7 +108,7 @@ default_environment() {
     ns_validate=enable
 }
 
-# Attempts to detect harware resouces available on node
+# Attempts to detect hardware resources available on node
 # These default values are probably acceptable for laptop and desktop systems.
 # For detailed benchmarking, these defaults can be overridden.
 default_hardware() {
