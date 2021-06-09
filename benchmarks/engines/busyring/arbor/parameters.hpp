@@ -39,7 +39,7 @@ struct ring_params {
     double duration = 100;
     double dt = 0.025;
     bool record_voltage = false;
-    bool dryrun = true;
+    bool dryrun = false;
     std::string odir = ".";
     cell_parameters cell;
 };

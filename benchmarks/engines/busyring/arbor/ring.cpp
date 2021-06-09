@@ -108,7 +108,7 @@ public:
         const auto group_start = s*group;
         const auto group_end = std::min(group_start+s, num_cells_per_tile_);
         cell_gid_type src = gid==group_start? group_end-1: gid-1;
-        cons.push_back(arb::cell_connection({src, 0}, {gid, 0}, event_weight_, min_delay_));
+        cons.push_back(arb::cell_connection({src, 0}, 0, event_weight_, min_delay_));
 
         // Used to pick source cell for a connection.
         // source can be from any cell, not just the cells on this tile
@@ -124,7 +124,7 @@ public:
             const float delay = min_delay_+delay_dist(src_gen);
             //const float delay = min_delay_;
             cons.push_back(
-                arb::cell_connection({src, 0}, {gid, i}, 0.f, delay));
+                arb::cell_connection({src, 0}, i, 0.f, delay));
         }
 
         return cons;
@@ -137,7 +137,7 @@ public:
         if ((gid%num_cells_per_tile_)%params_.ring_size == 0) {
             gens.push_back(
                 arb::explicit_generator(
-                    arb::pse_vector{{{gid, 0}, 1.0, event_weight_}}));
+                    arb::pse_vector{{0, 1.0, event_weight_}}));
         }
         return gens;
     }
@@ -153,7 +153,7 @@ private:
     cell_size_type num_tiles_;
     double min_delay_;
     ring_params params_;
-    float event_weight_ = 0.01;
+    float event_weight_ = 0.1;
 
     arb::cable_cell_global_properties gprop;
     arb::mechanism_catalogue cat;
