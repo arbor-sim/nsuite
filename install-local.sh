@@ -194,8 +194,8 @@ fi
 
 # Build simulator targets.
 
-export CC="$ns_cc"
-export CXX="$ns_cxx"
+# export CC="$ns_cc"
+# export CXX="$ns_cxx"
 
 [ "$ns_build_arbor"  = true ] && echo && source "$ns_base_path/scripts/build_arbor.sh"
 cd "$ns_base_path"
