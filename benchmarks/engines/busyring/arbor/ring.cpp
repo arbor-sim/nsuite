@@ -1,6 +1,11 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <algorithm>
+#include <array>
+#include <cstring>
+#include <functional>
 
 #include <nlohmann/json.hpp>
 
@@ -16,8 +21,10 @@
 #include <arbor/recipe.hpp>
 #include <arbor/version.hpp>
 
-#include <arborenv/concurrency.hpp>
+#include <arborenv/default_env.hpp>
 #include <arborenv/gpu_env.hpp>
+
+#include <arborio/label_parse.hpp>
 
 #include "parameters.hpp"
 
@@ -34,6 +41,8 @@ using arb::cell_kind;
 using arb::time_type;
 using arb::cable_probe_membrane_voltage;
 
+using namespace arborio::literals;
+
 // Writes voltage trace as a json file.
 void write_trace_json(std::string fname, const arb::trace_data<double>& trace);
 
@@ -46,12 +55,10 @@ public:
     ring_recipe(ring_params params):
         num_cells_(params.num_cells),
         min_delay_(params.min_delay),
-        params_(params),
-        cat(arb::global_allen_catalogue())
+        params_(params)
     {
-        cat.import(arb::global_default_catalogue(), "");
         gprop.default_parameters = arb::neuron_parameter_defaults;
-        gprop.catalogue = &cat;
+        gprop.catalogue.import(arb::global_allen_catalogue(), "");
 
         if (params.cell.complex_cell) {
             gprop.default_parameters.reversal_potential_method["ca"] = "nernst/ca";
@@ -62,33 +69,14 @@ public:
         }
     }
 
-    cell_size_type num_cells() const override {
-        return num_cells_;
-    }
-
+    std::any get_global_properties(cell_kind kind) const override { return gprop; }
+    cell_size_type num_cells() const override { return num_cells_; }
+    cell_kind get_cell_kind(cell_gid_type gid) const override { return cell_kind::cable; }
     arb::util::unique_any get_cell_description(cell_gid_type gid) const override {
         if (params_.cell.complex_cell) {
             return complex_cell(gid, params_.cell);
         }
         return branch_cell(gid, params_.cell);
-    }
-
-    cell_kind get_cell_kind(cell_gid_type gid) const override {
-        return cell_kind::cable;
-    }
-
-    // Each cell has one spike detector (at the soma).
-    cell_size_type num_sources(cell_gid_type gid) const override {
-        return 1;
-    }
-
-    // The cell has one target synapse, which will be connected to cell gid-1.
-    cell_size_type num_targets(cell_gid_type gid) const override {
-        return params_.cell.synapses;
-    }
-
-    std::any get_global_properties(cell_kind kind) const override {
-        return gprop;
     }
 
     // Each cell has one incoming connection, from cell with gid-1,
@@ -103,7 +91,7 @@ public:
         const auto group_start = s*group;
         const auto group_end = std::min(group_start+s, num_cells_);
         cell_gid_type src = gid==group_start? group_end-1: gid-1;
-        cons.push_back(arb::cell_connection({src, 0}, {gid, 0}, event_weight_, min_delay_));
+        cons.push_back(arb::cell_connection({src, "detector"}, {"p_syn"}, event_weight_, min_delay_));
 
         // Used to pick source cell for a connection.
         std::uniform_int_distribution<cell_gid_type> dist(0, num_cells_-2);
@@ -116,24 +104,20 @@ public:
             src = dist(src_gen);
             if (src==gid) ++src;
             const float delay = min_delay_+delay_dist(src_gen);
-            //const float delay = min_delay_;
             cons.push_back(
-                arb::cell_connection({src, 0}, {gid, i}, 0.f, delay));
+                arb::cell_connection({src, "detector"}, {"p_syn"}, 0.f, delay));
         }
-
         return cons;
     }
 
     // Return one event generator on the first cell of each ring.
     // This generates a single event that will kick start the spiking on the sub-ring.
     std::vector<arb::event_generator> event_generators(cell_gid_type gid) const override {
-        std::vector<arb::event_generator> gens;
         if (gid%params_.ring_size == 0) {
-            gens.push_back(
-                arb::explicit_generator(
-                    arb::pse_vector{{{gid, 0}, 1.0, event_weight_}}));
+            return {arb::explicit_generator({{{"p_syn"}, 1.0, event_weight_}})};
+        } else {
+            return {};
         }
-        return gens;
     }
 
     std::vector<arb::probe_info> get_probes(cell_gid_type gid) const override {
@@ -149,7 +133,6 @@ private:
     float event_weight_ = 0.01;
 
     arb::cable_cell_global_properties gprop;
-    arb::mechanism_catalogue cat;
 };
 
 struct cell_stats {
@@ -203,12 +186,7 @@ int main(int argc, char** argv) {
         auto params = read_options(argc, argv);
 
         arb::proc_allocation resources;
-        if (auto nt = arbenv::get_env_num_threads()) {
-            resources.num_threads = nt;
-        }
-        else {
-            resources.num_threads = arbenv::thread_concurrency();
-        }
+        resources.num_threads = arbenv::default_concurrency();
 
 #ifdef ARB_MPI_ENABLED
         arbenv::with_mpi guard(argc, argv, false);
@@ -411,38 +389,43 @@ arb::cable_cell complex_cell (arb::cell_gid_type gid, const cell_parameters& par
        dict.set("synapses",  arb::ls::uniform(arb::reg::all(), 0, params.synapses-2, gid));
     }
 
+    auto soma = "soma"_lab;
+    auto dend = "dend"_lab;
+    auto cntr = "center"_lab;
+    auto syns = "synapses"_lab;
+
     arb::decor decor;
 
     decor.paint(all(), arb::init_reversal_potential{"k",  -107.0});
     decor.paint(all(), arb::init_reversal_potential{"na", 53.0});
 
-    decor.paint("\"soma\"", arb::axial_resistivity{133.577});
-    decor.paint("\"soma\"", arb::membrane_capacitance{4.21567e-2});
+    decor.paint(soma, arb::axial_resistivity{133.577});
+    decor.paint(soma, arb::membrane_capacitance{4.21567e-2});
 
-    decor.paint("\"dend\"", arb::axial_resistivity{68.355});
-    decor.paint("\"dend\"", arb::membrane_capacitance{2.11248e-2});
+    decor.paint(dend, arb::axial_resistivity{68.355});
+    decor.paint(dend, arb::membrane_capacitance{2.11248e-2});
 
-    decor.paint("\"soma\"", mech("pas").set("g", 0.000119174).set("e", -76.4024));
-    decor.paint("\"soma\"", mech("NaV").set("gbar", 0.0499779));
-    decor.paint("\"soma\"", mech("SK").set("gbar", 0.000733676));
-    decor.paint("\"soma\"", mech("Kv3_1").set("gbar", 0.186718));
-    decor.paint("\"soma\"", mech("Ca_HVA").set("gbar", 9.96973e-05));
-    decor.paint("\"soma\"", mech("Ca_LVA").set("gbar", 0.00344495));
-    decor.paint("\"soma\"", mech("CaDynamics").set("gamma", 0.0177038).set("decay", 42.2507));
-    decor.paint("\"soma\"", mech("Ih").set("gbar", 1.07608e-07));
+    decor.paint(soma, arb::density("pas/e=-76.4024", {{"g", 0.000119174}}));
+    decor.paint(soma, arb::density("NaV",            {{"gbar", 0.0499779}}));
+    decor.paint(soma, arb::density("SK",             {{"gbar", 0.000733676}}));
+    decor.paint(soma, arb::density("Kv3_1",          {{"gbar", 0.186718}}));
+    decor.paint(soma, arb::density("Ca_HVA",         {{"gbar", 9.96973e-05}}));
+    decor.paint(soma, arb::density("Ca_LVA",         {{"gbar", 0.00344495}}));
+    decor.paint(soma, arb::density("CaDynamics",     {{"gamma", 0.0177038}, {"decay", 42.2507}}));
+    decor.paint(soma, arb::density("Ih",             {{"gbar", 1.07608e-07}}));
 
-    decor.paint("\"dend\"", mech("pas").set("g", 9.57001e-05).set("e", -88.2554));
-    decor.paint("\"dend\"", mech("NaV").set("gbar", 0.0472215));
-    decor.paint("\"dend\"", mech("Kv3_1").set("gbar", 0.186859));
-    decor.paint("\"dend\"", mech("Im_v2").set("gbar", 0.00132163));
-    decor.paint("\"dend\"", mech("Ih").set("gbar", 9.18815e-06));
+    decor.paint(dend, arb::density("pas/e=-88.2554", {{"g", 9.57001e-05}}));
+    decor.paint(dend, arb::density("NaV",            {{"gbar", 0.0472215}}));
+    decor.paint(dend, arb::density("Kv3_1",          {{"gbar", 0.186859}}));
+    decor.paint(dend, arb::density("Im_v2",          {{"gbar", 0.00132163}}));
+    decor.paint(dend, arb::density("Ih",             {{"gbar", 9.18815e-06}}));
 
-    decor.place("\"center\"", mech("expsyn"));
+    decor.place(cntr, arb::synapse("expsyn"), "p_syn");
     if (params.synapses>1) {
-       decor.place("\"synapses\"", "expsyn");
+        decor.place(syns, arb::synapse("expsyn"), "s_syn");
     }
 
-    decor.place("\"center\"", arb::threshold_detector{-20.0});
+    decor.place(cntr, arb::threshold_detector{-20.0}, "detector");
 
     decor.set_default(arb::cv_policy_every_segment());
 
@@ -500,6 +483,10 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
 
     arb::label_dict labels;
 
+    auto soma = "soma"_lab;
+    auto dnds = "dendrites"_lab;
+    auto syns = "synapses"_lab;
+
     using arb::reg::tagged;
     labels.set("soma",      tagged(1));
     labels.set("dendrites", join(tagged(3), tagged(4)));
@@ -509,19 +496,19 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
 
     arb::decor decor;
 
-    decor.paint("\"soma\"", "hh");
-    decor.paint("\"dendrites\"", "pas");
+    decor.paint(soma, arb::density{"hh"});
+    decor.paint(dnds, arb::density{"pas"});
     decor.set_default(arb::axial_resistivity{100}); // [Ω·cm]
 
     // Add spike threshold detector at the soma.
-    decor.place(arb::mlocation{0,0}, arb::threshold_detector{10});
+    decor.place(arb::mlocation{0,0}, arb::threshold_detector{10}, "detector");
 
-    // Add a synapse to proximal end of first dendrite.
-    decor.place(arb::mlocation{1, 0}, "expsyn");
+    // Add a synapse to proximal end of fqirst dendrite.
+    decor.place(arb::mlocation{1, 0}, arb::synapse{"expsyn"}, "p_syn");
 
     // Add additional synapses that will not be connected to anything.
     if (params.synapses>1) {
-        decor.place("\"synapses\"", "expsyn");
+        decor.place(syns, arb::synapse{"expsyn"}, "s_syn");
     }
 
     // Make a CV between every sample in the sample tree.
