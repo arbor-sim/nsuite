@@ -503,7 +503,7 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
     // Add spike threshold detector at the soma.
     decor.place(arb::mlocation{0,0}, arb::threshold_detector{10}, "detector");
 
-    // Add a synapse to proximal end of fqirst dendrite.
+    // Add a synapse to proximal end of first dendrite.
     decor.place(arb::mlocation{1, 0}, arb::synapse{"expsyn"}, "p_syn");
 
     // Add additional synapses that will not be connected to anything.
