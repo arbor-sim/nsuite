@@ -15,7 +15,7 @@ jobs:
         config:
         - {
             name:  "Linux Min GCC",
-            os:    "ubuntu-22.04",
+            os:    "ubuntu-20.04",
             cc:    "gcc-10",
             cxx:   "g++-10",
             cmake: "3.22.x",
@@ -33,9 +33,16 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1.12
         with:
           cmake-version: ${{ matrix.config.cmake }}
+      - name: Clone
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Install
         run: |
-          ./install-local arbor --env=systems/gh.sh
+           pwd
+           ls
+           ./install-local.sh arbor --env=systems/gh.sh || echo 'fail'
+           cat /home/runner/work/nsuite/nsuite/build/log_arbor
       - name: Run
         run: |
           ./run-bench.sh arbor --config=small
