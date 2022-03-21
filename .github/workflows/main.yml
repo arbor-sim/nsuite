@@ -29,7 +29,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y g++-10
-      - name: Set up cmake
+      - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1.12
         with:
           cmake-version: ${{ matrix.config.cmake }}

@@ -9,6 +9,7 @@ ns_cc="gcc"
 ns_cxx="g++"
 ns_with_mpi=OFF
 ns_arb_arch=native
+ns_arb_gpu=none
 
 ns_arb_git_repo='https://github.com/arbor-sim/arbor.git'
 ns_arb_branch='master'
