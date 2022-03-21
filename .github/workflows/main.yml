@@ -15,7 +15,7 @@ jobs:
         config:
         - {
             name:  "Linux Min GCC",
-            os:    "ubuntu-22.04",
+            os:    "ubuntu-20.04",
             cc:    "gcc-10",
             cxx:   "g++-10",
             cmake: "3.22.x",
