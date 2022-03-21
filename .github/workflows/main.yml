@@ -37,7 +37,7 @@ jobs:
         run: |
            pwd
            ls
-          ./install-local.sh arbor --env=systems/gh.sh
+           ./install-local.sh arbor --env=systems/gh.sh
       - name: Run
         run: |
           ./run-bench.sh arbor --config=small
