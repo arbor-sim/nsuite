@@ -41,7 +41,8 @@ jobs:
         run: |
            pwd
            ls
-           ./install-local.sh arbor --env=systems/gh.sh
+           ./install-local.sh arbor --env=systems/gh.sh || echo 'fail'
+           cat /home/runner/work/nsuite/nsuite/build/log_arbor
       - name: Run
         run: |
           ./run-bench.sh arbor --config=small
