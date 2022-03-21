@@ -35,6 +35,8 @@ jobs:
           cmake-version: ${{ matrix.config.cmake }}
       - name: Install
         run: |
+           pwd
+           ls
           ./install-local.sh arbor --env=systems/gh.sh
       - name: Run
         run: |
