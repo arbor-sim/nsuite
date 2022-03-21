@@ -33,6 +33,10 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1.12
         with:
           cmake-version: ${{ matrix.config.cmake }}
+      - name: Clone
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Install
         run: |
            pwd
