@@ -39,10 +39,7 @@ jobs:
           submodules: recursive
       - name: Install
         run: |
-           pwd
-           ls
-           ./install-local.sh arbor --env=systems/gh.sh || echo 'fail'
-           cat /home/runner/work/nsuite/nsuite/build/log_arbor
+           ./install-local.sh arbor --env=systems/gh.sh
       - name: Run
         run: |
           ./run-bench.sh arbor --config=small
