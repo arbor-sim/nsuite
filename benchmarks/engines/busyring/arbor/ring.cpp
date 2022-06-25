@@ -218,13 +218,10 @@ int main(int argc, char** argv) {
         cell_stats stats(recipe);
         if (root) std::cout << stats << "\n";
 
-        //arb::partition_hint_map hints;
-        //hints[cell_kind::cable1d_neuron].cpu_group_size = 4;
-        //auto decomp = arb::partition_load_balance(recipe, context, hints);
         auto decomp = arb::partition_load_balance(recipe, context);
 
         // Construct the model.
-        arb::simulation sim(recipe, decomp, context);
+        arb::simulation sim(recipe, context, decomp);
 
         // Set up the probe that will measure voltage in the cell.
 
