@@ -1,7 +1,9 @@
 ### environment ###
 
+# As of March 2022
+
 # record system name
-ns_sysname="juwels-gpu"
+ns_sysname="juwels-booster"
 
 # set up environment for building on the booster part of juwels
 ml CMake/3.21.1 Python/3.9.6 NVHPC/22.1 ParaStationMPI/5.5.0-1
@@ -29,8 +31,6 @@ ns_threads_per_socket=24
 
 # activate budget via jutil env activate -p <cproject> -A <budget> before running the benchmark
 run_with_mpi() {
-    export ARB_NUM_THREADS=$ns_threads_per_socket
-    export OMP_NUM_THREADS=$ns_threads_per_socket
-    echo srun -n$ns_sockets -N1 -c$ns_threads_per_socket "${@}"
-    srun -n$ns_sockets -N1 -c$ns_threads_per_socket "${@}"
+    echo srun "${@}"
+    srun "${@}"
 }
