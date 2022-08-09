@@ -115,7 +115,6 @@ public:
     std::vector<arb::event_generator> event_generators(cell_gid_type gid) const override {
         if (gid%params_.ring_size == 0) {
             return {arb::regular_generator({"p_syn"}, event_weight_, 1.0, 1.0)};
-            // return {arb::explicit_generator({{{"p_syn"}, 1.0, event_weight_}})};
         } else {
             return {};
         }
@@ -185,8 +184,6 @@ int main(int argc, char** argv) {
         bool root = true;
 
         auto params = read_options(argc, argv);
-
-        std::cout << "cell.complex=" << params.cell.complex_cell << '\n';
 
         arb::proc_allocation resources;
         resources.num_threads = arbenv::default_concurrency();
