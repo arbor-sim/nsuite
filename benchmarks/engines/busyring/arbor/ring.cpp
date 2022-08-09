@@ -218,10 +218,8 @@ int main(int argc, char** argv) {
         cell_stats stats(recipe);
         if (root) std::cout << stats << "\n";
 
-        auto decomp = arb::partition_load_balance(recipe, context);
-
         // Construct the model.
-        arb::simulation sim(recipe, decomp, context);
+        arb::simulation sim(recipe, context);
 
         // Set up the probe that will measure voltage in the cell.
 
