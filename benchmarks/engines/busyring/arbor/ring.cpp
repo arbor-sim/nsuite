@@ -114,7 +114,8 @@ public:
     // This generates a single event that will kick start the spiking on the sub-ring.
     std::vector<arb::event_generator> event_generators(cell_gid_type gid) const override {
         if (gid%params_.ring_size == 0) {
-            return {arb::explicit_generator({{{"p_syn"}, 1.0, event_weight_}})};
+            return {arb::regular_generator({"p_syn"}, event_weight_, 1.0, 1.0)};
+            // return {arb::explicit_generator({{{"p_syn"}, 1.0, event_weight_}})};
         } else {
             return {};
         }
@@ -185,6 +186,8 @@ int main(int argc, char** argv) {
 
         auto params = read_options(argc, argv);
 
+        std::cout << "cell.complex=" << params.cell.complex_cell << '\n';
+
         arb::proc_allocation resources;
         resources.num_threads = arbenv::default_concurrency();
 
@@ -221,7 +224,7 @@ int main(int argc, char** argv) {
         auto decomp = arb::partition_load_balance(recipe, context);
 
         // Construct the model.
-        arb::simulation sim(recipe, context, decomp);
+        arb::simulation sim(recipe, decomp, context);
 
         // Set up the probe that will measure voltage in the cell.
 
