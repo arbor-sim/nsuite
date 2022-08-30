@@ -114,7 +114,7 @@ public:
     // This generates a single event that will kick start the spiking on the sub-ring.
     std::vector<arb::event_generator> event_generators(cell_gid_type gid) const override {
         if (gid%params_.ring_size == 0) {
-            return {arb::regular_generator({"p_syn"}, event_weight_, 1.0, 1.0)};
+            return {arb::regular_generator({"p_syn"}, event_weight_, 0.0, 1.0)};
         } else {
             return {};
         }
@@ -130,7 +130,7 @@ private:
     cell_size_type num_cells_;
     double min_delay_;
     ring_params params_;
-    float event_weight_ = 0.01;
+    float event_weight_ = 0.05;
 
     arb::cable_cell_global_properties gprop;
 };
