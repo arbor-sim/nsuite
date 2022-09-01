@@ -38,6 +38,7 @@ struct ring_params {
     double duration = 100;
     double dt = 0.025;
     bool record_voltage = false;
+    bool record_spikes  = true;
     std::string odir = ".";
     cell_parameters cell;
 };
@@ -77,6 +78,7 @@ ring_params read_options(int argc, char** argv) {
     param_from_json(params.dt, "dt", json);
     param_from_json(params.min_delay, "min-delay", json);
     param_from_json(params.record_voltage, "record", json);
+    param_from_json(params.record_spikes,  "spikes", json);
     param_from_json(params.cell.complex_cell, "complex", json);
     param_from_json(params.cell.max_depth, "depth", json);
     param_from_json(params.cell.branch_probs, "branch-probs", json);

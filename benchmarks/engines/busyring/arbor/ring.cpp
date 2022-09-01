@@ -259,17 +259,19 @@ int main(int argc, char** argv) {
         if (root) {
             std::cout << "\n" << ns << " spikes generated at rate of "
                       << params.duration/ns << " ms between spikes\n";
-            std::ofstream fid(params.odir + "/" + params.name + "_spikes.gdf");
-            if (!fid.good()) {
-                std::cerr << "Warning: unable to open file spikes.gdf for spike output\n";
-            }
-            else {
-                char linebuf[45];
-                for (auto spike: recorded_spikes) {
-                    auto n = std::snprintf(
-                        linebuf, sizeof(linebuf), "%u %.4f\n",
-                        unsigned{spike.source.gid}, float(spike.time));
-                    fid.write(linebuf, n);
+            if (!recorded_spikes.empty()) {
+                std::ofstream fid(params.odir + "/" + params.name + "_spikes.gdf");
+                if (!fid.good()) {
+                    std::cerr << "Warning: unable to open file spikes.gdf for spike output\n";
+                }
+                else {
+                    char linebuf[45];
+                    for (auto spike: recorded_spikes) {
+                        auto n = std::snprintf(
+                            linebuf, sizeof(linebuf), "%u %.4f\n",
+                            unsigned{spike.source.gid}, float(spike.time));
+                        fid.write(linebuf, n);
+                    }
                 }
             }
         }
