@@ -130,7 +130,7 @@ private:
     cell_size_type num_cells_;
     double min_delay_;
     ring_params params_;
-    float event_weight_ = 0.05;
+    float event_weight_ = 0.025;
 
     arb::cable_cell_global_properties gprop;
 };
