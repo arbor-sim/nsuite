@@ -65,7 +65,8 @@ public:
             gprop.default_parameters.axial_resistivity = 100;
             gprop.default_parameters.temperature_K = 34 + 273.15;
             gprop.default_parameters.init_membrane_potential = -90;
-            event_weight_*=5;
+            event_weight_ = 0.2;
+            event_freq_ = 0.2;
         }
     }
 
@@ -114,7 +115,7 @@ public:
     // This generates a single event that will kick start the spiking on the sub-ring.
     std::vector<arb::event_generator> event_generators(cell_gid_type gid) const override {
         if (gid%params_.ring_size == 0) {
-            return {arb::regular_generator({"p_syn"}, event_weight_, 0.0, 1.0)};
+            return {arb::regular_generator({"p_syn"}, event_weight_, 0.0, event_freq_)};
         } else {
             return {};
         }
@@ -131,6 +132,7 @@ private:
     double min_delay_;
     ring_params params_;
     float event_weight_ = 0.025;
+    float event_freq_ = 1.0;
 
     arb::cable_cell_global_properties gprop;
 };
