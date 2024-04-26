@@ -52,7 +52,16 @@ struct rc_cable_recipe: public arb::recipe {
     cell_size_type num_cells() const override { return 1; }
     cell_kind get_cell_kind(cell_gid_type) const override { return cell_kind::cable; }
     cell_size_type num_cvs_per_branch(cell_gid_type) const { return n; }
-    std::vector<arb::probe_info> get_probes(cell_gid_type gid) const override { return {cable_probe_membrane_voltage_cell()}; }
+    std::vector<arb::probe_info> get_probes(cell_gid_type gid) const override {
+        std::vector<arb::probe_info> probes;
+
+        // n probes, centred over CVs.
+        for (unsigned i = 0; i < num_probes(gid); ++i) {
+          arb::mlocation loc{0, probe_x(i)/length};
+          probes.push_back(cable_probe_membrane_voltage{loc});
+        }
+        return probes;
+    }
 
     std::any get_global_properties(cell_kind kind) const override {
         cable_cell_global_properties prop;
@@ -84,6 +93,10 @@ struct rc_cable_recipe: public arb::recipe {
 
     // time constant in [ms]
     static double tau() { return rm*cm*1000; }
+
+    // probe position in [µm]
+    double probe_x(unsigned i) const { return length*((2.0*i+1.0)/(2.0*n)); }
+    cell_size_type num_probes(cell_gid_type) const { return n; }
 };
 
 int main(int argc, char** argv) {
@@ -99,40 +112,14 @@ int main(int argc, char** argv) {
 
     auto n_entities = rec.num_cvs_per_branch(0);
     std::vector<double> voltage(n_entities);
-    std::vector<double> xs(n_entities);
+    std::vector<double> x(n_entities);
+    for (unsigned i = 0; i<x.size(); ++i) x[i] = rec.probe_x(i);
 
     double t_sample = 0;
-    auto sampler = [&voltage,
-                    &t_sample,
-                    &xs,
-                    n_entities=n_entities] (probe_metadata pm,
-                                            std::size_t n_samples,
-                                            const sample_record* samples) {
-        auto* cables = arb::util::any_cast<const arb::mcable_list*>(pm.meta);
-        assert(cables);
-        for (std::size_t ix = 0; ix < n_samples; ++ix) {
-            auto* value_range = arb::util::any_cast<const arb::cable_sample_range*>(samples[ix].data);
-            assert(value_range);
-            const auto& [lo, hi] = *value_range;
-            assert(n_entities == hi - lo);
-            t_sample = samples[ix].time;
-            for (unsigned jx = 0; jx < n_entities; ++jx) {
-                arb::mcable where = (*cables)[jx];
-                assert(where.branch_id == 0);
-                xs[jx] = 0.5*(where.prox_pos + where.dist_pos);
-
-                voltage[jx] = lo[jx];
-                std::cout << "t=" << t_sample << ", x=" << xs[jx] << ", U=" << voltage[jx] << '\n';
-            }
-            // Just taking the _first_ time.
-            break;
-        }
+    auto sampler = [&voltage,&t_sample] (probe_metadata pm, std::size_t n, const sample_record* rec) {
+        voltage.at(pm.id.index) = *rec[0].data.as<const double*>();
+        t_sample = rec[0].time;
     };
-
-        // voltage.at(pm.id.index) = *rec[0].data.as<const double*>();
-        // t_sample = rec[0].time;
-    // };
-
     sim.add_sampler(all_probes, explicit_schedule({t_end-dt}), sampler);
 
     sim.run(t_end, dt);
@@ -149,10 +136,6 @@ int main(int argc, char** argv) {
     nc_check(nc_def_var, ncid, "x", NC_DOUBLE, 1, &x_dimid, &xid);
     nc_check(nc_def_var, ncid, "v", NC_DOUBLE, 1, &x_dimid, &vid);
     nc_check(nc_def_var, ncid, "t_sample", NC_DOUBLE, 0, nullptr, &tid);
-
-    for (int ix = 0; ix < n_entities; ++ix) {
-        // std::cout << t_sample << ", " << xs[ix] << ", " << voltage[ix] << '\n';
-    }
 
     auto nc_put_att_cstr = [](int ncid, int varid, const char* name, const char* value) {
         nc_check(nc_put_att_text, ncid, varid, name, std::strlen(value), value);
@@ -174,6 +157,6 @@ int main(int argc, char** argv) {
 
     nc_check(nc_put_var_double, ncid, tid, &t_sample)
     nc_check(nc_put_var_double, ncid, vid, voltage.data())
-    nc_check(nc_put_var_double, ncid, xid, xs.data())
+    nc_check(nc_put_var_double, ncid, xid, x.data())
     nc_check(nc_close, ncid);
 }
