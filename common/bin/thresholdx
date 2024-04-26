@@ -63,17 +63,17 @@ for var, op, value in opts.exprs:
     else:
         v = opts.input[var]
         if op=='<':
-            status = np.asscalar(np.all(v<value))
+            status = np.all(v<value).item()
         elif op=='<=':
-            status = np.asscalar(np.all(v<=value))
+            status = (np.all(v<=value)).item()
         elif op=='>':
-            status = np.asscalar(np.all(v>value))
+            status = (np.all(v>value)).item()
         elif op=='>=':
-            status = np.asscalar(np.all(v>=value))
+            status = (np.all(v>=value)).item()
         elif op=='==' or op=='=':
-            status = np.asscalar(np.all(v==value))
+            status = (np.all(v==value)).item()
         elif op=='!=':
-            status = np.asscalar(np.all(v!=value))
+            status = (np.all(v!=value)).item()
         else:
             status = 'unknown operation'
 

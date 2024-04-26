@@ -67,7 +67,7 @@ def run_integration():
     crossing.direction = 1
 
     r = integrate.solve_ivp(dv_dt, (0., tend), [Erev], method='LSODA', t_eval=ts, jac=jacobian, atol=1e-10/nsamp, rtol=1e-10/nsamp, events=crossing)
-    spike = np.asscalar(r.t_events[0]) if r.t_events[0].size>0 else np.NaN
+    spike = (r.t_events[0]).item() if r.t_events[0].size>0 else np.NaN
 
     return (r.y[0], spike)
 

@@ -92,7 +92,7 @@ public:
         const auto group_start = s*group;
         const auto group_end = std::min(group_start+s, num_cells_);
         cell_gid_type src = gid==group_start? group_end-1: gid-1;
-        cons.push_back(arb::cell_connection({src, "detector"}, {"p_syn"}, event_weight_, min_delay_));
+        cons.push_back(arb::cell_connection({src, "d"}, {"p"}, event_weight_, min_delay_));
 
         // Used to pick source cell for a connection.
         std::uniform_int_distribution<cell_gid_type> dist(0, num_cells_-2);
@@ -106,7 +106,7 @@ public:
             if (src==gid) ++src;
             const float delay = min_delay_+delay_dist(src_gen);
             cons.push_back(
-                arb::cell_connection({src, "detector"}, {"p_syn"}, 0.f, delay));
+                arb::cell_connection({src, "d"}, {"p"}, 0.f, delay));
         }
         return cons;
     }
@@ -115,7 +115,7 @@ public:
     // This generates a single event that will kick start the spiking on the sub-ring.
     std::vector<arb::event_generator> event_generators(cell_gid_type gid) const override {
         if (gid%params_.ring_size == 0) {
-            return {arb::regular_generator({"p_syn"}, event_weight_, 0.0, event_freq_)};
+            return {arb::regular_generator({"p"}, event_weight_, 0.0, event_freq_)};
         } else {
             return {};
         }
@@ -377,26 +377,19 @@ arb::cable_cell complex_cell (arb::cell_gid_type gid, const cell_parameters& par
         dist_from_soma += l;
     }
 
-    arb::label_dict dict;
-
-    dict.set("soma", tagged(1));
-    dict.set("axon", tagged(2));
-    dict.set("dend", tagged(3));
-    dict.set("apic", tagged(4));
-    dict.set("center", location(0, 0.5));
-    if (params.synapses>1) {
-       dict.set("synapses",  arb::ls::uniform(arb::reg::all(), 0, params.synapses-2, gid));
-    }
-
-    auto soma = "soma"_lab;
-    auto dend = "dend"_lab;
-    auto cntr = "center"_lab;
-    auto syns = "synapses"_lab;
+    using arb::reg::tagged;
+    auto rall  = arb::reg::all();
+    auto soma = tagged(1);
+    auto axon = tagged(2);
+    auto dend = tagged(3);
+    auto apic = tagged(4);
+    auto cntr = location(0, 0.5);
+    auto syns = arb::ls::uniform(rall, 0, params.synapses-2, gid);
 
     arb::decor decor;
 
-    decor.paint(all(), arb::init_reversal_potential{"k",  -107.0});
-    decor.paint(all(), arb::init_reversal_potential{"na", 53.0});
+    decor.paint(rall, arb::init_reversal_potential{"k",  -107.0});
+    decor.paint(rall, arb::init_reversal_potential{"na", 53.0});
 
     decor.paint(soma, arb::axial_resistivity{133.577});
     decor.paint(soma, arb::membrane_capacitance{4.21567e-2});
@@ -419,16 +412,16 @@ arb::cable_cell complex_cell (arb::cell_gid_type gid, const cell_parameters& par
     decor.paint(dend, arb::density("Im_v2",          {{"gbar", 0.00132163}}));
     decor.paint(dend, arb::density("Ih",             {{"gbar", 9.18815e-06}}));
 
-    decor.place(cntr, arb::synapse("expsyn"), "p_syn");
+    decor.place(cntr, arb::synapse("expsyn"), "p");
     if (params.synapses>1) {
-        decor.place(syns, arb::synapse("expsyn"), "s_syn");
+        // decor.place(syns, arb::synapse("expsyn"), "s");
     }
 
-    decor.place(cntr, arb::threshold_detector{-20.0}, "detector");
+    decor.place(cntr, arb::threshold_detector{-20.0}, "d");
 
     decor.set_default(arb::cv_policy_every_segment());
 
-    return {arb::morphology(tree), dict, decor};
+    return {arb::morphology(tree), decor};
 }
 
 arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& params) {
@@ -480,18 +473,10 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
         dist_from_soma += l;
     }
 
-    arb::label_dict labels;
-
-    auto soma = "soma"_lab;
-    auto dnds = "dendrites"_lab;
-    auto syns = "synapses"_lab;
-
     using arb::reg::tagged;
-    labels.set("soma",      tagged(1));
-    labels.set("dendrites", join(tagged(3), tagged(4)));
-    if (params.synapses>1) {
-       labels.set("synapses",  arb::ls::uniform(arb::reg::all(), 0, params.synapses-2, gid));
-    }
+    auto soma = tagged(1);
+    auto dnds = join(tagged(3), tagged(4));
+    auto syns = arb::ls::uniform(arb::reg::all(), 0, params.synapses-2, gid);
 
     arb::decor decor;
 
@@ -500,18 +485,18 @@ arb::cable_cell branch_cell(arb::cell_gid_type gid, const cell_parameters& param
     decor.set_default(arb::axial_resistivity{100}); // [Ω·cm]
 
     // Add spike threshold detector at the soma.
-    decor.place(arb::mlocation{0,0}, arb::threshold_detector{10}, "detector");
+    decor.place(arb::mlocation{0,0}, arb::threshold_detector{10}, "d");
 
     // Add a synapse to proximal end of first dendrite.
-    decor.place(arb::mlocation{1, 0}, arb::synapse{"expsyn"}, "p_syn");
+    decor.place(arb::mlocation{1, 0}, arb::synapse{"expsyn"}, "p");
 
     // Add additional synapses that will not be connected to anything.
     if (params.synapses>1) {
-        decor.place(syns, arb::synapse{"expsyn"}, "s_syn");
+        decor.place(syns, arb::synapse{"expsyn"}, "s");
     }
 
     // Make a CV between every sample in the sample tree.
     decor.set_default(arb::cv_policy_every_segment());
 
-    return {arb::morphology(tree), labels, decor};
+    return {arb::morphology(tree), decor};
 }

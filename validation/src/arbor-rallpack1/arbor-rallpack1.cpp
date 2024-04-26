@@ -49,7 +49,6 @@ struct rc_rallpack1_recipe: public arb::recipe {
     {}
 
     cell_size_type num_cells() const override { return 1; }
-    cell_size_type num_targets(cell_gid_type) const override { return 0; }
     cell_kind get_cell_kind(cell_gid_type) const override { return cell_kind::cable; }
     cell_size_type num_probes(cell_gid_type) const { return 2; }
 
@@ -79,34 +78,18 @@ struct rc_rallpack1_recipe: public arb::recipe {
         segment_tree tree;
         tree.append(arb::mnpos, {0., 0., 0., d/2}, {0., 0., length, d/2}, 0);
 
-        mechanism_desc pas("pas");
+        mechanism_desc pas("pas/e=-65");
         pas["g"] = 1e-4/rm; // [S/cm^2]
-        pas["e"] = (double)erev;
+        // pas["e"] = (double)erev;
 
         decor D;
-        D.paint(reg::all(), pas);
-        D.place(mlocation{0, 0}, i_clamp{0, INFINITY, iinj});
+        D.paint(reg::all(), arb::density{pas});
+        D.place(mlocation{0, 0}, i_clamp{0, INFINITY, iinj}, "ic");
         D.set_default(cv_policy_fixed_per_branch(n));
 
-        return cable_cell(tree, {}, D);
+        return cable_cell(tree, D);
     }
 };
-
-domain_decomposition trivial_dd(const recipe& r) {
-    cell_size_type ncell = r.num_cells();
-
-    std::vector<cell_gid_type> all_gids(ncell);
-    std::iota(all_gids.begin(), all_gids.end(), cell_gid_type(0));
-
-    return domain_decomposition{
-        [](cell_gid_type) { return 0; },   // gid_domain map
-        1,                                 // num_domains
-        0,                                 // domain_id
-        ncell,                             // num_local_cells
-        ncell,                             // num_global_cells
-        {{r.get_cell_kind(0), all_gids, backend_kind::multicore}}  // groups
-    };
-}
 
 int main(int argc, char** argv) {
     common_args A;
@@ -115,7 +98,7 @@ int main(int argc, char** argv) {
 
     auto ctx = make_context();
     rc_rallpack1_recipe rec(A.params);
-    simulation sim(rec, trivial_dd(rec), ctx);
+    simulation sim(rec);
 
     time_type dt = A.params["dt"];
     time_type t_end = A.params["tend"];

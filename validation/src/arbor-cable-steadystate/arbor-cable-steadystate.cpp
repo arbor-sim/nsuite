@@ -14,6 +14,8 @@
 #include <arbor/simple_sampler.hpp>
 #include <arbor/simulation.hpp>
 #include <arbor/version.hpp>
+#include <arbor/util/any_cast.hpp>
+#include <arbor/util/any_ptr.hpp>
 
 #include "common_args.h"
 #include "common_attr.h"
@@ -48,9 +50,9 @@ struct rc_cable_recipe: public arb::recipe {
     {}
 
     cell_size_type num_cells() const override { return 1; }
-    cell_size_type num_targets(cell_gid_type) const override { return 0; }
     cell_kind get_cell_kind(cell_gid_type) const override { return cell_kind::cable; }
-    cell_size_type num_probes(cell_gid_type) const { return n; }
+    cell_size_type num_cvs_per_branch(cell_gid_type) const { return n; }
+    std::vector<arb::probe_info> get_probes(cell_gid_type gid) const override { return {cable_probe_membrane_voltage_cell()}; }
 
     std::any get_global_properties(cell_kind kind) const override {
         cable_cell_global_properties prop;
@@ -58,87 +60,80 @@ struct rc_cable_recipe: public arb::recipe {
         prop.default_parameters.init_membrane_potential = 0;
         prop.default_parameters.axial_resistivity = 100*rl; // [Ω·cm]
         prop.default_parameters.membrane_capacitance = (double)cm;  // [F/m²]
-        prop.default_parameters.temperature_K = 0;
+        prop.default_parameters.temperature_K = 300;
         prop.ion_species.clear();
         return prop;
     }
 
-    std::vector<arb::probe_info> get_probes(cell_gid_type gid) const override {
-        std::vector<arb::probe_info> probes; 
-
-        // n probes, centred over CVs.
-        for (unsigned i = 0; i < num_probes(gid); ++i) {
-          arb::mlocation loc{0, probe_x(i)/length};
-          probes.push_back(cable_probe_membrane_voltage{loc});
-        } 
-        return probes; 
-    }
 
     util::unique_any get_cell_description(cell_gid_type) const override {
         segment_tree tree;
         tree.append(arb::mnpos, {0., 0., 0., d0/2}, {0., 0., length, d1/2}, 0);
 
-        mechanism_desc pas("pas");
+        mechanism_desc pas("pas/e=0");
         pas["g"] = 1e-4/rm; // [S/cm^2]
-        pas["e"] = 0; // erev=0
+        // pas["e"] = 0; // erev=0
 
         decor D;
-        D.paint(reg::all(), pas);
-        D.place(mlocation{0, 1.}, i_clamp{0, INFINITY, iinj});
+        D.paint(reg::all(), arb::density{pas});
+        D.place(mlocation{0, 1.}, i_clamp{iinj}, "ic");
         D.set_default(cv_policy_fixed_per_branch(n));
 
-        return cable_cell(tree, {}, D);
+        return cable_cell(tree, D);
     }
 
     // time constant in [ms]
     static double tau() { return rm*cm*1000; }
-
-    // probe position in [µm]
-    double probe_x(unsigned i) const {
-        return length*((2.0*i+1.0)/(2.0*n));
-    }
-
 };
-
-domain_decomposition trivial_dd(const recipe& r) {
-    cell_size_type ncell = r.num_cells();
-
-    std::vector<cell_gid_type> all_gids(ncell);
-    std::iota(all_gids.begin(), all_gids.end(), cell_gid_type(0));
-
-    return domain_decomposition{
-        [](cell_gid_type) { return 0; },   // gid_domain map
-        1,                                 // num_domains
-        0,                                 // domain_id
-        ncell,                             // num_local_cells
-        ncell,                             // num_global_cells
-        {{r.get_cell_kind(0), all_gids, backend_kind::multicore}}  // groups
-    };
-}
 
 int main(int argc, char** argv) {
     common_args A;
     A.params = default_parameters;
     parse_common_args(A, argc, argv, {"binevents"});
 
-    auto ctx = make_context();
     rc_cable_recipe rec(A.params);
-    simulation sim(rec, trivial_dd(rec), ctx);
+    simulation sim(rec);
 
     time_type dt = A.params["dt"];
     time_type t_end = 20*rec.tau(); // transient amplitudes are proportional to exp(-t/tau).
 
-    std::vector<double> voltage(rec.num_probes(0));
-    std::vector<double> x(rec.num_probes(0));
-    for (unsigned i = 0; i<x.size(); ++i) x[i] = rec.probe_x(i);
+    auto n_entities = rec.num_cvs_per_branch(0);
+    std::vector<double> voltage(n_entities);
+    std::vector<double> xs(n_entities);
 
     double t_sample = 0;
-    auto sampler = [&voltage,&t_sample] (probe_metadata pm, std::size_t n, const sample_record* rec) {
-        voltage.at(pm.id.index) = *rec[0].data.as<const double*>();
-        t_sample = rec[0].time;
-    }; 
+    auto sampler = [&voltage,
+                    &t_sample,
+                    &xs,
+                    n_entities=n_entities] (probe_metadata pm,
+                                            std::size_t n_samples,
+                                            const sample_record* samples) {
+        auto* cables = arb::util::any_cast<const arb::mcable_list*>(pm.meta);
+        assert(cables);
+        for (std::size_t ix = 0; ix < n_samples; ++ix) {
+            auto* value_range = arb::util::any_cast<const arb::cable_sample_range*>(samples[ix].data);
+            assert(value_range);
+            const auto& [lo, hi] = *value_range;
+            assert(n_entities == hi - lo);
+            t_sample = samples[ix].time;
+            for (unsigned jx = 0; jx < n_entities; ++jx) {
+                arb::mcable where = (*cables)[jx];
+                assert(where.branch_id == 0);
+                xs[jx] = 0.5*(where.prox_pos + where.dist_pos);
 
-    sim.add_sampler(all_probes, explicit_schedule({t_end-dt}), sampler, sampling_policy::exact);
+                voltage[jx] = lo[jx];
+                std::cout << "t=" << t_sample << ", x=" << xs[jx] << ", U=" << voltage[jx] << '\n';
+            }
+            // Just taking the _first_ time.
+            break;
+        }
+    };
+
+        // voltage.at(pm.id.index) = *rec[0].data.as<const double*>();
+        // t_sample = rec[0].time;
+    // };
+
+    sim.add_sampler(all_probes, explicit_schedule({t_end-dt}), sampler);
 
     sim.run(t_end, dt);
 
@@ -154,6 +149,10 @@ int main(int argc, char** argv) {
     nc_check(nc_def_var, ncid, "x", NC_DOUBLE, 1, &x_dimid, &xid);
     nc_check(nc_def_var, ncid, "v", NC_DOUBLE, 1, &x_dimid, &vid);
     nc_check(nc_def_var, ncid, "t_sample", NC_DOUBLE, 0, nullptr, &tid);
+
+    for (int ix = 0; ix < n_entities; ++ix) {
+        // std::cout << t_sample << ", " << xs[ix] << ", " << voltage[ix] << '\n';
+    }
 
     auto nc_put_att_cstr = [](int ncid, int varid, const char* name, const char* value) {
         nc_check(nc_put_att_text, ncid, varid, name, std::strlen(value), value);
@@ -175,6 +174,6 @@ int main(int argc, char** argv) {
 
     nc_check(nc_put_var_double, ncid, tid, &t_sample)
     nc_check(nc_put_var_double, ncid, vid, voltage.data())
-    nc_check(nc_put_var_double, ncid, xid, x.data())
+    nc_check(nc_put_var_double, ncid, xid, xs.data())
     nc_check(nc_close, ncid);
 }

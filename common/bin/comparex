@@ -8,7 +8,7 @@ import sys
 import numpy as np
 import xarray
 import scipy.interpolate as interpolate
-import scipy.ndimage.filters as filters
+from scipy.ndimage import maximum_filter1d
 
 def parse_clargs():
     P = argparse.ArgumentParser()
@@ -92,10 +92,10 @@ def interpolate_array(x, t, tnew):
     x4_est[0] *= 3  # end-interval fudge factors
     x4_est[-1] *= 3
 
-    x4_windowmax = np.pad(filters.maximum_filter1d(x4_est, 4, origin=-2), (1, 0), mode='edge')
+    x4_windowmax = np.pad(maximum_filter1d(x4_est, 4, origin=-2), (1, 0), mode='edge')
     local_x4max = interpolate.interp1d(t, np.resize(x4_windowmax, x.size), assume_sorted=True, kind='previous', fill_value='extrapolate')
 
-    dt_windowmax = np.pad(filters.maximum_filter1d(np.ediff1d(t), 3, origin=-1), (1, 0), mode='edge')
+    dt_windowmax = np.pad(maximum_filter1d(np.ediff1d(t), 3, origin=-1), (1, 0), mode='edge')
     local_dtmax = interpolate.interp1d(t, np.resize(dt_windowmax, x.size), assume_sorted=True, kind='previous', fill_value='extrapolate')
 
     xi_err = 5./384.*pow(local_dtmax(tnew), 4)*local_x4max(tnew)

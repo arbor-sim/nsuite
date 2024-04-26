@@ -12,12 +12,14 @@
 #include <arbor/simple_sampler.hpp>
 #include <arbor/simulation.hpp>
 #include <arbor/version.hpp>
+#include <arborio/label_parse.hpp>
 
 #include "common_args.h"
 #include "common_attr.h"
 #include "netcdf_wrap.h"
 
 using namespace arb;
+using namespace arborio::literals;
 
 paramset default_parameters = {
     {"dt", 0.01},
@@ -64,11 +66,7 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
     }
 
     cell_size_type num_cells() const override { return ncell; }
-    cell_size_type num_sources(cell_gid_type) const override { return 1; }
-    cell_size_type num_targets(cell_gid_type) const override { return 1; }
-    cell_size_type num_probes(cell_gid_type gid) const {
-        return gid==0? 1: 0;
-    }
+    cell_size_type num_probes(cell_gid_type gid) const { return gid==0? 1: 0; }
     cell_kind get_cell_kind(cell_gid_type) const override { return cell_kind::cable; }
 
     std::any get_global_properties(cell_kind kind) const override {
@@ -89,22 +87,18 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
 
     std::vector<event_generator> event_generators(cell_gid_type gid) const override {
         if (gid!=0) return {};
-
-        spike_event ev;
-        ev.target = {0u, 0u};
-        ev.time = 0;
-        ev.weight = g0;
-
-        return {explicit_generator(pse_vector{{ev}})};
+        return {explicit_generator(arb::cell_local_label_type("syn"),
+                                   g0,
+                                   std::vector<float>{0.0f})};
     }
 
     util::unique_any get_cell_description(cell_gid_type) const override {
         segment_tree tree;
         tree.append(arb::mnpos, {0., 0., 0., r*1e6}, {0., 0., 2*r*1e6,  r*1e6}, 1);
 
-        mechanism_desc pas("pas");
+        mechanism_desc pas("pas/e=-65");
         pas["g"] = 1e-10/(rm*area);    // [S/cm^2]
-        pas["e"] = erev;
+        // pas["e"] = erev;
 
         mechanism_desc exp2syn("exp2syn");
         exp2syn["tau1"] = tau1;
@@ -117,44 +111,30 @@ struct rc_exp2syn_spike_recipe: public arb::recipe {
 
         decor D;
         D.set_default(membrane_capacitance{cm*1e-9/area}); // [F/m^2]
-        D.paint("\"soma\"", pas);
-        D.place("\"midpoint\"", exp2syn);
-        D.place("\"midpoint\"", threshold_detector{threshold});
+        D.paint(arb::reg::named("soma"), arb::density{pas});
+        D.place(arb::ls::named("midpoint"), arb::synapse{exp2syn}, "syn");
+        D.place(arb::ls::named("midpoint"), threshold_detector{threshold}, "det");
 
-        return cable_cell(tree, labels, D);
+        return cable_cell(tree, D, labels);
     }
 
     std::vector<arb::cell_connection> connections_on(cell_gid_type gid) const override {
         if (gid==0) return {};
 
-        return {arb::cell_connection({0, 0}, {gid, 0}, g0, delay[gid])};
+        return {arb::cell_connection(arb::cell_global_label_type{0, "det"},
+                                     arb::cell_local_label_type{"syn"},
+                                     g0,
+                                     delay[gid])};
     }
 };
-
-domain_decomposition trivial_dd(const recipe& r) {
-    cell_size_type ncell = r.num_cells();
-
-    std::vector<cell_gid_type> all_gids(ncell);
-    std::iota(all_gids.begin(), all_gids.end(), cell_gid_type(0));
-
-    return domain_decomposition{
-        [](cell_gid_type) { return 0; },   // gid_domain map
-        1,                                 // num_domains
-        0,                                 // domain_id
-        ncell,                             // num_local_cells
-        ncell,                             // num_global_cells
-        {{r.get_cell_kind(0), all_gids, backend_kind::multicore}}  // groups
-    };
-}
 
 int main(int argc, char** argv) {
     common_args A;
     A.params = default_parameters;
     parse_common_args(A, argc, argv, {"binevents"});
 
-    auto ctx = make_context();
     rc_exp2syn_spike_recipe rec(A.params);
-    simulation sim(rec, trivial_dd(rec), ctx);
+    simulation sim(rec);
 
     time_type t_end = 10., sample_dt = 0.05; // [ms]
     time_type dt = A.params["dt"];
